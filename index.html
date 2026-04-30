@@ -139,6 +139,7 @@
       <button class="tab" onclick="switchTab('customers', this)">ลูกค้า</button>
       <button class="tab" onclick="switchTab('inventory', this)">คลังอะไหล่</button>
       <button class="tab" onclick="switchTab('reports', this)">รายงาน</button>
+      <button class="tab" onclick="switchTab('slips', this)">💳 สลิปโอนเงิน</button>
       <button class="tab" onclick="switchTab('settings', this)">⚙ ตั้งค่า</button>
     </nav>
     <button class="btn btn-primary btn-sm" onclick="switchTab('newjob', document.querySelector('.tab'))">+ สร้างงาน</button>
@@ -167,8 +168,12 @@
           <div class="metric-value" id="m-done" style="color:var(--green)">—</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">รายได้วันนี้</div>
-          <div class="metric-value" id="m-revenue" style="color:var(--green)">—</div>
+          <div class="metric-label">💳 สลิปวันนี้</div>
+          <div class="metric-value" id="m-slip-count" style="color:#6C5CE7">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">รายได้รวมวันนี้</div>
+          <div class="metric-value" id="m-revenue" style="color:#00B894">—</div>
         </div>
       </div>
 
@@ -364,6 +369,79 @@
           <button class="btn btn-primary" id="submit-job-btn" onclick="submitJob()">✅ สร้างงานซ่อม</button>
           <button class="btn" style="background:#378ADD;color:#fff;border-color:#378ADD" onclick="showQuotation()">📄 ออกใบเสนอราคา</button>
           <button class="btn" onclick="switchTab('dashboard', document.querySelector('.tab'))">ยกเลิก</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ SLIPS (สลิปโอนเงิน) ══════════ -->
+    <section id="slips" class="section">
+      <div class="flex-between">
+        <h1 class="page-title" style="margin-bottom:0">💳 สลิปโอนเงิน</h1>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" placeholder="ค้นหา ผู้โอน / ธนาคาร / เลขอ้างอิง..." id="slip-search" style="width:260px" oninput="filterSlips()">
+          <button class="btn btn-sm" onclick="loadSlips()" title="รีเฟรช">🔄 รีเฟรช</button>
+        </div>
+      </div>
+
+      <!-- Slip summary cards -->
+      <div class="metric-grid" style="margin-top:16px">
+        <div class="metric-card">
+          <div class="metric-label">สลิปวันนี้</div>
+          <div class="metric-value" id="slip-today-count" style="color:#6C5CE7">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ยอดรวมวันนี้</div>
+          <div class="metric-value" id="slip-today-total" style="color:#00B894">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">สลิปทั้งหมด</div>
+          <div class="metric-value" id="slip-all-count">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ยอดรวมทั้งหมด</div>
+          <div class="metric-value" id="slip-all-total">—</div>
+        </div>
+      </div>
+
+      <!-- Slip info banner -->
+      <div style="background:#EDE7F6;border:1px solid #B39DDB;border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:13px;color:#4527A0;display:flex;align-items:center;gap:10px">
+        <span>📱</span>
+        <span>ลูกค้าส่งรูปสลิปผ่าน <strong>LINE Bot</strong> → ระบบ OCR อ่านข้อมูลอัตโนมัติ → บันทึกลง Google Sheets ทันที</span>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>วันที่/เวลา</th>
+                <th>จำนวนเงิน</th>
+                <th>ธนาคาร</th>
+                <th>ผู้โอน</th>
+                <th>ผู้รับ</th>
+                <th>เลขอ้างอิง</th>
+                <th>รูปสลิป</th>
+              </tr>
+            </thead>
+            <tbody id="slips-body">
+              <tr><td colspan="7" class="empty-state">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Revenue by date -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">📊 รายได้จากสลิปรายวัน</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>วันที่</th><th>จำนวนสลิป</th><th>รายได้จากสลิป (฿)</th><th>รายได้จากงานซ่อม (฿)</th><th>รายได้รวม (฿)</th></tr>
+            </thead>
+            <tbody id="revenue-body">
+              <tr><td colspan="5" class="empty-state">กำลังโหลด...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -586,6 +664,7 @@ async function refreshAllData() {
   loadJobs();
   loadCustomers();
   loadInventory();
+  loadSlips();
 }
 
 async function loadDashboard() {
@@ -595,7 +674,8 @@ async function loadDashboard() {
   document.getElementById("m-today").textContent    = s.today;
   document.getElementById("m-progress").textContent = s.inProgress;
   document.getElementById("m-done").textContent     = s.done;
-  document.getElementById("m-revenue").textContent  = "฿" + Number(s.revenue).toLocaleString();
+  document.getElementById("m-slip-count").textContent = s.slipCount || 0;
+  document.getElementById("m-revenue").textContent  = "฿" + Number(s.totalRevenue || s.revenue || 0).toLocaleString();
 
   // Also refresh recent jobs table
   loadRecentJobs();
@@ -1151,6 +1231,118 @@ function showQuotation() {
   document.getElementById("quotationModal").classList.add("open");
 }
 
+
+// ════════════════════════════════════════════
+//  SLIPS
+// ════════════════════════════════════════════
+let allSlips   = [];
+let allRevenue = [];
+
+async function loadSlips() {
+  const [slipData, revData] = await Promise.all([
+    gasGet({ action: "getSlips" }),
+    gasGet({ action: "getRevenue" })
+  ]);
+
+  if (slipData && slipData.status === "ok") {
+    allSlips = slipData.slips || [];
+    renderSlips(allSlips);
+    updateSlipSummary(allSlips);
+  }
+  if (revData && revData.status === "ok") {
+    allRevenue = revData.revenue || [];
+    renderRevenue(allRevenue);
+  }
+}
+
+function updateSlipSummary(slips) {
+  const today = new Date().toDateString();
+  let todayCount = 0, todayTotal = 0, allTotal = 0;
+
+  slips.forEach(s => {
+    const amt = Number(s["จำนวนเงิน (บาท)"] || 0);
+    allTotal += amt;
+    try {
+      if (new Date(s["Timestamp"]).toDateString() === today) {
+        todayCount++;
+        todayTotal += amt;
+      }
+    } catch (_) {}
+  });
+
+  const el = id => document.getElementById(id);
+  if (el("slip-today-count")) el("slip-today-count").textContent = todayCount;
+  if (el("slip-today-total")) el("slip-today-total").textContent = "฿" + todayTotal.toLocaleString();
+  if (el("slip-all-count"))   el("slip-all-count").textContent   = slips.length;
+  if (el("slip-all-total"))   el("slip-all-total").textContent   = "฿" + allTotal.toLocaleString();
+}
+
+function renderSlips(slips) {
+  const tbody = document.getElementById("slips-body");
+  if (!slips || !slips.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">
+      <div style="padding:32px">
+        <div style="font-size:48px;margin-bottom:12px">📷</div>
+        <div style="font-weight:600;margin-bottom:8px">ยังไม่มีสลิปในระบบ</div>
+        <div style="color:var(--muted);font-size:12px">ให้ลูกค้าส่งรูปสลิปผ่าน LINE Bot เพื่อบันทึกอัตโนมัติ</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = slips.map(s => {
+    const amt    = Number(s["จำนวนเงิน (บาท)"] || 0);
+    const imgUrl = s["URL รูปสลิป"] || "";
+    const ref    = (s["เลขอ้างอิง"] || "").substring(0, 20);
+    const ts     = s["Timestamp"] ? new Date(s["Timestamp"]).toLocaleString("th-TH", {
+      day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit"
+    }) : "—";
+
+    return `<tr>
+      <td style="white-space:nowrap;font-size:12px">${ts}</td>
+      <td style="font-weight:700;color:#00B894">฿${amt.toLocaleString()}</td>
+      <td><span class="badge" style="background:#EDE7F6;color:#4527A0">${s["ธนาคาร"] || "—"}</span></td>
+      <td>${s["ผู้โอน"] || "—"}</td>
+      <td>${s["ผู้รับ"] || "—"}</td>
+      <td><code style="font-size:10px;background:var(--bg);padding:2px 6px;border-radius:4px">${ref || "—"}</code></td>
+      <td>
+        ${imgUrl ? `<a href="${imgUrl}" target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">
+          <span style="background:#EBF5FF;padding:3px 8px;border-radius:6px;border:1px solid #BEE3F8">🖼 ดูสลิป</span>
+        </a>` : "—"}
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function renderRevenue(revenue) {
+  const tbody = document.getElementById("revenue-body");
+  if (!tbody) return;
+  if (!revenue || !revenue.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">ยังไม่มีข้อมูลรายได้</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = revenue.map(r => {
+    const d   = r["วันที่"] ? new Date(r["วันที่"]).toLocaleDateString("th-TH", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
+    const sc  = Number(r["จำนวนสลิป"] || 0);
+    const sr  = Number(r["รายได้จากสลิป (฿)"] || 0);
+    const jr  = Number(r["รายได้จากงานซ่อม (฿)"] || 0);
+    const tot = Number(r["รายได้รวม (฿)"] || sr + jr);
+    return `<tr>
+      <td>${d}</td>
+      <td>${sc} สลิป</td>
+      <td style="color:#6C5CE7;font-weight:600">฿${sr.toLocaleString()}</td>
+      <td style="color:var(--green);font-weight:600">฿${jr.toLocaleString()}</td>
+      <td style="color:#00B894;font-weight:700">฿${tot.toLocaleString()}</td>
+    </tr>`;
+  }).join("");
+}
+
+function filterSlips() {
+  const q = document.getElementById("slip-search").value.toLowerCase();
+  renderSlips(allSlips.filter(s =>
+    Object.values(s).some(v => String(v).toLowerCase().includes(q))
+  ));
+}
 
 let toastTimer;
 function showToast(msg) {
