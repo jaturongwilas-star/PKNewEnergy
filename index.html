@@ -166,6 +166,43 @@
   .sub-tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
   .sub-tab { background: none; border: none; padding: 8px 16px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; font-weight: 500; }
   .sub-tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 700; }
+
+  /* ── Calendar ── */
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .cal-header { background: #F7FAFC; padding: 8px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); }
+  .cal-day { background: var(--surface); min-height: 80px; padding: 4px; font-size: 11px; vertical-align: top; cursor: default; transition: background .1s; }
+  .cal-day:hover { background: #F0FFF8; }
+  .cal-day.today { background: #EBF8F3; }
+  .cal-day.other-month { background: #FAFAFA; color: var(--muted); }
+  .cal-day-num { font-weight: 700; font-size: 12px; margin-bottom: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .cal-day.today .cal-day-num { background: var(--green); color: white; }
+  .cal-appt { background: #EBF8F3; color: #1D9E75; border-left: 3px solid var(--green); padding: 2px 4px; margin-bottom: 2px; border-radius: 0 4px 4px 0; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-appt:hover { background: #1D9E75; color: white; }
+  .cal-appt.line-appt { border-left-color: #00B900; background: #E6F9E6; color: #056005; }
+  .cal-appt.line-appt:hover { background: #00B900; color: white; }
+  .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .cal-nav-title { font-size: 16px; font-weight: 700; flex: 1; text-align: center; }
+
+  /* ── LINE chat bubble ── */
+  .line-bubble { display: flex; gap: 10px; margin-bottom: 14px; }
+  .line-bubble.bot { flex-direction: row; }
+  .line-bubble.user { flex-direction: row-reverse; }
+  .line-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .line-avatar.bot-av { background: #00B900; }
+  .line-avatar.user-av { background: var(--blue); }
+  .line-msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 13px; line-height: 1.5; }
+  .line-bubble.bot .line-msg { background: white; border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .line-bubble.user .line-msg { background: #DCF8C6; border-top-right-radius: 4px; }
+  .line-chat-area { background: #EAE6D9; border-radius: var(--radius); padding: 16px; max-height: 420px; overflow-y: auto; }
+  .line-input-bar { display: flex; gap: 8px; margin-top: 10px; }
+  .line-quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .line-qr-btn { background: white; border: 1px solid var(--green); color: var(--green); padding: 5px 12px; border-radius: 18px; font-size: 12px; cursor: pointer; transition: all .15s; }
+  .line-qr-btn:hover { background: var(--green); color: white; }
+
+  /* ── Appt badge ── */
+  .badge-appt { background: #E8F5E9; color: #1B5E20; }
+  .badge-confirmed { background: #E3F2FD; color: #0D47A1; }
+  .badge-cancelled-appt { background: #FFEBEE; color: #B71C1C; }
 </style>
 </head>
 <body>
@@ -201,6 +238,7 @@
       <button class="tab" onclick="switchTab('inventory', this)">คลังอะไหล่</button>
       <button class="tab" onclick="switchTab('reports', this)">รายงาน</button>
       <button class="tab" onclick="switchTab('slips', this)">💳 สลิปโอนเงิน</button>
+      <button class="tab" onclick="switchTab('appointments', this)">📅 นัดหมาย</button>
       <button class="tab" onclick="switchTab('qc', this)">✅ QC</button>
       <button class="tab" onclick="switchTab('settings', this)">⚙ ตั้งค่า</button>
     </nav>
@@ -543,6 +581,109 @@
       </div>
     </section>
 
+    <!-- ══════════ APPOINTMENTS (นัดหมาย) ══════════ -->
+    <section id="appointments" class="section">
+      <div class="flex-between">
+        <h1 class="page-title" style="margin-bottom:0">📅 นัดหมาย</h1>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary btn-sm" onclick="openApptModal()">➕ สร้างนัดหมาย</button>
+          <button class="btn btn-sm" onclick="renderAppointments()">🔄 รีเฟรช</button>
+        </div>
+      </div>
+
+      <!-- Sub tabs -->
+      <div class="sub-tab-bar" style="margin-top:16px">
+        <button class="sub-tab active" id="appt-tab-calendar" onclick="switchApptTab('calendar')">📆 ปฏิทิน</button>
+        <button class="sub-tab" id="appt-tab-list" onclick="switchApptTab('list')">📋 รายการ</button>
+        <button class="sub-tab" id="appt-tab-line" onclick="switchApptTab('line')">💬 LINE Booking</button>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="appt-view-calendar">
+        <div class="card">
+          <div class="cal-nav">
+            <button class="btn btn-sm" onclick="calPrev()">◀</button>
+            <div class="cal-nav-title" id="cal-title">—</div>
+            <button class="btn btn-sm" onclick="calNext()">▶</button>
+            <button class="btn btn-sm" onclick="calToday()">วันนี้</button>
+          </div>
+          <div class="cal-grid" id="cal-grid">
+            <div class="cal-header">อา</div>
+            <div class="cal-header">จ</div>
+            <div class="cal-header">อ</div>
+            <div class="cal-header">พ</div>
+            <div class="cal-header">พฤ</div>
+            <div class="cal-header">ศ</div>
+            <div class="cal-header">ส</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- List View -->
+      <div id="appt-view-list" style="display:none">
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <input type="text" placeholder="ค้นหา ชื่อ/เบอร์/ประเภท..." id="appt-search" style="flex:1;min-width:180px" oninput="filterAppointments()">
+            <select id="appt-filter-status" onchange="filterAppointments()" style="width:140px">
+              <option value="">ทุกสถานะ</option>
+              <option value="รอยืนยัน">รอยืนยัน</option>
+              <option value="ยืนยันแล้ว">ยืนยันแล้ว</option>
+              <option value="ยกเลิก">ยกเลิก</option>
+              <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>วันที่นัด</th>
+                  <th>เวลา</th>
+                  <th>ชื่อลูกค้า</th>
+                  <th>เบอร์โทร</th>
+                  <th>รถ</th>
+                  <th>ประเภทงาน</th>
+                  <th>แหล่งที่มา</th>
+                  <th>สถานะ</th>
+                  <th>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="appt-list-body">
+                <tr><td colspan="9" class="empty-state">ยังไม่มีนัดหมาย</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINE Booking View -->
+      <div id="appt-view-line" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-title">💬 LINE Booking Bot (จำลอง)</div>
+            <div style="background:#F9F0E0;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#7B4F00">
+              <strong>📌 ระบบนี้จำลอง LINE Bot</strong> — ในระบบจริงให้ต่อ LINE Messaging API แล้วส่งข้อมูลมาบันทึก
+            </div>
+            <div class="line-chat-area" id="line-chat-area"></div>
+            <div class="line-quick-replies" id="line-quick-replies">
+              <button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">จองคิวซ่อมรถ</button>
+              <button class="line-qr-btn" onclick="lineUserSay('เช็คสถานะนัด')">เช็คสถานะนัด</button>
+              <button class="line-qr-btn" onclick="lineUserSay('ยกเลิกนัด')">ยกเลิกนัด</button>
+            </div>
+            <div class="line-input-bar">
+              <input type="text" id="line-input" placeholder="พิมพ์ข้อความ..." style="flex:1" onkeydown="if(event.key==='Enter')lineSend()">
+              <button class="btn btn-primary" onclick="lineSend()">ส่ง</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">📥 นัดจาก LINE (รออนุมัติ)</div>
+            <div id="line-pending-list" style="font-size:13px">
+              <div class="empty-state" style="padding:24px">ยังไม่มีการนัดจาก LINE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ══════════ QC ══════════ -->
     <section id="qc" class="section">
       <div class="flex-between">
@@ -635,18 +776,21 @@
 
       <div class="card">
         <div class="card-title">👤 จัดการผู้ใช้งาน</div>
+        <div id="user-admin-warning" style="display:none;align-items:center;gap:10px;background:#FFF3CD;border:1px solid #FFD600;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#7B6000">
+          ⚠️ คุณไม่มีสิทธิ์แก้ไขข้อมูลผู้ใช้ — เฉพาะ <strong>admin</strong> เท่านั้น
+        </div>
         <div class="table-wrap" style="margin-bottom:16px">
           <table id="users-table">
-            <thead><tr><th>Username</th><th>ชื่อ</th><th>บทบาท</th><th>จัดการ</th></tr></thead>
+            <thead><tr><th>Username</th><th>ชื่อ</th><th>บทบาท</th><th></th><th>จัดการ</th></tr></thead>
             <tbody id="users-body"></tbody>
           </table>
         </div>
-        <div style="border-top:1px solid var(--border);padding-top:16px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:12px">เพิ่มผู้ใช้ใหม่</div>
+        <div id="add-user-section" style="border-top:1px solid var(--border);padding-top:16px;display:none">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px">➕ เพิ่มผู้ใช้ใหม่</div>
           <div class="form-grid">
             <div class="form-group">
               <label>Username</label>
-              <input type="text" id="new-username" placeholder="ตัวอักษร/ตัวเลข">
+              <input type="text" id="new-username" placeholder="ตัวอักษร/ตัวเลข/_ เท่านั้น">
             </div>
             <div class="form-group">
               <label>Password</label>
@@ -796,6 +940,112 @@
   </div>
 </div>
 
+<!-- ══════ EDIT USER MODAL ══════ -->
+<div class="modal-overlay" id="editUserModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">✏️ แก้ไขข้อมูลผู้ใช้</div>
+    <input type="hidden" id="edit-user-index">
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Username (ไม่สามารถเปลี่ยนได้)</label>
+      <input type="text" id="edit-user-username" readonly style="background:#F7FAFC;color:var(--muted)">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>ชื่อที่แสดง *</label>
+      <input type="text" id="edit-user-displayname" placeholder="ชื่อ-นามสกุล">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>บทบาท</label>
+      <select id="edit-user-role">
+        <option value="tech">ช่างเทคนิค (tech)</option>
+        <option value="qc">QC Inspector (qc)</option>
+        <option value="manager">ผู้จัดการ (manager)</option>
+        <option value="admin">ผู้ดูแลระบบ (admin)</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>รีเซ็ตรหัสผ่าน (เว้นว่างถ้าไม่ต้องการเปลี่ยน)</label>
+      <input type="password" id="edit-user-password" placeholder="รหัสผ่านใหม่ อย่างน้อย 6 ตัวอักษร">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="saveEditUser()">💾 บันทึก</button>
+      <button class="btn" onclick="document.getElementById('editUserModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APPOINTMENT MODAL ══════ -->
+<div class="modal-overlay" id="apptModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title" id="appt-modal-title">➕ สร้างนัดหมาย</div>
+    <input type="hidden" id="appt-edit-id">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>ชื่อลูกค้า *</label>
+        <input type="text" id="appt-name" placeholder="ชื่อ-นามสกุล">
+      </div>
+      <div class="form-group">
+        <label>เบอร์โทร</label>
+        <input type="text" id="appt-phone" placeholder="08x-xxx-xxxx">
+      </div>
+      <div class="form-group">
+        <label>วันที่นัด *</label>
+        <input type="date" id="appt-date">
+      </div>
+      <div class="form-group">
+        <label>เวลา *</label>
+        <input type="time" id="appt-time" value="09:00">
+      </div>
+      <div class="form-group">
+        <label>ยี่ห้อรถ</label>
+        <input type="text" id="appt-car" placeholder="เช่น BYD Atto 3">
+      </div>
+      <div class="form-group">
+        <label>ทะเบียน</label>
+        <input type="text" id="appt-plate" placeholder="ขข 1234">
+      </div>
+      <div class="form-group span2">
+        <label>ประเภทงาน</label>
+        <select id="appt-type">
+          <option value="ตรวจเช็คทั่วไป">ตรวจเช็คทั่วไป</option>
+          <option value="ซ่อมระบบแอร์">ซ่อมระบบแอร์ EV</option>
+          <option value="ซ่อมแบตเตอรี่">ซ่อมแบตเตอรี่</option>
+          <option value="ซ่อมมอเตอร์">ซ่อมมอเตอร์</option>
+          <option value="ตรวจระบบชาร์จ">ตรวจระบบชาร์จ</option>
+          <option value="เปลี่ยนยาง">เปลี่ยนยาง</option>
+          <option value="อื่นๆ">อื่นๆ</option>
+        </select>
+      </div>
+      <div class="form-group span2">
+        <label>หมายเหตุ</label>
+        <textarea id="appt-notes" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>สถานะ</label>
+        <select id="appt-status">
+          <option value="รอยืนยัน">รอยืนยัน</option>
+          <option value="ยืนยันแล้ว">ยืนยันแล้ว</option>
+          <option value="ยกเลิก">ยกเลิก</option>
+          <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>แหล่งที่มา</label>
+        <select id="appt-source">
+          <option value="manual">กรอกเอง (Manual)</option>
+          <option value="line">LINE</option>
+          <option value="phone">โทรศัพท์</option>
+          <option value="walkin">Walk-in</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-primary" onclick="saveAppointment()">💾 บันทึกนัดหมาย</button>
+      <button class="btn" style="background:#378ADD;color:#fff;border-color:#378ADD" onclick="apptToJob()">📋 แปลงเป็นใบงาน</button>
+      <button class="btn" onclick="document.getElementById('apptModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -819,14 +1069,34 @@ let currentUser = null;
 
 function loadUsers() {
   const saved = localStorage.getItem("ev_users");
-  return saved ? JSON.parse(saved) : DEFAULT_USERS;
+  if (!saved) {
+    // ไม่เคยบันทึก → ใช้ DEFAULT_USERS แล้วบันทึกลง localStorage ทันที
+    localStorage.setItem("ev_users", JSON.stringify(DEFAULT_USERS));
+    return DEFAULT_USERS;
+  }
+  try {
+    const parsed = JSON.parse(saved);
+    // ตรวจสอบว่ามี admin อยู่เสมอ
+    if (!parsed.find(u => u.username === "admin")) {
+      parsed.unshift(DEFAULT_USERS[0]);
+      localStorage.setItem("ev_users", JSON.stringify(parsed));
+    }
+    return parsed;
+  } catch {
+    localStorage.setItem("ev_users", JSON.stringify(DEFAULT_USERS));
+    return DEFAULT_USERS;
+  }
+}
+
+function saveUsers(users) {
+  localStorage.setItem("ev_users", JSON.stringify(users));
 }
 
 function doLogin() {
   const username = document.getElementById("login-user").value.trim();
   const password = document.getElementById("login-pass").value;
   const errEl    = document.getElementById("login-error");
-  const users    = loadUsers();
+  const users    = loadUsers();  // loadUsers ตอนนี้ initialise localStorage แล้ว
 
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) {
@@ -838,10 +1108,10 @@ function doLogin() {
   localStorage.setItem("ev_session", JSON.stringify({ username: user.username, ts: Date.now() }));
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("topbar-user").style.display = "flex";
-  document.getElementById("topbar-username").textContent = user.displayName;
+  document.getElementById("topbar-username").textContent = user.displayName + " [" + user.role + "]";
   document.getElementById("user-avatar-char").textContent = user.displayName.charAt(0);
   errEl.textContent = "";
-  showToast("👋 ยินดีต้อนรับ " + user.displayName);
+  showToast("👋 ยินดีต้อนรับ " + user.displayName + " (" + user.role + ")");
   refreshAllData();
 }
 
@@ -866,6 +1136,10 @@ function checkSession() {
     currentUser = user;
     return true;
   } catch { return false; }
+}
+
+function isAdmin() {
+  return currentUser && currentUser.role === "admin";
 }
 
 // ════════════════════════════════════════════
@@ -1076,6 +1350,7 @@ function switchTab(id, triggerEl) {
   document.getElementById(id).classList.add("active");
   if (triggerEl) triggerEl.classList.add("active");
   if (id === "qc") { loadQCData(); renderQC(allJobs); }
+  if (id === "appointments") { renderAppointments(); }
   if (id === "settings") { renderUsersTable(); }
 }
 
@@ -1853,44 +2128,489 @@ function renderUsersTable() {
   const users = loadUsers();
   const tbody = document.getElementById("users-body");
   if (!tbody) return;
+
+  // Show/hide add user form based on admin role
+  const addUserSection = document.getElementById("add-user-section");
+  if (addUserSection) addUserSection.style.display = isAdmin() ? "block" : "none";
+
+  const adminWarning = document.getElementById("user-admin-warning");
+  if (adminWarning) adminWarning.style.display = isAdmin() ? "none" : "flex";
+
   tbody.innerHTML = users.map((u, i) => `
     <tr>
       <td><code>${u.username}</code></td>
       <td>${u.displayName}</td>
-      <td><span class="badge ${u.role === 'admin' ? 'badge-progress' : u.role === 'manager' ? 'badge-done' : u.role === 'qc' ? 'badge-wait' : ''}" style="background:#EDE7F6;color:#4527A0">${u.role}</span></td>
+      <td><span class="badge" style="background:${
+        u.role==='admin'?'#EDE7F6;color:#4527A0':
+        u.role==='manager'?'#E3F2FD;color:#0D47A1':
+        u.role==='qc'?'#FFF8E1;color:#E65100':
+        '#E8F5E9;color:#1B5E20'}">${u.role}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${u.username === currentUser?.username ? '👤 (คุณ)' : ''}</td>
       <td>
-        ${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${i})">ลบ</button>` : '<span style="color:var(--muted);font-size:12px">ค่าเริ่มต้น</span>'}
+        ${isAdmin() ? `
+          <button class="btn btn-sm" style="background:#378ADD;color:#fff;border-color:#378ADD;margin-right:4px" onclick="openEditUser(${i})">แก้ไข</button>
+          ${u.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${i})">ลบ</button>` : '<span style="color:var(--muted);font-size:11px">ค่าเริ่มต้น</span>'}
+        ` : '<span style="color:var(--muted);font-size:12px">—</span>'}
       </td>
     </tr>`).join("");
 }
 
+function openEditUser(index) {
+  if (!isAdmin()) { showToast("⛔ เฉพาะ Admin เท่านั้น"); return; }
+  const users = loadUsers();
+  const u = users[index];
+  document.getElementById("edit-user-index").value = index;
+  document.getElementById("edit-user-username").value = u.username;
+  document.getElementById("edit-user-displayname").value = u.displayName;
+  document.getElementById("edit-user-role").value = u.role;
+  document.getElementById("edit-user-password").value = "";
+  document.getElementById("editUserModal").classList.add("open");
+}
+
+function saveEditUser() {
+  if (!isAdmin()) { showToast("⛔ เฉพาะ Admin เท่านั้น"); return; }
+  const index = parseInt(document.getElementById("edit-user-index").value);
+  const displayName = document.getElementById("edit-user-displayname").value.trim();
+  const role = document.getElementById("edit-user-role").value;
+  const newPassword = document.getElementById("edit-user-password").value;
+
+  if (!displayName) { showToast("⚠️ กรอกชื่อที่แสดง"); return; }
+  if (newPassword && newPassword.length < 6) { showToast("⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"); return; }
+
+  const users = loadUsers();
+  users[index].displayName = displayName;
+  users[index].role = role;
+  if (newPassword) users[index].password = newPassword;
+  saveUsers(users);
+  document.getElementById("editUserModal").classList.remove("open");
+  renderUsersTable();
+  showToast("✅ แก้ไขข้อมูลผู้ใช้สำเร็จ" + (newPassword ? " (รีเซ็ตรหัสผ่านแล้ว)" : ""));
+}
+
 function addUser() {
+  if (!isAdmin()) { showToast("⛔ เฉพาะ Admin เท่านั้น"); return; }
   const username    = document.getElementById("new-username").value.trim();
   const password    = document.getElementById("new-password").value;
   const displayName = document.getElementById("new-displayname").value.trim();
   const role        = document.getElementById("new-role").value;
   if (!username || !password || !displayName) { showToast("⚠️ กรอกข้อมูลให้ครบถ้วน"); return; }
   if (password.length < 6) { showToast("⚠️ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) { showToast("⚠️ Username ใช้ได้เฉพาะ a-z, 0-9, _"); return; }
   const users = loadUsers();
   if (users.find(u => u.username === username)) { showToast("⚠️ Username นี้มีอยู่แล้ว"); return; }
   users.push({ username, password, role, displayName });
-  localStorage.setItem("ev_users", JSON.stringify(users));
+  saveUsers(users);
   document.getElementById("new-username").value    = "";
   document.getElementById("new-password").value    = "";
   document.getElementById("new-displayname").value = "";
   renderUsersTable();
-  showToast("✅ เพิ่มผู้ใช้ " + username + " สำเร็จ");
+  showToast("✅ เพิ่มผู้ใช้ " + username + " สำเร็จ (เข้าระบบได้ทันที)");
 }
 
 function deleteUser(index) {
+  if (!isAdmin()) { showToast("⛔ เฉพาะ Admin เท่านั้น"); return; }
   const users = loadUsers();
   if (users[index].username === "admin") { showToast("⚠️ ไม่สามารถลบ admin ได้"); return; }
+  if (users[index].username === currentUser?.username) { showToast("⚠️ ไม่สามารถลบบัญชีตัวเองได้"); return; }
   if (!confirm("ยืนยันลบผู้ใช้ " + users[index].username + "?")) return;
   users.splice(index, 1);
-  localStorage.setItem("ev_users", JSON.stringify(users));
+  saveUsers(users);
   renderUsersTable();
   showToast("✅ ลบผู้ใช้สำเร็จ");
 }
+
+// ════════════════════════════════════════════
+//  APPOINTMENTS SYSTEM
+// ════════════════════════════════════════════
+let allAppointments = [];
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-based
+let lineStep = 0;
+let lineBookingData = {};
+
+function loadAppointments() {
+  const saved = localStorage.getItem("ev_appointments");
+  allAppointments = saved ? JSON.parse(saved) : [];
+}
+
+function saveAppointments() {
+  localStorage.setItem("ev_appointments", JSON.stringify(allAppointments));
+}
+
+function switchApptTab(tab) {
+  ["calendar","list","line"].forEach(t => {
+    document.getElementById("appt-view-"+t).style.display = t===tab?"block":"none";
+    document.getElementById("appt-tab-"+t).classList.toggle("active", t===tab);
+  });
+  if (tab==="calendar") renderCalendar();
+  if (tab==="list") renderApptList();
+  if (tab==="line") renderLinePending();
+}
+
+function renderAppointments() {
+  loadAppointments();
+  renderCalendar();
+}
+
+function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+function calToday() { calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendar(); }
+
+const THAI_MONTHS = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+function renderCalendar() {
+  loadAppointments();
+  document.getElementById("cal-title").textContent = THAI_MONTHS[calMonth] + " " + (calYear+543);
+  const grid = document.getElementById("cal-grid");
+  // Remove all day cells (keep 7 headers)
+  while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+
+  // Previous month filler
+  for (let i=firstDay-1; i>=0; i--) {
+    const d = document.createElement("div");
+    d.className = "cal-day other-month";
+    d.innerHTML = `<div class="cal-day-num">${daysInPrev-i}</div>`;
+    grid.appendChild(d);
+  }
+  // Current month days
+  for (let day=1; day<=daysInMonth; day++) {
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===day;
+    const dateStr = calYear + "-" + String(calMonth+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+    const dayAppts = allAppointments.filter(a => a.date === dateStr);
+    const d = document.createElement("div");
+    d.className = "cal-day" + (isToday?" today":"");
+    d.onclick = () => openApptModal(dateStr);
+    let html = `<div class="cal-day-num">${day}</div>`;
+    dayAppts.forEach(a => {
+      const isLine = a.source === "line";
+      html += `<div class="cal-appt${isLine?" line-appt":""}" title="${a.name} - ${a.type}" onclick="event.stopPropagation();editApptById('${a.id}')">${a.time} ${a.name}</div>`;
+    });
+    d.innerHTML = html;
+    grid.appendChild(d);
+  }
+  // Next month filler
+  const totalCells = firstDay + daysInMonth;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i=1; i<=remaining; i++) {
+    const d = document.createElement("div");
+    d.className = "cal-day other-month";
+    d.innerHTML = `<div class="cal-day-num">${i}</div>`;
+    grid.appendChild(d);
+  }
+}
+
+function apptBadge(status) {
+  const map = { "รอยืนยัน":"badge-wait", "ยืนยันแล้ว":"badge-confirmed", "ยกเลิก":"badge-cancelled-appt", "เสร็จสิ้น":"badge-done" };
+  return `<span class="badge ${map[status]||'badge-wait'}">${status}</span>`;
+}
+
+function renderApptList(list) {
+  loadAppointments();
+  const data = list || allAppointments;
+  const tbody = document.getElementById("appt-list-body");
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state">ยังไม่มีนัดหมาย</td></tr>`;
+    return;
+  }
+  const sorted = [...data].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  tbody.innerHTML = sorted.map(a => `<tr>
+    <td>${fmtDate(a.date)}</td>
+    <td>${a.time||"—"}</td>
+    <td><strong>${a.name||"—"}</strong></td>
+    <td>${a.phone||"—"}</td>
+    <td>${a.car||"—"}</td>
+    <td>${a.type||"—"}</td>
+    <td><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${a.source==='line'?'#E6F9E6;color:#056005':a.source==='phone'?'#E3F2FD;color:#0D47A1':'#F5F5F5;color:#555'}">${a.source==='line'?'💬 LINE':a.source==='phone'?'📞 โทร':a.source==='walkin'?'🚶 Walk-in':'✍️ Manual'}</span></td>
+    <td>${apptBadge(a.status)}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-sm" onclick="editApptById('${a.id}')">แก้ไข</button>
+      <button class="btn btn-sm" style="margin-left:4px;background:#378ADD;color:#fff;border-color:#378ADD" onclick="apptToJobById('${a.id}')">📋 ใบงาน</button>
+      <button class="btn btn-sm btn-danger" style="margin-left:4px" onclick="deleteAppt('${a.id}')">ลบ</button>
+    </td>
+  </tr>`).join("");
+}
+
+function filterAppointments() {
+  loadAppointments();
+  const q = document.getElementById("appt-search").value.toLowerCase();
+  const s = document.getElementById("appt-filter-status").value;
+  const filtered = allAppointments.filter(a => {
+    const matchQ = !q || Object.values(a).some(v => String(v).toLowerCase().includes(q));
+    const matchS = !s || a.status === s;
+    return matchQ && matchS;
+  });
+  renderApptList(filtered);
+}
+
+function openApptModal(dateStr) {
+  document.getElementById("appt-modal-title").textContent = "➕ สร้างนัดหมาย";
+  document.getElementById("appt-edit-id").value = "";
+  document.getElementById("appt-name").value = "";
+  document.getElementById("appt-phone").value = "";
+  document.getElementById("appt-date").value = dateStr || new Date().toISOString().slice(0,10);
+  document.getElementById("appt-time").value = "09:00";
+  document.getElementById("appt-car").value = "";
+  document.getElementById("appt-plate").value = "";
+  document.getElementById("appt-type").value = "ตรวจเช็คทั่วไป";
+  document.getElementById("appt-notes").value = "";
+  document.getElementById("appt-status").value = "รอยืนยัน";
+  document.getElementById("appt-source").value = "manual";
+  document.getElementById("apptModal").classList.add("open");
+}
+
+function editApptById(id) {
+  loadAppointments();
+  const a = allAppointments.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById("appt-modal-title").textContent = "✏️ แก้ไขนัดหมาย";
+  document.getElementById("appt-edit-id").value = id;
+  document.getElementById("appt-name").value = a.name||"";
+  document.getElementById("appt-phone").value = a.phone||"";
+  document.getElementById("appt-date").value = a.date||"";
+  document.getElementById("appt-time").value = a.time||"09:00";
+  document.getElementById("appt-car").value = a.car||"";
+  document.getElementById("appt-plate").value = a.plate||"";
+  document.getElementById("appt-type").value = a.type||"ตรวจเช็คทั่วไป";
+  document.getElementById("appt-notes").value = a.notes||"";
+  document.getElementById("appt-status").value = a.status||"รอยืนยัน";
+  document.getElementById("appt-source").value = a.source||"manual";
+  document.getElementById("apptModal").classList.add("open");
+}
+
+function saveAppointment() {
+  const name = document.getElementById("appt-name").value.trim();
+  const date = document.getElementById("appt-date").value;
+  const time = document.getElementById("appt-time").value;
+  if (!name || !date || !time) { showToast("⚠️ กรอกชื่อ, วันที่, เวลา"); return; }
+  loadAppointments();
+  const editId = document.getElementById("appt-edit-id").value;
+  const appt = {
+    id: editId || ("APT-" + Date.now()),
+    name, date, time,
+    phone: document.getElementById("appt-phone").value.trim(),
+    car: document.getElementById("appt-car").value.trim(),
+    plate: document.getElementById("appt-plate").value.trim(),
+    type: document.getElementById("appt-type").value,
+    notes: document.getElementById("appt-notes").value.trim(),
+    status: document.getElementById("appt-status").value,
+    source: document.getElementById("appt-source").value,
+    createdAt: editId ? undefined : new Date().toISOString(),
+    createdBy: currentUser?.username || "system",
+  };
+  if (editId) {
+    const idx = allAppointments.findIndex(x => x.id === editId);
+    if (idx >= 0) allAppointments[idx] = { ...allAppointments[idx], ...appt };
+  } else {
+    allAppointments.push(appt);
+  }
+  saveAppointments();
+  document.getElementById("apptModal").classList.remove("open");
+  renderCalendar();
+  renderApptList();
+  showToast("✅ " + (editId ? "แก้ไข" : "สร้าง") + "นัดหมายสำเร็จ: " + name);
+}
+
+function deleteAppt(id) {
+  if (!confirm("ยืนยันลบนัดหมายนี้?")) return;
+  loadAppointments();
+  allAppointments = allAppointments.filter(x => x.id !== id);
+  saveAppointments();
+  renderApptList();
+  renderCalendar();
+  showToast("✅ ลบนัดหมายสำเร็จ");
+}
+
+function apptToJob() {
+  // Convert from modal form to new job form
+  const name = document.getElementById("appt-name").value.trim();
+  if (!name) { showToast("⚠️ กรอกชื่อลูกค้าก่อน"); return; }
+  const date = document.getElementById("appt-date").value;
+  const type = document.getElementById("appt-type").value;
+  document.getElementById("apptModal").classList.remove("open");
+  // Switch to new job and pre-fill
+  switchTab("newjob", document.querySelector(".tab"));
+  document.getElementById("f-name").value = name;
+  document.getElementById("f-phone").value = document.getElementById("appt-phone").value;
+  document.getElementById("f-plate").value = document.getElementById("appt-plate").value;
+  document.getElementById("f-date").value = date;
+  document.getElementById("f-notes").value = document.getElementById("appt-notes").value;
+  showToast("📋 โอนข้อมูลไปใบงานแล้ว — กรุณากรอกรายละเอียดเพิ่มเติม");
+}
+
+function apptToJobById(id) {
+  loadAppointments();
+  const a = allAppointments.find(x => x.id === id);
+  if (!a) return;
+  switchTab("newjob", document.querySelector(".tab"));
+  document.getElementById("f-name").value = a.name||"";
+  document.getElementById("f-phone").value = a.phone||"";
+  document.getElementById("f-plate").value = a.plate||"";
+  document.getElementById("f-date").value = a.date||"";
+  document.getElementById("f-notes").value = a.notes||"";
+  showToast("📋 โอนข้อมูลนัดหมายไปใบงานแล้ว");
+}
+
+// ── LINE Bot Simulator ──
+function renderLinePending() {
+  loadAppointments();
+  const pending = allAppointments.filter(a => a.source==="line" && a.status==="รอยืนยัน");
+  const el = document.getElementById("line-pending-list");
+  if (!pending.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px">ยังไม่มีการนัดจาก LINE</div>`;
+    return;
+  }
+  el.innerHTML = pending.map(a => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:13px">💬 ${a.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmtDate(a.date)} ${a.time} — ${a.type}</div>
+          <div style="font-size:12px">${a.phone} | ${a.car||"ไม่ระบุรถ"}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="btn btn-sm btn-primary" onclick="confirmLineAppt('${a.id}')">✅ อนุมัติ</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectLineAppt('${a.id}')">❌ ปฏิเสธ</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function confirmLineAppt(id) {
+  loadAppointments();
+  const a = allAppointments.find(x => x.id===id);
+  if (a) { a.status = "ยืนยันแล้ว"; saveAppointments(); }
+  renderLinePending(); renderApptList(); renderCalendar();
+  showToast("✅ อนุมัตินัดหมาย LINE สำเร็จ");
+}
+
+function rejectLineAppt(id) {
+  loadAppointments();
+  const a = allAppointments.find(x => x.id===id);
+  if (a) { a.status = "ยกเลิก"; saveAppointments(); }
+  renderLinePending(); renderApptList(); renderCalendar();
+  showToast("✅ ปฏิเสธนัดหมายแล้ว");
+}
+
+// LINE chat bot simulation
+function lineSend() {
+  const inp = document.getElementById("line-input");
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = "";
+  lineUserSay(msg);
+}
+
+function lineUserSay(msg) {
+  addLineBubble(msg, "user");
+  setTimeout(() => lineBotReply(msg), 500);
+}
+
+function addLineBubble(msg, role) {
+  const area = document.getElementById("line-chat-area");
+  const isBot = role === "bot";
+  const div = document.createElement("div");
+  div.className = "line-bubble " + role;
+  div.innerHTML = `
+    <div class="line-avatar ${isBot?"bot-av":"user-av"}">${isBot?"🤖":"👤"}</div>
+    <div class="line-msg">${msg.replace(/\n/g,"<br>")}</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function lineBotReply(msg) {
+  const lower = msg.toLowerCase();
+  let reply = "";
+  const qr = document.getElementById("line-quick-replies");
+
+  if (lineStep === 0) {
+    if (lower.includes("จอง") || lower.includes("นัด")) {
+      reply = "สวัสดีครับ! 🙏\nยินดีให้บริการ กรุณาแจ้ง **ชื่อ-นามสกุล** ของท่าน";
+      lineStep = 1; lineBookingData = {};
+      qr.innerHTML = "";
+    } else if (lower.includes("สถานะ") || lower.includes("เช็ค")) {
+      reply = "กรุณาแจ้งชื่อหรือเบอร์โทรเพื่อตรวจสอบนัดหมายครับ";
+    } else if (lower.includes("ยกเลิก")) {
+      reply = "กรุณาแจ้งชื่อหรือเบอร์โทรเพื่อยกเลิกนัดหมายครับ";
+    } else {
+      reply = "สวัสดีครับ! บริการ EV Garage Center 🚗⚡\nเลือกบริการที่ต้องการ:";
+      qr.innerHTML = `
+        <button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">📅 จองคิวซ่อมรถ</button>
+        <button class="line-qr-btn" onclick="lineUserSay('เช็คสถานะนัด')">🔍 เช็คสถานะนัด</button>
+        <button class="line-qr-btn" onclick="lineUserSay('ยกเลิกนัด')">❌ ยกเลิกนัด</button>`;
+    }
+  } else if (lineStep === 1) {
+    lineBookingData.name = msg;
+    reply = "ขอบคุณคุณ " + msg + " ครับ\nกรุณาแจ้ง **เบอร์โทรศัพท์** ของท่าน";
+    lineStep = 2;
+  } else if (lineStep === 2) {
+    lineBookingData.phone = msg;
+    reply = "กรุณาแจ้ง **ยี่ห้อและรุ่นรถ EV** ของท่าน\n(เช่น BYD Atto 3, Tesla Model 3)";
+    lineStep = 3;
+  } else if (lineStep === 3) {
+    lineBookingData.car = msg;
+    reply = "กรุณาแจ้ง **วันที่ต้องการนัด** (เช่น 15/05/2568)";
+    lineStep = 4;
+  } else if (lineStep === 4) {
+    lineBookingData.rawDate = msg;
+    reply = "กรุณาแจ้ง **เวลา** ที่สะดวก:";
+    qr.innerHTML = `
+      <button class="line-qr-btn" onclick="lineUserSay('09:00')">09:00</button>
+      <button class="line-qr-btn" onclick="lineUserSay('10:00')">10:00</button>
+      <button class="line-qr-btn" onclick="lineUserSay('13:00')">13:00</button>
+      <button class="line-qr-btn" onclick="lineUserSay('14:00')">14:00</button>`;
+    lineStep = 5;
+  } else if (lineStep === 5) {
+    lineBookingData.time = msg;
+    reply = "ต้องการบริการอะไร:";
+    qr.innerHTML = `
+      <button class="line-qr-btn" onclick="lineUserSay('ตรวจเช็คทั่วไป')">ตรวจเช็คทั่วไป</button>
+      <button class="line-qr-btn" onclick="lineUserSay('ซ่อมระบบแอร์')">ซ่อมระบบแอร์ EV</button>
+      <button class="line-qr-btn" onclick="lineUserSay('ซ่อมแบตเตอรี่')">ซ่อมแบตเตอรี่</button>
+      <button class="line-qr-btn" onclick="lineUserSay('ตรวจระบบชาร์จ')">ตรวจระบบชาร์จ</button>`;
+    lineStep = 6;
+  } else if (lineStep === 6) {
+    lineBookingData.type = msg;
+    // Save the appointment
+    loadAppointments();
+    // Parse date loosely
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0,10); // fallback
+    const newAppt = {
+      id: "LINE-" + Date.now(),
+      name: lineBookingData.name,
+      phone: lineBookingData.phone,
+      car: lineBookingData.car,
+      date: dateStr,
+      time: lineBookingData.time||"09:00",
+      type: lineBookingData.type,
+      notes: "จากระบบ LINE Bot",
+      status: "รอยืนยัน",
+      source: "line",
+      createdAt: new Date().toISOString(),
+    };
+    allAppointments.push(newAppt);
+    saveAppointments();
+    reply = `✅ รับนัดหมายเรียบร้อยครับ!\n\n📋 สรุปนัดหมาย:\n👤 ${lineBookingData.name}\n📞 ${lineBookingData.phone}\n🚗 ${lineBookingData.car}\n🔧 ${lineBookingData.type}\n⏰ ${lineBookingData.time}\n\nทีมงานจะยืนยันนัดอีกครั้งครับ 🙏`;
+    qr.innerHTML = `<button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">📅 จองเพิ่ม</button>`;
+    lineStep = 0;
+    renderLinePending();
+  }
+  if (reply) addLineBubble(reply, "bot");
+}
+
+// Init LINE chat
+window.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (document.getElementById("line-chat-area")) {
+      addLineBubble("สวัสดีครับ! บริการ EV Garage Center 🚗⚡\nเลือกบริการที่ต้องการ:", "bot");
+    }
+  }, 100);
+});
 
 let toastTimer;
 function showToast(msg) {
