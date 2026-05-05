@@ -657,29 +657,83 @@
 
       <!-- LINE Booking View -->
       <div id="appt-view-line" style="display:none">
+
+        <!-- LINE OA Config bar -->
+        <div class="card" style="margin-bottom:12px;padding:14px 20px">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:600;color:#056005;white-space:nowrap">⚙️ ตั้งค่า LINE OA</div>
+            <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+              <input type="text" id="line-oa-id" placeholder="LINE OA ID เช่น @pknewenergy" style="flex:1;min-width:160px;font-size:13px" oninput="saveLINEConfig()">
+              <input type="text" id="line-oa-link" placeholder="ลิงก์ LINE เช่น https://lin.ee/xxxxxxx" style="flex:2;min-width:200px;font-size:13px" oninput="saveLINEConfig()">
+            </div>
+            <div id="line-config-badge" style="font-size:11px;padding:3px 10px;border-radius:99px;background:#E8F5E9;color:#1B5E20;white-space:nowrap">ยังไม่ตั้งค่า</div>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- LEFT: LINE OA Info + QR -->
           <div class="card">
-            <div class="card-title">💬 LINE Booking Bot (จำลอง)</div>
-            <div style="background:#F9F0E0;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#7B4F00">
-              <strong>📌 ระบบนี้จำลอง LINE Bot</strong> — ในระบบจริงให้ต่อ LINE Messaging API แล้วส่งข้อมูลมาบันทึก
+            <div class="card-title">💬 ช่องทาง LINE จองนัด</div>
+
+            <!-- ลูกค้า: ส่งให้ลูกค้าไปคุย -->
+            <div style="background:#E8F9E8;border:1px solid #A5D6A7;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center">
+              <div style="font-size:13px;font-weight:700;color:#1B5E20;margin-bottom:12px">📲 แชร์ให้ลูกค้าเพื่อจองนัด</div>
+              <div id="line-qr-container" style="margin-bottom:12px">
+                <div style="width:140px;height:140px;margin:0 auto;background:#F5F5F5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);border:2px dashed var(--border)" id="line-qr-placeholder">
+                  📷 QR Code<br>กรอก LINE OA ID<br>ด้านบนก่อน
+                </div>
+                <img id="line-qr-img" src="" alt="QR LINE" style="display:none;width:140px;height:140px;border-radius:8px;object-fit:cover">
+              </div>
+              <div id="line-oa-display" style="font-size:14px;font-weight:700;color:#056005;margin-bottom:10px">—</div>
+              <a id="line-oa-btn" href="#" target="_blank" rel="noopener"
+                style="display:inline-flex;align-items:center;gap:8px;background:#00B900;color:white;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:700;text-decoration:none;pointer-events:none;opacity:0.4"
+                id="line-open-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.064-.022.135-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+                เปิด LINE OA
+              </a>
             </div>
-            <div class="line-chat-area" id="line-chat-area"></div>
-            <div class="line-quick-replies" id="line-quick-replies">
-              <button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">จองคิวซ่อมรถ</button>
-              <button class="line-qr-btn" onclick="lineUserSay('เช็คสถานะนัด')">เช็คสถานะนัด</button>
-              <button class="line-qr-btn" onclick="lineUserSay('ยกเลิกนัด')">ยกเลิกนัด</button>
+
+            <!-- วิธีที่ลูกค้าจอง -->
+            <div style="background:#F7FAFC;border-radius:8px;padding:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">📋 วิธีที่ลูกค้าจองนัดผ่าน LINE</div>
+              <div style="font-size:12px;color:var(--text);line-height:2">
+                <div>1️⃣ ลูกค้า scan QR หรือกดลิงก์ เพื่อเปิด LINE OA</div>
+                <div>2️⃣ พิมพ์ข้อความรูปแบบนี้ส่งมา:</div>
+                <div style="background:white;border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin:6px 0;font-family:monospace;font-size:11px;color:#056005">
+                  นัด: ชื่อ: สมชาย | วัน: 15/06/2568 | เวลา: 10:00 | รถ: BYD Atto 3 | โทร: 0812345678
+                </div>
+                <div>3️⃣ GAS Bot ตอบกลับยืนยัน + บันทึกลง Sheet</div>
+                <div>4️⃣ Admin เห็นนัดขึ้น "รออนุมัติ" ด้านขวา → กดอนุมัติ</div>
+              </div>
             </div>
-            <div class="line-input-bar">
-              <input type="text" id="line-input" placeholder="พิมพ์ข้อความ..." style="flex:1" onkeydown="if(event.key==='Enter')lineSend()">
-              <button class="btn btn-primary" onclick="lineSend()">ส่ง</button>
+
+            <!-- Copy ลิงก์ -->
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <input type="text" id="line-share-text" readonly
+                style="flex:1;font-size:12px;background:#F7FAFC;color:var(--muted)"
+                value="กรุณาตั้งค่า LINE OA ID ก่อน">
+              <button class="btn btn-sm" onclick="copyLineLink()" style="white-space:nowrap">📋 คัดลอก</button>
             </div>
           </div>
+
+          <!-- RIGHT: นัดรออนุมัติ -->
           <div class="card">
-            <div class="card-title">📥 นัดจาก LINE (รออนุมัติ)</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="card-title" style="margin-bottom:0">📥 นัดจาก LINE (รออนุมัติ)</div>
+              <button class="btn btn-sm" onclick="refreshLinePending()" title="รีเฟรช">🔄</button>
+            </div>
             <div id="line-pending-list" style="font-size:13px">
               <div class="empty-state" style="padding:24px">ยังไม่มีการนัดจาก LINE</div>
             </div>
+
+            <!-- ทุกนัดจาก LINE -->
+            <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
+              <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">📋 ประวัตินัดจาก LINE ทั้งหมด</div>
+              <div id="line-all-list" style="font-size:12px;max-height:200px;overflow-y:auto"></div>
+            </div>
           </div>
+
         </div>
       </div>
     </section>
@@ -1288,7 +1342,7 @@ function saveQC() {
   renderQC(allJobs);
 }
 
-const GAS_SCRIPT_ID = "1ZrYVzS2XmrDyasgnQc_2yaZSUdSJQ0B0VbVoDIzhId9hKH0UNzAy0flo";
+const GAS_SCRIPT_ID = "AKfycbzxUR-9LnLhwxO_tezt5mesw5Ijo4zNSa8cosNFBS6VHmDY64uHeB9kfrNYMdN3EUES1A";
 const GAS_URL_AUTO  = `https://script.google.com/macros/s/${GAS_SCRIPT_ID}/exec`;
 // ถ้าเคยบันทึก URL override ไว้ใน localStorage ให้ใช้ค่านั้น มิฉะนั้นใช้ auto URL
 let GAS_URL = localStorage.getItem("ev_gas_url") || GAS_URL_AUTO;
@@ -1305,6 +1359,7 @@ let revenueChart = null;
 //  INIT
 // ════════════════════════════════════════════
 window.addEventListener("DOMContentLoaded", () => {
+  loadLINEConfig();
   // Set report month to current
   document.getElementById("report-month").value = new Date().getMonth();
 
@@ -2275,7 +2330,7 @@ async function switchApptTab(tab) {
   await loadAppointments();
   if (tab==="calendar") renderCalendar();
   if (tab==="list") renderApptList();
-  if (tab==="line") renderLinePending();
+  if (tab==="line") { loadLINEConfig(); renderLinePending(); }
 }
 
 async function renderAppointments() {
@@ -2507,202 +2562,136 @@ function apptToJobById(id) {
   showToast("📋 โอนข้อมูลนัดหมายไปใบงานแล้ว");
 }
 
-// ── LINE Bot Simulator ──
-function renderLinePending() {
-  loadAppointments();
-  const pending = allAppointments.filter(a => a.source==="line" && a.status==="รอยืนยัน");
+// ── LINE Booking (Real) ──────────────────────────────────────
+
+// Load LINE OA config from localStorage
+function loadLINEConfig() {
+  const oaId   = localStorage.getItem("line_oa_id")   || "";
+  const oaLink = localStorage.getItem("line_oa_link") || "";
+  const oaIdEl   = document.getElementById("line-oa-id");
+  const oaLinkEl = document.getElementById("line-oa-link");
+  if (oaIdEl)   oaIdEl.value   = oaId;
+  if (oaLinkEl) oaLinkEl.value = oaLink;
+  updateLINEDisplay(oaId, oaLink);
+}
+
+function saveLINEConfig() {
+  const oaId   = (document.getElementById("line-oa-id")   || {}).value || "";
+  const oaLink = (document.getElementById("line-oa-link") || {}).value || "";
+  localStorage.setItem("line_oa_id",   oaId);
+  localStorage.setItem("line_oa_link", oaLink);
+  updateLINEDisplay(oaId, oaLink);
+}
+
+function updateLINEDisplay(oaId, oaLink) {
+  const badge    = document.getElementById("line-config-badge");
+  const display  = document.getElementById("line-oa-display");
+  const btn      = document.getElementById("line-oa-btn");
+  const qrImg    = document.getElementById("line-qr-img");
+  const qrPlaceholder = document.getElementById("line-qr-placeholder");
+  const shareText = document.getElementById("line-share-text");
+
+  const hasId   = oaId.trim().length > 0;
+  const hasLink = oaLink.trim().length > 0;
+
+  if (badge) {
+    badge.textContent = (hasId || hasLink) ? "✅ ตั้งค่าแล้ว" : "ยังไม่ตั้งค่า";
+    badge.style.background = (hasId || hasLink) ? "#E8F5E9" : "#FFF3E0";
+    badge.style.color      = (hasId || hasLink) ? "#1B5E20" : "#E65100";
+  }
+
+  if (display) display.textContent = oaId || (hasLink ? oaLink : "—");
+
+  if (btn) {
+    const url = oaLink || (hasId ? "https://line.me/R/ti/p/" + encodeURIComponent(oaId) : "#");
+    btn.href = url;
+    btn.style.opacity       = (hasId || hasLink) ? "1" : "0.4";
+    btn.style.pointerEvents = (hasId || hasLink) ? "auto" : "none";
+  }
+
+  // QR Code via Google Charts API (ฟรี ไม่ต้องสมัคร)
+  if (qrImg && qrPlaceholder) {
+    const qrTarget = oaLink || (hasId ? "https://line.me/R/ti/p/" + encodeURIComponent(oaId) : "");
+    if (qrTarget) {
+      const qrUrl = "https://chart.googleapis.com/chart?chs=140x140&cht=qr&chl=" + encodeURIComponent(qrTarget) + "&choe=UTF-8";
+      qrImg.src     = qrUrl;
+      qrImg.style.display    = "block";
+      qrPlaceholder.style.display = "none";
+    } else {
+      qrImg.style.display    = "none";
+      qrPlaceholder.style.display = "flex";
+    }
+  }
+
+  if (shareText) {
+    const link = oaLink || (hasId ? "https://line.me/R/ti/p/" + encodeURIComponent(oaId) : "");
+    shareText.value = link
+      ? "📅 จองนัดซ่อมรถ EV ได้ที่: " + link + " (พิมพ์ นัด: ชื่อ: xxx | วัน: dd/mm/yyyy | เวลา: HH:MM | รถ: xxx | โทร: xxx)"
+      : "กรุณาตั้งค่า LINE OA ID ก่อน";
+  }
+}
+
+function copyLineLink() {
+  const el = document.getElementById("line-share-text");
+  if (!el || !el.value || el.value.includes("กรุณา")) { showToast("⚠️ กรอก LINE OA ID ก่อน"); return; }
+  navigator.clipboard.writeText(el.value).then(() => showToast("📋 คัดลอกลิงก์แล้ว"));
+}
+
+async function renderLinePending() {
+  await loadAppointments();
+  const pending = allAppointments.filter(a => a.source === "line" && a.status === "รอยืนยัน");
   const el = document.getElementById("line-pending-list");
+  if (!el) return;
+
   if (!pending.length) {
-    el.innerHTML = `<div class="empty-state" style="padding:24px">ยังไม่มีการนัดจาก LINE</div>`;
-    return;
-  }
-  el.innerHTML = pending.map(a => `
-    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="font-weight:700;font-size:13px">💬 ${a.name}</div>
-          <div style="font-size:12px;color:var(--muted)">${fmtDate(a.date)} ${a.time} — ${a.type}</div>
-          <div style="font-size:12px">${a.phone} | ${a.car||"ไม่ระบุรถ"}</div>
+    el.innerHTML = `<div class="empty-state" style="padding:24px 0">✅ ไม่มีนัดรออนุมัติ</div>`;
+  } else {
+    el.innerHTML = pending.map(a => `
+      <div style="border:1px solid #A5D6A7;border-radius:8px;padding:12px;margin-bottom:10px;background:#F1F8E9">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;margin-bottom:4px">💬 ${a.name || "—"}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:2px">📅 ${fmtDate(a.date)} ${a.time || ""} — ${a.type || "—"}</div>
+            <div style="font-size:12px">📞 ${a.phone || "—"} | 🚗 ${a.car || "—"} ${a.plate ? "("+a.plate+")" : ""}</div>
+            ${a.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">💬 ${a.notes}</div>` : ""}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button class="btn btn-sm btn-primary" onclick="confirmLineAppt('${a.id}')">✅ อนุมัติ</button>
+            <button class="btn btn-sm btn-danger"  onclick="rejectLineAppt('${a.id}')">❌ ปฏิเสธ</button>
+            <button class="btn btn-sm" onclick="editApptById('${a.id}')">✏️ แก้ไข</button>
+          </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <button class="btn btn-sm btn-primary" onclick="confirmLineAppt('${a.id}')">✅ อนุมัติ</button>
-          <button class="btn btn-sm btn-danger" onclick="rejectLineAppt('${a.id}')">❌ ปฏิเสธ</button>
-        </div>
-      </div>
-    </div>`).join("");
-}
-
-async function confirmLineAppt(id) {
-  const a = allAppointments.find(x => x.id===id);
-  if (a) {
-    a.status = "ยืนยันแล้ว";
-    saveAppointmentsLocal();
-    await gasUpdateAppointment({ id, status: "ยืนยันแล้ว" });
-    await loadAppointments();
+      </div>`).join("");
   }
-  renderLinePending(); renderApptList(); renderCalendar();
-  showToast("✅ อนุมัตินัดหมาย LINE สำเร็จ");
-}
 
-async function rejectLineAppt(id) {
-  const a = allAppointments.find(x => x.id===id);
-  if (a) {
-    a.status = "ยกเลิก";
-    saveAppointmentsLocal();
-    await gasUpdateAppointment({ id, status: "ยกเลิก" });
-    await loadAppointments();
-  }
-  renderLinePending(); renderApptList(); renderCalendar();
-  showToast("✅ ปฏิเสธนัดหมายแล้ว");
-}
-
-// LINE chat bot simulation
-function lineSend() {
-  const inp = document.getElementById("line-input");
-  const msg = inp.value.trim();
-  if (!msg) return;
-  inp.value = "";
-  lineUserSay(msg);
-}
-
-function lineUserSay(msg) {
-  addLineBubble(msg, "user");
-  setTimeout(() => lineBotReply(msg), 500);
-}
-
-function addLineBubble(msg, role) {
-  const area = document.getElementById("line-chat-area");
-  const isBot = role === "bot";
-  const div = document.createElement("div");
-  div.className = "line-bubble " + role;
-  div.innerHTML = `
-    <div class="line-avatar ${isBot?"bot-av":"user-av"}">${isBot?"🤖":"👤"}</div>
-    <div class="line-msg">${msg.replace(/\n/g,"<br>")}</div>`;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-}
-
-function lineBotReply(msg) {
-  const lower = msg.toLowerCase();
-  let reply = "";
-  const qr = document.getElementById("line-quick-replies");
-
-  if (lineStep === 0) {
-    if (lower.includes("จอง") || lower.includes("นัด")) {
-      reply = "สวัสดีครับ! 🙏\nยินดีให้บริการ กรุณาแจ้ง **ชื่อ-นามสกุล** ของท่าน";
-      lineStep = 1; lineBookingData = {};
-      qr.innerHTML = "";
-    } else if (lower.includes("สถานะ") || lower.includes("เช็ค")) {
-      reply = "กรุณาแจ้งชื่อหรือเบอร์โทรเพื่อตรวจสอบนัดหมายครับ";
-    } else if (lower.includes("ยกเลิก")) {
-      reply = "กรุณาแจ้งชื่อหรือเบอร์โทรเพื่อยกเลิกนัดหมายครับ";
+  // แสดงประวัติ LINE ทั้งหมด
+  const allLine = allAppointments.filter(a => a.source === "line");
+  const allEl   = document.getElementById("line-all-list");
+  if (allEl) {
+    if (!allLine.length) {
+      allEl.innerHTML = `<div style="color:var(--muted);padding:8px 0">ยังไม่มีประวัตินัดจาก LINE</div>`;
     } else {
-      reply = "สวัสดีครับ! บริการ EV Garage Center 🚗⚡\nเลือกบริการที่ต้องการ:";
-      qr.innerHTML = `
-        <button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">📅 จองคิวซ่อมรถ</button>
-        <button class="line-qr-btn" onclick="lineUserSay('เช็คสถานะนัด')">🔍 เช็คสถานะนัด</button>
-        <button class="line-qr-btn" onclick="lineUserSay('ยกเลิกนัด')">❌ ยกเลิกนัด</button>`;
+      allEl.innerHTML = allLine.map(a => {
+        const statusColor = a.status === "ยืนยันแล้ว" ? "#1B5E20" : a.status === "ยกเลิก" ? "#B71C1C" : "#E65100";
+        const statusBg    = a.status === "ยืนยันแล้ว" ? "#E8F5E9" : a.status === "ยกเลิก" ? "#FFEBEE" : "#FFF3E0";
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <span style="font-weight:600">${a.name || "—"}</span>
+            <span style="color:var(--muted);margin-left:6px">${fmtDate(a.date)} ${a.time || ""}</span>
+          </div>
+          <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${statusBg};color:${statusColor}">${a.status}</span>
+        </div>`;
+      }).join("");
     }
-  } else if (lineStep === 1) {
-    lineBookingData.name = msg;
-    reply = "ขอบคุณคุณ " + msg + " ครับ\nกรุณาแจ้ง **เบอร์โทรศัพท์** ของท่าน";
-    lineStep = 2;
-  } else if (lineStep === 2) {
-    lineBookingData.phone = msg;
-    reply = "กรุณาแจ้ง **ยี่ห้อและรุ่นรถ EV** ของท่าน\n(เช่น BYD Atto 3, Tesla Model 3)";
-    lineStep = 3;
-  } else if (lineStep === 3) {
-    lineBookingData.car = msg;
-    reply = "กรุณาแจ้ง **วันที่ต้องการนัด** (เช่น 15/05/2568)";
-    lineStep = 4;
-  } else if (lineStep === 4) {
-    lineBookingData.rawDate = msg;
-    reply = "กรุณาแจ้ง **เวลา** ที่สะดวก:";
-    qr.innerHTML = `
-      <button class="line-qr-btn" onclick="lineUserSay('09:00')">09:00</button>
-      <button class="line-qr-btn" onclick="lineUserSay('10:00')">10:00</button>
-      <button class="line-qr-btn" onclick="lineUserSay('13:00')">13:00</button>
-      <button class="line-qr-btn" onclick="lineUserSay('14:00')">14:00</button>`;
-    lineStep = 5;
-  } else if (lineStep === 5) {
-    lineBookingData.time = msg;
-    reply = "ต้องการบริการอะไร:";
-    qr.innerHTML = `
-      <button class="line-qr-btn" onclick="lineUserSay('ตรวจเช็คทั่วไป')">ตรวจเช็คทั่วไป</button>
-      <button class="line-qr-btn" onclick="lineUserSay('ซ่อมระบบแอร์')">ซ่อมระบบแอร์ EV</button>
-      <button class="line-qr-btn" onclick="lineUserSay('ซ่อมแบตเตอรี่')">ซ่อมแบตเตอรี่</button>
-      <button class="line-qr-btn" onclick="lineUserSay('ตรวจระบบชาร์จ')">ตรวจระบบชาร์จ</button>`;
-    lineStep = 6;
-  } else if (lineStep === 6) {
-    lineBookingData.type = msg;
-
-    // แปลงวันที่ที่ user พิมพ์ (dd/mm/yyyy พ.ศ.) → yyyy-MM-dd ค.ศ.
-    let dateStr = lineBookingData.rawDate || "";
-    const dm = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-    if (dm) {
-      let yr = parseInt(dm[3]);
-      if (yr > 2500) yr -= 543; // พ.ศ. → ค.ศ.
-      dateStr = yr + "-" + String(dm[2]).padStart(2,"0") + "-" + String(dm[1]).padStart(2,"0");
-    } else {
-      // fallback วันนี้
-      dateStr = new Date().toISOString().slice(0,10);
-    }
-
-    const newAppt = {
-      id: "LINE-" + Date.now(),
-      name:  lineBookingData.name  || "",
-      phone: lineBookingData.phone || "",
-      car:   lineBookingData.car   || "",
-      date:  dateStr,
-      time:  lineBookingData.time  || "09:00",
-      type:  lineBookingData.type,
-      notes: "จากระบบ LINE Booking",
-      status: "รอยืนยัน",
-      source: "line",
-      createdAt: new Date().toISOString(),
-      createdBy: "line-bot",
-    };
-
-    // บันทึก local ก่อนทันที
-    allAppointments.unshift(newAppt);
-    saveAppointmentsLocal();
-
-    // ส่ง GAS async (ไม่ block UI)
-    gasCreateAppointment(newAppt).then(gasId => {
-      if (gasId) {
-        // อัปเดต id ใน local ให้ตรงกับ GAS
-        const idx = allAppointments.findIndex(x => x.id === newAppt.id);
-        if (idx >= 0) allAppointments[idx].id = gasId;
-        saveAppointmentsLocal();
-      }
-    });
-
-    reply = `✅ รับนัดหมายเรียบร้อยครับ!
-
-📋 สรุปนัดหมาย:
-👤 ${newAppt.name}
-📞 ${newAppt.phone}
-🚗 ${newAppt.car}
-🔧 ${newAppt.type}
-📅 ${newAppt.date} ⏰ ${newAppt.time}
-
-ทีมงานจะยืนยันนัดอีกครั้งครับ 🙏`;
-    qr.innerHTML = `<button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">📅 จองเพิ่ม</button>`;
-    lineStep = 0;
-    renderLinePending();
-    renderCalendar();
   }
-  if (reply) addLineBubble(reply, "bot");
 }
 
-// Init LINE chat
-window.addEventListener("DOMContentLoaded", () => {
-  setTimeout(() => {
-    if (document.getElementById("line-chat-area")) {
-      addLineBubble("สวัสดีครับ! บริการ EV Garage Center 🚗⚡\nเลือกบริการที่ต้องการ:", "bot");
-    }
-  }, 100);
-});
+async function refreshLinePending() {
+  showToast("⏳ กำลังโหลดจาก GAS...");
+  await loadAppointments();
+  await renderLinePending();
+  showToast("✅ โหลดข้อมูลล่าสุดแล้ว");
+}
 
 let toastTimer;
 function showToast(msg) {
