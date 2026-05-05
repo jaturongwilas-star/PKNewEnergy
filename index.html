@@ -224,7 +224,7 @@
     </div>
     <button class="btn-login" onclick="doLogin()">🔐 เข้าสู่ระบบ</button>
     <div class="login-error" id="login-error"></div>
-    <div style="margin-top:20px;font-size:11px;color:var(--muted)">เข้าระบบครั้งแรก: admin / admin1234</div>
+    <div style="margin-top:20px;font-size:11px;color:var(--muted)">ติดต่อผู้ดูแลระบบหากลืมรหัสผ่าน</div>
   </div>
 </div>
 
@@ -2228,27 +2228,68 @@ let calMonth = new Date().getMonth(); // 0-based
 let lineStep = 0;
 let lineBookingData = {};
 
-function loadAppointments() {
+async function loadAppointments() {
+  // ดึงจาก GAS ก่อน — fallback เป็น localStorage
+  try {
+    const data = await gasGet({ action: "getAppointments" });
+    if (data && data.status === "ok" && Array.isArray(data.appointments)) {
+      allAppointments = data.appointments;
+      localStorage.setItem("ev_appointments", JSON.stringify(allAppointments));
+      return;
+    }
+  } catch (_) {}
   const saved = localStorage.getItem("ev_appointments");
   allAppointments = saved ? JSON.parse(saved) : [];
 }
 
-function saveAppointments() {
+function saveAppointmentsLocal() {
   localStorage.setItem("ev_appointments", JSON.stringify(allAppointments));
 }
 
-function switchApptTab(tab) {
+async function saveAppointments() {
+  saveAppointmentsLocal();
+}
+
+async function gasCreateAppointment(appt) {
+  try {
+    const res = await gasPost({ action: "createAppointment", ...appt });
+    if (res && res.status === "ok" && res.id) return res.id;
+  } catch (_) {}
+  return null;
+}
+
+async function gasUpdateAppointment(appt) {
+  try { await gasPost({ action: "updateAppointment", ...appt }); } catch (_) {}
+}
+
+async function gasDeleteAppointment(id) {
+  try { await gasPost({ action: "deleteAppointment", id }); } catch (_) {}
+}
+
+async function switchApptTab(tab) {
   ["calendar","list","line"].forEach(t => {
     document.getElementById("appt-view-"+t).style.display = t===tab?"block":"none";
     document.getElementById("appt-tab-"+t).classList.toggle("active", t===tab);
   });
+  // โหลดข้อมูลสดจาก GAS ทุกครั้งที่เปลี่ยน tab
+  await loadAppointments();
   if (tab==="calendar") renderCalendar();
   if (tab==="list") renderApptList();
   if (tab==="line") renderLinePending();
 }
 
-function renderAppointments() {
-  loadAppointments();
+async function renderAppointments() {
+  // แสดง loading
+  const grid = document.getElementById("cal-grid");
+  if (grid) {
+    // ลบ cells เก่า เหลือแค่ 7 headers
+    while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+    const loading = document.createElement("div");
+    loading.style = "grid-column:1/-1;padding:24px;text-align:center;color:var(--muted);font-size:13px";
+    loading.textContent = "⏳ กำลังโหลดนัดหมาย...";
+    grid.appendChild(loading);
+  }
+  await loadAppointments();
   renderCalendar();
 }
 
@@ -2382,44 +2423,55 @@ function editApptById(id) {
   document.getElementById("apptModal").classList.add("open");
 }
 
-function saveAppointment() {
+async function saveAppointment() {
   const name = document.getElementById("appt-name").value.trim();
   const date = document.getElementById("appt-date").value;
   const time = document.getElementById("appt-time").value;
   if (!name || !date || !time) { showToast("⚠️ กรอกชื่อ, วันที่, เวลา"); return; }
-  loadAppointments();
+
   const editId = document.getElementById("appt-edit-id").value;
   const appt = {
     id: editId || ("APT-" + Date.now()),
     name, date, time,
     phone: document.getElementById("appt-phone").value.trim(),
-    car: document.getElementById("appt-car").value.trim(),
+    car:   document.getElementById("appt-car").value.trim(),
     plate: document.getElementById("appt-plate").value.trim(),
-    type: document.getElementById("appt-type").value,
+    type:  document.getElementById("appt-type").value,
     notes: document.getElementById("appt-notes").value.trim(),
     status: document.getElementById("appt-status").value,
     source: document.getElementById("appt-source").value,
-    createdAt: editId ? undefined : new Date().toISOString(),
     createdBy: currentUser?.username || "system",
   };
+
+  showToast("⏳ กำลังบันทึก...");
+
   if (editId) {
+    // UPDATE — ส่ง GAS ก่อน แล้วอัปเดต local
+    await gasUpdateAppointment(appt);
+    await loadAppointments(); // reload จาก GAS
     const idx = allAppointments.findIndex(x => x.id === editId);
     if (idx >= 0) allAppointments[idx] = { ...allAppointments[idx], ...appt };
   } else {
-    allAppointments.push(appt);
+    // CREATE — ส่ง GAS ก่อน รับ id จริง
+    appt.createdAt = new Date().toISOString();
+    const gasId = await gasCreateAppointment(appt);
+    if (gasId) appt.id = gasId; // ใช้ id จาก GAS ถ้าได้
+    allAppointments.unshift(appt);
   }
-  saveAppointments();
+
+  saveAppointmentsLocal();
   document.getElementById("apptModal").classList.remove("open");
   renderCalendar();
   renderApptList();
   showToast("✅ " + (editId ? "แก้ไข" : "สร้าง") + "นัดหมายสำเร็จ: " + name);
 }
 
-function deleteAppt(id) {
+async function deleteAppt(id) {
   if (!confirm("ยืนยันลบนัดหมายนี้?")) return;
-  loadAppointments();
+  showToast("⏳ กำลังลบ...");
+  await gasDeleteAppointment(id);
   allAppointments = allAppointments.filter(x => x.id !== id);
-  saveAppointments();
+  saveAppointmentsLocal();
   renderApptList();
   renderCalendar();
   showToast("✅ ลบนัดหมายสำเร็จ");
@@ -2480,18 +2532,26 @@ function renderLinePending() {
     </div>`).join("");
 }
 
-function confirmLineAppt(id) {
-  loadAppointments();
+async function confirmLineAppt(id) {
   const a = allAppointments.find(x => x.id===id);
-  if (a) { a.status = "ยืนยันแล้ว"; saveAppointments(); }
+  if (a) {
+    a.status = "ยืนยันแล้ว";
+    saveAppointmentsLocal();
+    await gasUpdateAppointment({ id, status: "ยืนยันแล้ว" });
+    await loadAppointments();
+  }
   renderLinePending(); renderApptList(); renderCalendar();
   showToast("✅ อนุมัตินัดหมาย LINE สำเร็จ");
 }
 
-function rejectLineAppt(id) {
-  loadAppointments();
+async function rejectLineAppt(id) {
   const a = allAppointments.find(x => x.id===id);
-  if (a) { a.status = "ยกเลิก"; saveAppointments(); }
+  if (a) {
+    a.status = "ยกเลิก";
+    saveAppointmentsLocal();
+    await gasUpdateAppointment({ id, status: "ยกเลิก" });
+    await loadAppointments();
+  }
   renderLinePending(); renderApptList(); renderCalendar();
   showToast("✅ ปฏิเสธนัดหมายแล้ว");
 }
@@ -2575,30 +2635,62 @@ function lineBotReply(msg) {
     lineStep = 6;
   } else if (lineStep === 6) {
     lineBookingData.type = msg;
-    // Save the appointment
-    loadAppointments();
-    // Parse date loosely
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0,10); // fallback
+
+    // แปลงวันที่ที่ user พิมพ์ (dd/mm/yyyy พ.ศ.) → yyyy-MM-dd ค.ศ.
+    let dateStr = lineBookingData.rawDate || "";
+    const dm = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (dm) {
+      let yr = parseInt(dm[3]);
+      if (yr > 2500) yr -= 543; // พ.ศ. → ค.ศ.
+      dateStr = yr + "-" + String(dm[2]).padStart(2,"0") + "-" + String(dm[1]).padStart(2,"0");
+    } else {
+      // fallback วันนี้
+      dateStr = new Date().toISOString().slice(0,10);
+    }
+
     const newAppt = {
       id: "LINE-" + Date.now(),
-      name: lineBookingData.name,
-      phone: lineBookingData.phone,
-      car: lineBookingData.car,
-      date: dateStr,
-      time: lineBookingData.time||"09:00",
-      type: lineBookingData.type,
-      notes: "จากระบบ LINE Bot",
+      name:  lineBookingData.name  || "",
+      phone: lineBookingData.phone || "",
+      car:   lineBookingData.car   || "",
+      date:  dateStr,
+      time:  lineBookingData.time  || "09:00",
+      type:  lineBookingData.type,
+      notes: "จากระบบ LINE Booking",
       status: "รอยืนยัน",
       source: "line",
       createdAt: new Date().toISOString(),
+      createdBy: "line-bot",
     };
-    allAppointments.push(newAppt);
-    saveAppointments();
-    reply = `✅ รับนัดหมายเรียบร้อยครับ!\n\n📋 สรุปนัดหมาย:\n👤 ${lineBookingData.name}\n📞 ${lineBookingData.phone}\n🚗 ${lineBookingData.car}\n🔧 ${lineBookingData.type}\n⏰ ${lineBookingData.time}\n\nทีมงานจะยืนยันนัดอีกครั้งครับ 🙏`;
+
+    // บันทึก local ก่อนทันที
+    allAppointments.unshift(newAppt);
+    saveAppointmentsLocal();
+
+    // ส่ง GAS async (ไม่ block UI)
+    gasCreateAppointment(newAppt).then(gasId => {
+      if (gasId) {
+        // อัปเดต id ใน local ให้ตรงกับ GAS
+        const idx = allAppointments.findIndex(x => x.id === newAppt.id);
+        if (idx >= 0) allAppointments[idx].id = gasId;
+        saveAppointmentsLocal();
+      }
+    });
+
+    reply = `✅ รับนัดหมายเรียบร้อยครับ!
+
+📋 สรุปนัดหมาย:
+👤 ${newAppt.name}
+📞 ${newAppt.phone}
+🚗 ${newAppt.car}
+🔧 ${newAppt.type}
+📅 ${newAppt.date} ⏰ ${newAppt.time}
+
+ทีมงานจะยืนยันนัดอีกครั้งครับ 🙏`;
     qr.innerHTML = `<button class="line-qr-btn" onclick="lineUserSay('จองคิวซ่อมรถ')">📅 จองเพิ่ม</button>`;
     lineStep = 0;
     renderLinePending();
+    renderCalendar();
   }
   if (reply) addLineBubble(reply, "bot");
 }
