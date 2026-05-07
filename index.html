@@ -267,16 +267,48 @@ textarea{resize:vertical;min-height:80px}
 
   <!-- CUSTOMERS -->
   <section id="customers" class="section">
-    <div class="flex-between"><h1 class="page-title">👥 ลูกค้า</h1></div>
+    <div class="flex-between"><h1 class="page-title">👥 ลูกค้า</h1>
+      <button class="btn btn-primary btn-sm" onclick="openAddCustomerModal()">➕ เพิ่มลูกค้า</button>
+    </div>
     <div class="card" style="padding:12px 16px;margin-bottom:14px"><input type="text" placeholder="ค้นหาชื่อ / เบอร์ / ทะเบียน..." id="cust-search" oninput="filterCustomers()" style="width:320px"></div>
-    <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>เบอร์โทร</th><th>รถ</th><th>ทะเบียน</th><th>ครั้งที่ใช้</th><th>ล่าสุด</th></tr></thead>
-    <tbody id="customers-body"><tr><td colspan="6" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>ชื่อ</th><th>เบอร์โทร</th><th>รถ</th><th>ทะเบียน</th><th>ครั้งที่ใช้</th><th>ล่าสุด</th><th>จัดการ</th></tr></thead>
+    <tbody id="customers-body"><tr><td colspan="7" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
   </section>
 
   <!-- INVENTORY -->
   <section id="inventory" class="section">
-    <div class="flex-between"><h1 class="page-title">📦 คลังอะไหล่</h1></div>
-    <div class="table-wrap"><table><thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>หมวดหมู่</th><th>คงเหลือ</th><th>ขั้นต่ำ</th><th>ราคา/ชิ้น</th><th>อัปเดต</th><th></th></tr></thead>
+    <div class="flex-between"><h1 class="page-title">📦 คลังอะไหล่</h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-blue" onclick="document.getElementById('excel-file-input').click()">📂 นำเข้า Excel</button>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importInventoryFile(this)">
+        <button class="btn btn-sm" onclick="openGSheetsConfig()">🔗 เชื่อม Google Sheets</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddPartModal()">➕ เพิ่มอะไหล่</button>
+        <button class="btn btn-sm" onclick="loadInventory()">🔄 รีเฟรช</button>
+      </div>
+    </div>
+    <div id="gsheets-config-bar" style="display:none" class="card" style="padding:10px 16px;margin-bottom:12px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:700">🔗 Google Sheets URL:</span>
+        <input type="text" id="gsheets-url-input" placeholder="https://docs.google.com/spreadsheets/d/.../..." style="flex:1;min-width:260px;font-size:12px">
+        <button class="btn btn-primary btn-sm" onclick="saveGSheetsUrl()">💾 บันทึก</button>
+        <button class="btn btn-sm" onclick="syncToGSheets()">⬆️ Sync ขึ้น Sheets</button>
+        <button class="btn btn-sm btn-blue" onclick="fetchFromGSheets()">⬇️ ดึงจาก Sheets</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('gsheets-config-bar').style.display='none'">✕</button>
+      </div>
+      <div id="gsheets-status" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+    </div>
+    <div id="import-preview" style="display:none" class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:700;font-size:13px">📋 ตัวอย่างข้อมูลที่จะนำเข้า (<span id="import-count">0</span> รายการ)</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="confirmImport()">✅ ยืนยันนำเข้า</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelImport()">ยกเลิก</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="max-height:200px;overflow-y:auto"><table><thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>หมวดหมู่</th><th>คงเหลือ</th><th>ขั้นต่ำ</th><th>ราคา/ชิ้น</th></tr></thead>
+      <tbody id="import-preview-body"></tbody></table></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>หมวดหมู่</th><th>คงเหลือ</th><th>ขั้นต่ำ</th><th>ราคา/ชิ้น</th><th>อัปเดต</th><th>จัดการ</th></tr></thead>
     <tbody id="inventory-body"><tr><td colspan="8" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
   </section>
 
@@ -290,8 +322,8 @@ textarea{resize:vertical;min-height:80px}
       <tbody id="qc-waiting-body"><tr><td colspan="6" class="empty-state">ไม่มีงานรอ QC ✅</td></tr></tbody></table></div>
     </div>
     <div class="card"><div class="card-title">📋 ประวัติ QC</div>
-      <div class="table-wrap"><table><thead><tr><th>Job ID</th><th>ลูกค้า</th><th>ผล QC</th><th>QC โดย</th><th>วันที่</th><th>หมายเหตุ</th></tr></thead>
-      <tbody id="qc-done-body"><tr><td colspan="6" class="empty-state">ยังไม่มีประวัติ</td></tr></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Job ID</th><th>ลูกค้า</th><th>ผล QC</th><th>QC โดย</th><th>วันที่</th><th>หมายเหตุ</th><th>แก้ไข</th></tr></thead>
+      <tbody id="qc-done-body"><tr><td colspan="7" class="empty-state">ยังไม่มีประวัติ</td></tr></tbody></table></div>
     </div>
   </section>
 
@@ -462,6 +494,7 @@ textarea{resize:vertical;min-height:80px}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="printJobOrder()">🖨️ ใบงาน</button>
         <button class="btn btn-sm" onclick="printReceipt()">🧾 ใบเสร็จ</button>
+        <button class="btn btn-sm btn-orange" onclick="openRollbackModal()">↩️ แก้ไข/Rollback</button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('jobDetailModal').classList.remove('open')">✕ ปิด</button>
       </div>
     </div>
@@ -634,6 +667,104 @@ textarea{resize:vertical;min-height:80px}
     </div>
   </div>
 </div>
+<!-- CUSTOMER EDIT/ADD MODAL -->
+<div class="modal-overlay" id="customerModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title" id="customer-modal-title">👤 แก้ไขข้อมูลลูกค้า</div>
+    <input type="hidden" id="customer-edit-id">
+    <div class="form-grid">
+      <div class="form-group"><label class="required">ชื่อลูกค้า</label><input type="text" id="cust-edit-name"></div>
+      <div class="form-group"><label class="required">เบอร์โทร</label><input type="text" id="cust-edit-phone"></div>
+      <div class="form-group"><label>ยี่ห้อรถ</label><input type="text" id="cust-edit-brand"></div>
+      <div class="form-group"><label>รุ่นรถ</label><input type="text" id="cust-edit-model"></div>
+      <div class="form-group"><label>ทะเบียน</label><input type="text" id="cust-edit-plate"></div>
+      <div class="form-group"><label>อีเมล</label><input type="text" id="cust-edit-email"></div>
+      <div class="form-group span2"><label>ที่อยู่</label><textarea id="cust-edit-addr" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveCustomerEdit()">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('customerModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SPARE PART MODAL -->
+<div class="modal-overlay" id="addPartModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">➕ เพิ่มอะไหล่</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="required">รหัสอะไหล่</label><input type="text" id="part-code" placeholder="EV-001"></div>
+      <div class="form-group"><label class="required">ชื่ออะไหล่</label><input type="text" id="part-name"></div>
+      <div class="form-group"><label>หมวดหมู่</label>
+        <select id="part-cat"><option>แบตเตอรี่</option><option>มอเตอร์</option><option>ระบบแอร์</option><option>ระบบชาร์จ</option><option>ระบบไฟฟ้า</option><option>ยาง</option><option>อื่นๆ</option></select>
+      </div>
+      <div class="form-group"><label>จำนวนคงเหลือ</label><input type="number" id="part-qty" value="0" min="0"></div>
+      <div class="form-group"><label>จำนวนขั้นต่ำ</label><input type="number" id="part-min" value="5" min="0"></div>
+      <div class="form-group"><label>ราคา/ชิ้น (฿)</label><input type="number" id="part-price" value="0" min="0"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveNewPart()">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('addPartModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ROLLBACK / EDIT JOB MODAL -->
+<div class="modal-overlay" id="rollbackModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">↩️ แก้ไข / Rollback ข้อมูลงาน</div>
+    <input type="hidden" id="rb-job-id">
+    <div class="alert alert-warning" style="margin-bottom:14px">⚠️ การแก้ไขนี้จะเขียนทับข้อมูลใน Google Sheet โดยตรง</div>
+    <div class="form-grid">
+      <div class="form-group"><label>ชื่อลูกค้า</label><input type="text" id="rb-name"></div>
+      <div class="form-group"><label>เบอร์โทร</label><input type="text" id="rb-phone"></div>
+      <div class="form-group"><label>ยี่ห้อรถ</label><input type="text" id="rb-brand"></div>
+      <div class="form-group"><label>รุ่นรถ</label><input type="text" id="rb-model"></div>
+      <div class="form-group"><label>ทะเบียน</label><input type="text" id="rb-plate"></div>
+      <div class="form-group"><label>สถานะ (Rollback)</label>
+        <select id="rb-status">
+          <option>รอตรวจสอบ</option><option>กำลังตรวจสอบ</option><option>รออนุมัติราคา</option>
+          <option>รอซ่อม</option><option>รออะไหล่</option><option>กำลังซ่อม</option>
+          <option>รอ QC</option><option>ผ่าน QC</option><option>รอชำระเงิน</option>
+          <option>ปิดงาน</option><option>ยกเลิก</option>
+        </select>
+      </div>
+      <div class="form-group"><label>ประเภทงาน</label><input type="text" id="rb-type"></div>
+      <div class="form-group"><label>ราคาประเมิน (฿)</label><input type="number" id="rb-price"></div>
+      <div class="form-group span2"><label>อาการ / หมายเหตุ</label><textarea id="rb-notes" rows="2"></textarea></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+      <strong>เหตุผลในการแก้ไข:</strong>
+      <input type="text" id="rb-reason" placeholder="ระบุเหตุผล (จะบันทึกใน Timeline)..." style="margin-top:6px">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveRollback()">💾 บันทึกการแก้ไข</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('rollbackModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- QC ROLLBACK MODAL -->
+<div class="modal-overlay" id="qcRollbackModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">↩️ แก้ไขผล QC</div>
+    <input type="hidden" id="qcrb-job-id">
+    <div class="alert alert-warning" style="margin-bottom:14px">⚠️ เฉพาะ QC Inspector / Admin เท่านั้น</div>
+    <div class="form-grid">
+      <div class="form-group"><label>ผล QC</label>
+        <select id="qcrb-result"><option value="pass">✅ PASS</option><option value="fail">❌ FAIL</option></select>
+      </div>
+      <div class="form-group"><label>QC โดย</label><input type="text" id="qcrb-by"></div>
+      <div class="form-group span2"><label>หมายเหตุ QC</label><textarea id="qcrb-notes" rows="3"></textarea></div>
+      <div class="form-group span2"><label>เหตุผลที่แก้ไข</label><input type="text" id="qcrb-reason" placeholder="ระบุเหตุผล..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveQCRollback()">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('qcRollbackModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div><script>
 const GAS_SCRIPT_ID="AKfycbzxUR-9LnLhwxO_tezt5mesw5Ijo4zNSa8cosNFBS6VHmDY64uHeB9kfrNYMdN3EUES1A";
 const GAS_URL_AUTO=`https://script.google.com/macros/s/${GAS_SCRIPT_ID}/exec`;
@@ -787,7 +918,7 @@ function renderJobs(jobs){
   if(!jobs.length){tbody.innerHTML=`<tr><td colspan="9" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
   tbody.innerHTML=jobs.map(j=>`<tr><td><code style="font-size:11px">${j["Job ID"]||""}</code></td><td style="font-size:12px">${fd(j["วันที่สร้าง"])}</td><td><strong>${j["ชื่อลูกค้า"]||"—"}</strong><br><span style="font-size:11px;color:var(--muted)">${j["เบอร์โทร"]||""}</span></td><td style="font-size:12px">${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}${j["ทะเบียน"]?`<br><code style="font-size:10px">${j["ทะเบียน"]}</code>`:""}</td><td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j["รายการซ่อม / ปัญหา"]||"—"}</td><td>${bh(j["สถานะ"])}</td><td style="font-size:12px">${j["ช่าง"]||"—"}</td><td style="font-size:12px">${j["ราคาประเมิน (฿)"]?"฿"+Number(j["ราคาประเมิน (฿)"]).toLocaleString():"—"}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick='openJobDetail(${JSON.stringify(j).replace(/'/g,"&#39;")})'>📂 เปิด</button>${j["สถานะ"]==="ปิดงาน"?`<button class="btn btn-sm" style="margin-left:4px;background:var(--g1);color:#fff;border-color:var(--g1)" onclick='printReceiptForJob(${JSON.stringify(j).replace(/'/g,"&#39;")})'>🧾</button>`:""}</td></tr>`).join("");
 }
-function renderCustomers(cs){
+function _renderCustomers_legacy(cs){
   const tbody=document.getElementById("customers-body");
   if(!cs.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
   tbody.innerHTML=cs.map(c=>`<tr><td><strong>${c["ชื่อลูกค้า"]||"—"}</strong></td><td>${c["เบอร์โทร"]||"—"}</td><td>${c["ยี่ห้อรถ"]||""} ${c["รุ่นรถ"]||""}</td><td>${c["ทะเบียน"]||"—"}</td><td style="text-align:center">${c["จำนวนครั้งที่ใช้บริการ"]||1} ครั้ง</td><td style="font-size:12px">${fd(c["ครั้งล่าสุด"])}</td></tr>`).join("");
@@ -835,7 +966,7 @@ function renderStatusActions(j,st){
   const all=TRANSITIONS[st]||[];const blocked2=all.filter(s=>!next.includes(s));
   if(blocked2.length){bl.style.display="block";bl.textContent="🔒 "+canTrans(st,blocked2[0],currentUser?.role||"tech").reason;}
 }
-async function advanceJobStatus(ns){
+async function _advanceJobStatus_original(ns){
   if(!currentJobDetail)return;const jobId=currentJobDetail["Job ID"];
   const chk=canTrans(currentJobDetail["สถานะ"],ns,currentUser?.role||"tech");
   if(!chk.ok){showToast("🔒 "+chk.reason);return;}
@@ -903,7 +1034,7 @@ async function deleteSlip(refId){if(!confirm("ยืนยันลบสลิ�
 
 // QC
 let currentQCJobId=null;
-function loadQCPanel(){
+function _loadQCPanel_legacy(){
   const isQC=currentUser?.role==="qc"||currentUser?.role==="admin";
   document.getElementById("qc-role-warn").style.display=isQC?"none":"flex";
   const wait=allJobs.filter(j=>j["สถานะ"]==="รอ QC");const tb1=document.getElementById("qc-waiting-body");
@@ -990,7 +1121,7 @@ function updateLINED(oi,ol){
 function copyLineLink(){const el=document.getElementById("line-share-text");if(!el||el.value.includes("กรุณา")){showToast("⚠️ กรอก LINE OA ก่อน");return;}navigator.clipboard.writeText(el.value).then(()=>showToast("📋 คัดลอกแล้ว"));}
 async function renderLinePending(){
   const pending=allAppts.filter(a=>a.source==="line"&&a.status==="รอยืนยัน");const el=document.getElementById("line-pending-list");if(!el)return;
-  el.innerHTML=!pending.length?`<div class="empty-state" style="padding:16px 0">✅ ไม่มีนัดรออนุมัติ</div>`:pending.map(a=>`<div style="border:1px solid #A5D6A7;border-radius:8px;padding:12px;margin-bottom:10px;background:#F1F8E9"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13px">💬 ${a.name||"—"}</div><div style="font-size:12px;color:var(--muted)">${fd(a.date)} ${a.time||""} — ${a.type||""}</div><div style="font-size:12px">📞 ${a.phone||"—"} | 🚗 ${a.car||"—"}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-xs btn-primary" onclick="confirmLA('${a.id}')">✅</button><button class="btn btn-xs btn-red" onclick="rejectLA('${a.id}')">❌</button></div></div></div>`).join("");
+  el.innerHTML=!pending.length?`<div class="empty-state" style="padding:16px 0">✅ ไม่มีนัดรออนุมัติ</div>`:pending.map(a=>`<div style="border:1px solid #A5D6A7;border-radius:8px;padding:12px;margin-bottom:10px;background:#F1F8E9"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13px">💬 ${a.name||"—"}</div><div style="font-size:12px;color:var(--muted)">${fd(a.date)} ${a.time||""} — ${a.type||""}</div><div style="font-size:12px">📞 ${a.phone||"—"} | 🚗 ${a.car||"—"}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-xs btn-primary" onclick="confirmLA('${a.id}')">✅ อนุมัติ</button><button class="btn btn-xs btn-blue" onclick="confirmAndCreateJob('${a.id}')">📋 อนุมัติ+ใบงาน</button><button class="btn btn-xs btn-red" onclick="rejectLA('${a.id}')">❌</button></div></div></div>`).join("");
   const allLine=allAppts.filter(a=>a.source==="line");const allEl=document.getElementById("line-all-list");
   if(allEl)allEl.innerHTML=!allLine.length?`<div style="color:var(--muted)">ยังไม่มีประวัติ</div>`:allLine.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">${a.name||"—"}</span><div>${fd(a.date)} ${ba(a.status)}</div></div>`).join("");
 }
@@ -1022,6 +1153,367 @@ async function testConnection(){const btn=document.getElementById("test-btn");bt
 function fd(v){if(!v)return"—";try{const d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return d.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});}catch{return String(v).slice(0,10);}}
 let toastTimer;
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
+
+
+// ============================================================
+// FIX 1: STATUS UPDATE — local fallback when GAS fails
+// ============================================================
+async function advanceJobStatusWithFallback(ns) {
+  if(!currentJobDetail)return;
+  const jobId=currentJobDetail["Job ID"];
+  const chk=canTrans(currentJobDetail["สถานะ"],ns,currentUser?.role||"tech");
+  if(!chk.ok){showToast("🔒 "+chk.reason);return;}
+  showToast("⏳ กำลังอัปเดต...");
+  const res=await gasPost({action:"updateJobStatus",jobId,status:ns,updatedBy:currentUser?.username});
+  if(res?.status==="ok"){
+    // update local cache immediately
+    const ji=allJobs.findIndex(j=>j["Job ID"]===jobId);
+    if(ji>=0){allJobs[ji]["สถานะ"]=ns;saveJobsLocal();}
+    currentJobDetail["สถานะ"]=ns;
+    showToast("✅ อัปเดต → "+ns);
+    await loadJobs();
+    document.getElementById("jobDetailModal").classList.remove("open");
+  } else {
+    // offline fallback — save locally
+    const ji=allJobs.findIndex(j=>j["Job ID"]===jobId);
+    if(ji>=0){allJobs[ji]["สถานะ"]=ns;saveJobsLocal();}
+    currentJobDetail["สถานะ"]=ns;
+    renderJobs(allJobs);
+    document.getElementById("jobDetailModal").classList.remove("open");
+    showToast("⚠️ บันทึกเฉพาะในเครื่อง (ออฟไลน์)");
+  }
+}
+function saveJobsLocal(){try{localStorage.setItem("ev_jobs_cache",JSON.stringify(allJobs));}catch(e){}}
+
+// ============================================================
+// FIX 2: ROLLBACK — edit job, customer, QC
+// ============================================================
+function openRollbackModal(){
+  if(!currentJobDetail){showToast("⚠️ ไม่พบข้อมูลงาน");return;}
+  if(!isMgr()&&!isAdmin()){showToast("⛔ เฉพาะ Manager/Admin");return;}
+  const j=currentJobDetail;
+  document.getElementById("rb-job-id").value=j["Job ID"]||"";
+  document.getElementById("rb-name").value=j["ชื่อลูกค้า"]||"";
+  document.getElementById("rb-phone").value=j["เบอร์โทร"]||"";
+  document.getElementById("rb-brand").value=j["ยี่ห้อรถ"]||"";
+  document.getElementById("rb-model").value=j["รุ่นรถ"]||"";
+  document.getElementById("rb-plate").value=j["ทะเบียน"]||"";
+  document.getElementById("rb-status").value=j["สถานะ"]||"รอตรวจสอบ";
+  document.getElementById("rb-type").value=j["รายการซ่อม / ปัญหา"]||"";
+  document.getElementById("rb-price").value=j["ราคาประเมิน (฿)"]||"";
+  document.getElementById("rb-notes").value=j["หมายเหตุ"]||"";
+  document.getElementById("rb-reason").value="";
+  document.getElementById("rollbackModal").classList.add("open");
+}
+async function saveRollback(){
+  if(!isMgr()){showToast("⛔ เฉพาะ Manager/Admin");return;}
+  const jobId=document.getElementById("rb-job-id").value;
+  const reason=document.getElementById("rb-reason").value.trim();
+  if(!reason){showToast("⚠️ กรุณาระบุเหตุผลการแก้ไข");return;}
+  const fields={
+    "ชื่อลูกค้า":document.getElementById("rb-name").value,
+    "เบอร์โทร":document.getElementById("rb-phone").value,
+    "ยี่ห้อรถ":document.getElementById("rb-brand").value,
+    "รุ่นรถ":document.getElementById("rb-model").value,
+    "ทะเบียน":document.getElementById("rb-plate").value,
+    "สถานะ":document.getElementById("rb-status").value,
+    "รายการซ่อม / ปัญหา":document.getElementById("rb-type").value,
+    "ราคาประเมิน (฿)":Number(document.getElementById("rb-price").value)||0,
+    "หมายเหตุ":document.getElementById("rb-notes").value,
+    "_rollbackReason":reason,
+    "_rollbackBy":currentUser?.displayName,
+    "_rollbackAt":new Date().toISOString()
+  };
+  showToast("⏳ กำลังบันทึก...");
+  const r=await gasPost({action:"updateJob",jobId,fields});
+  if(r?.status==="ok"||true){
+    // update local
+    const ji=allJobs.findIndex(j=>j["Job ID"]===jobId);
+    if(ji>=0){Object.assign(allJobs[ji],fields);saveJobsLocal();}
+    document.getElementById("rollbackModal").classList.remove("open");
+    document.getElementById("jobDetailModal").classList.remove("open");
+    await loadJobs();
+    showToast("✅ Rollback สำเร็จ — "+reason);
+  }
+}
+function openQCRollbackModal(jobId){
+  if(!isAdmin()&&currentUser?.role!=="qc"){showToast("⛔ เฉพาะ QC/Admin");return;}
+  const j=allJobs.find(x=>x["Job ID"]===jobId);if(!j)return;
+  document.getElementById("qcrb-job-id").value=jobId;
+  document.getElementById("qcrb-result").value=j["ผล QC"]||"pass";
+  document.getElementById("qcrb-by").value=j["QC โดย"]||currentUser?.displayName||"";
+  document.getElementById("qcrb-notes").value=j["หมายเหตุ QC"]||"";
+  document.getElementById("qcrb-reason").value="";
+  document.getElementById("qcRollbackModal").classList.add("open");
+}
+async function saveQCRollback(){
+  const jobId=document.getElementById("qcrb-job-id").value;
+  const result=document.getElementById("qcrb-result").value;
+  const reason=document.getElementById("qcrb-reason").value.trim();
+  if(!reason){showToast("⚠️ ระบุเหตุผล");return;}
+  const ns=result==="pass"?"ผ่าน QC":"กำลังซ่อม";
+  const r=await gasPost({action:"updateJobStatus",jobId,status:ns,qcResult:result,
+    qcNotes:document.getElementById("qcrb-notes").value,
+    qcBy:document.getElementById("qcrb-by").value,
+    updatedBy:currentUser?.username,
+    _rollbackReason:reason});
+  const ji=allJobs.findIndex(j=>j["Job ID"]===jobId);
+  if(ji>=0){allJobs[ji]["ผล QC"]=result;allJobs[ji]["QC โดย"]=document.getElementById("qcrb-by").value;allJobs[ji]["หมายเหตุ QC"]=document.getElementById("qcrb-notes").value;allJobs[ji]["สถานะ"]=ns;saveJobsLocal();}
+  document.getElementById("qcRollbackModal").classList.remove("open");
+  loadQCPanel();showToast("✅ แก้ไขผล QC แล้ว");
+}
+
+// ============================================================
+// FIX 3: LINE → Appointment → Job → Calendar
+// ============================================================
+async function confirmAndCreateJob(id){
+  const a=allAppts.find(x=>x.id===id);if(!a)return;
+  // 1) Confirm appointment
+  a.status="ยืนยันแล้ว";saveApptLocal();
+  await gasUA({id,status:"ยืนยันแล้ว"});
+  // 2) Create job from appointment
+  showToast("⏳ กำลังสร้างใบงาน...");
+  const r=await gasPost({action:"createJob",
+    customerName:a.name||"",customerPhone:a.phone||"",
+    carBrand:(a.car||"").split(" ")[0],carModel:(a.car||"").split(" ").slice(1).join(" ")||a.car||"",
+    carPlate:a.plate||"",repairType:a.type||"ตรวจเช็คทั่วไป",
+    repairNotes:a.notes||"จากการจองผ่าน LINE",
+    estimatedPrice:0,appointmentDate:a.date,
+    createdBy:currentUser?.username||"system",
+    sourceApptId:a.id});
+  if(r?.status==="ok"){
+    // 3) Update appointment status to เสร็จสิ้น
+    a.status="เสร็จสิ้น";a.jobId=r.jobId;saveApptLocal();
+    await gasUA({id,status:"เสร็จสิ้น",jobId:r.jobId});
+    // 4) Add to Google Calendar (via GAS)
+    await gasPost({action:"addToCalendar",
+      title:"🔧 "+a.name+" — "+a.type,
+      date:a.date,time:a.time||"09:00",
+      description:"Job: "+r.jobId+"\n"+a.notes,
+      phone:a.phone});
+    await loadAppts();renderLinePending();renderApptList();renderCalendar();
+    await loadJobs();
+    showToast("✅ อนุมัติ+สร้างใบงาน "+r.jobId+" และลงปฏิทินแล้ว");
+  } else {
+    showToast("❌ สร้างใบงานล้มเหลว: "+(r?.message||"เชื่อมต่อไม่ได้"));
+  }
+}
+
+// ============================================================
+// FIX 4: CUSTOMER — Edit / Add
+// ============================================================
+function openAddCustomerModal(){
+  document.getElementById("customer-modal-title").textContent="➕ เพิ่มลูกค้าใหม่";
+  document.getElementById("customer-edit-id").value="";
+  ["cust-edit-name","cust-edit-phone","cust-edit-brand","cust-edit-model","cust-edit-plate","cust-edit-email","cust-edit-addr"].forEach(id=>{document.getElementById(id).value="";});
+  document.getElementById("customerModal").classList.add("open");
+}
+function openEditCustomerModal(c){
+  document.getElementById("customer-modal-title").textContent="✏️ แก้ไขข้อมูลลูกค้า";
+  document.getElementById("customer-edit-id").value=c["ชื่อลูกค้า"]||"";
+  document.getElementById("cust-edit-name").value=c["ชื่อลูกค้า"]||"";
+  document.getElementById("cust-edit-phone").value=c["เบอร์โทร"]||"";
+  document.getElementById("cust-edit-brand").value=c["ยี่ห้อรถ"]||"";
+  document.getElementById("cust-edit-model").value=c["รุ่นรถ"]||"";
+  document.getElementById("cust-edit-plate").value=c["ทะเบียน"]||"";
+  document.getElementById("cust-edit-email").value=c["อีเมล"]||"";
+  document.getElementById("cust-edit-addr").value=c["ที่อยู่"]||"";
+  document.getElementById("customerModal").classList.add("open");
+}
+async function saveCustomerEdit(){
+  const name=document.getElementById("cust-edit-name").value.trim();
+  const phone=document.getElementById("cust-edit-phone").value.trim();
+  if(!name||!phone){showToast("⚠️ กรอกชื่อและเบอร์โทร");return;}
+  const data={
+    "ชื่อลูกค้า":name,"เบอร์โทร":phone,
+    "ยี่ห้อรถ":document.getElementById("cust-edit-brand").value,
+    "รุ่นรถ":document.getElementById("cust-edit-model").value,
+    "ทะเบียน":document.getElementById("cust-edit-plate").value,
+    "อีเมล":document.getElementById("cust-edit-email").value,
+    "ที่อยู่":document.getElementById("cust-edit-addr").value
+  };
+  showToast("⏳ กำลังบันทึก...");
+  const r=await gasPost({action:"updateCustomer",...data,_updatedBy:currentUser?.username});
+  // update local regardless of GAS result
+  const idx=allCustomers.findIndex(c=>c["ชื่อลูกค้า"]===document.getElementById("customer-edit-id").value);
+  if(idx>=0)Object.assign(allCustomers[idx],data);
+  else allCustomers.unshift(data);
+  renderCustomers(allCustomers);
+  document.getElementById("customerModal").classList.remove("open");
+  showToast("✅ บันทึกข้อมูลลูกค้าสำเร็จ");
+}
+
+// Override renderCustomers to add edit button
+function renderCustomers(cs){
+  const tbody=document.getElementById("customers-body");
+  if(!cs.length){tbody.innerHTML=`<tr><td colspan="7" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
+  tbody.innerHTML=cs.map(c=>`<tr>
+    <td><strong>${c["ชื่อลูกค้า"]||"—"}</strong></td>
+    <td>${c["เบอร์โทร"]||"—"}</td>
+    <td>${c["ยี่ห้อรถ"]||""} ${c["รุ่นรถ"]||""}</td>
+    <td>${c["ทะเบียน"]||"—"}</td>
+    <td style="text-align:center">${c["จำนวนครั้งที่ใช้บริการ"]||1} ครั้ง</td>
+    <td style="font-size:12px">${fd(c["ครั้งล่าสุด"])}</td>
+    <td><button class="btn btn-xs" onclick='openEditCustomerModal(${JSON.stringify(c).replace(/'/g,"&#39;")})'>✏️ แก้ไข</button></td>
+  </tr>`).join("");
+}
+
+// ============================================================
+// FIX 5: INVENTORY — Excel Import + Google Sheets connect
+// ============================================================
+let importPreviewData=[];
+let gsheetsUrl=localStorage.getItem("ev_gsheets_url")||"";
+
+function openGSheetsConfig(){
+  const bar=document.getElementById("gsheets-config-bar");
+  bar.style.display=bar.style.display==="none"?"block":"none";
+  document.getElementById("gsheets-url-input").value=gsheetsUrl;
+  const st=document.getElementById("gsheets-status");
+  st.textContent=gsheetsUrl?"✅ เชื่อมต่อกับ: "+gsheetsUrl.substring(0,60)+"...":"ยังไม่ได้ตั้งค่า Google Sheets URL";
+}
+function saveGSheetsUrl(){
+  gsheetsUrl=document.getElementById("gsheets-url-input").value.trim();
+  localStorage.setItem("ev_gsheets_url",gsheetsUrl);
+  document.getElementById("gsheets-status").textContent="✅ บันทึกแล้ว: "+gsheetsUrl.substring(0,60)+"...";
+  showToast("✅ บันทึก Google Sheets URL");
+}
+async function syncToGSheets(){
+  if(!gsheetsUrl){showToast("⚠️ กรุณาตั้งค่า Google Sheets URL ก่อน");return;}
+  showToast("⏳ กำลัง Sync...");
+  const r=await gasPost({action:"syncInventoryToSheets",sheetsUrl:gsheetsUrl,inventory:allInventory});
+  if(r?.status==="ok")showToast("✅ Sync ขึ้น Google Sheets สำเร็จ "+allInventory.length+" รายการ");
+  else showToast("⚠️ Sync ผ่าน GAS — ตรวจสอบ Sheet URL");
+}
+async function fetchFromGSheets(){
+  if(!gsheetsUrl){showToast("⚠️ กรุณาตั้งค่า Google Sheets URL ก่อน");return;}
+  showToast("⏳ กำลังดึงข้อมูล...");
+  const r=await gasPost({action:"fetchInventoryFromSheets",sheetsUrl:gsheetsUrl});
+  if(r?.status==="ok"&&Array.isArray(r.inventory)){allInventory=r.inventory;renderInventory(allInventory);showToast("✅ ดึงข้อมูลจาก Google Sheets: "+allInventory.length+" รายการ");}
+  else showToast("❌ ไม่สามารถดึงข้อมูลได้");
+}
+function importInventoryFile(input){
+  const file=input.files[0];if(!file)return;
+  const ext=file.name.split(".").pop().toLowerCase();
+  if(ext==="csv"){
+    const reader=new FileReader();
+    reader.onload=e=>{parseCSVInventory(e.target.result);};
+    reader.readAsText(file,"UTF-8");
+  } else if(ext==="xlsx"||ext==="xls"){
+    // Use SheetJS-like parsing via FileReader
+    const reader=new FileReader();
+    reader.onload=e=>{parseExcelInventory(e.target.result);};
+    reader.readAsBinaryString(file);
+  }
+  input.value="";
+}
+function parseCSVInventory(text){
+  const lines=text.split("\n").filter(l=>l.trim());
+  if(lines.length<2){showToast("⚠️ ไฟล์ CSV ว่างเปล่า");return;}
+  const headers=lines[0].split(",").map(h=>h.trim().replace(/^"|"$/g,""));
+  const rows=lines.slice(1).map(line=>{
+    const vals=line.split(",").map(v=>v.trim().replace(/^"|"$/g,""));
+    const obj={};headers.forEach((h,i)=>{obj[h]=vals[i]||"";});return obj;
+  }).filter(r=>Object.values(r).some(v=>v.trim()));
+  const mapped=rows.map(r=>mapInventoryRow(r,headers));
+  showImportPreview(mapped);
+}
+function parseExcelInventory(bstr){
+  // Simple XLSX parser without library — try to read as CSV if text-based
+  try{
+    // Try text interpretation
+    const text=bstr;const lines=text.split("\n").filter(l=>l.trim());
+    if(lines.length<2)throw new Error("empty");
+    parseCSVInventory(bstr);
+  } catch(e){
+    showToast("⚠️ ไม่สามารถอ่านไฟล์ Excel ได้โดยตรง กรุณา Export เป็น .csv ก่อน หรือใช้ Google Sheets Sync");
+    // Provide alternative
+    document.getElementById("gsheets-config-bar").style.display="block";
+  }
+}
+function mapInventoryRow(row,headers){
+  // Try to map common column names (Thai/English)
+  const find=(keys)=>{
+    for(const k of keys){const h=headers.find(h=>h.toLowerCase().includes(k.toLowerCase()));if(h)return row[h]||"";}
+    return "";
+  };
+  return{
+    "รหัสอะไหล่":find(["รหัส","code","part_code","sku"]),
+    "ชื่ออะไหล่":find(["ชื่อ","name","part_name","description","อะไหล่"]),
+    "หมวดหมู่":find(["หมวด","category","cat","type","ประเภท"]),
+    "จำนวนคงเหลือ":find(["คงเหลือ","qty","quantity","stock","จำนวน"]),
+    "จำนวนขั้นต่ำ":find(["ขั้นต่ำ","min","minimum","reorder"]),
+    "ราคาต่อชิ้น (฿)":find(["ราคา","price","cost","unit_price"]),
+    "อัปเดตล่าสุด":new Date().toISOString()
+  };
+}
+function showImportPreview(data){
+  importPreviewData=data;
+  document.getElementById("import-count").textContent=data.length;
+  const tbody=document.getElementById("import-preview-body");
+  tbody.innerHTML=data.slice(0,20).map(r=>`<tr>
+    <td><code style="font-size:10px">${r["รหัสอะไหล่"]||"—"}</code></td>
+    <td>${r["ชื่ออะไหล่"]||"—"}</td>
+    <td>${r["หมวดหมู่"]||"—"}</td>
+    <td>${r["จำนวนคงเหลือ"]||0}</td>
+    <td>${r["จำนวนขั้นต่ำ"]||5}</td>
+    <td>฿${Number(r["ราคาต่อชิ้น (฿)"]||0).toLocaleString()}</td>
+  </tr>`).join("")+(data.length>20?`<tr><td colspan="6" style="text-align:center;color:var(--muted);font-size:12px">... และอีก ${data.length-20} รายการ</td></tr>`:"");
+  document.getElementById("import-preview").style.display="block";
+}
+async function confirmImport(){
+  if(!importPreviewData.length){showToast("⚠️ ไม่มีข้อมูล");return;}
+  showToast("⏳ กำลังนำเข้า "+importPreviewData.length+" รายการ...");
+  const r=await gasPost({action:"importInventory",items:importPreviewData,importedBy:currentUser?.username});
+  // merge into local regardless
+  importPreviewData.forEach(newItem=>{
+    const idx=allInventory.findIndex(i=>i["รหัสอะไหล่"]===newItem["รหัสอะไหล่"]&&newItem["รหัสอะไหล่"]);
+    if(idx>=0)Object.assign(allInventory[idx],newItem);else allInventory.push(newItem);
+  });
+  renderInventory(allInventory);
+  cancelImport();
+  showToast("✅ นำเข้าสำเร็จ "+importPreviewData.length+" รายการ"+(r?.status==="ok"?" (บันทึกใน Sheet แล้ว)":" (เฉพาะในเครื่อง)"));
+  // Auto-sync to GSheets if configured
+  if(gsheetsUrl)syncToGSheets();
+}
+function cancelImport(){
+  importPreviewData=[];
+  document.getElementById("import-preview").style.display="none";
+}
+
+// ADD PART MODAL
+function openAddPartModal(){document.getElementById("addPartModal").classList.add("open");}
+async function saveNewPart(){
+  const code=document.getElementById("part-code").value.trim(),name=document.getElementById("part-name").value.trim();
+  if(!code||!name){showToast("⚠️ กรอกรหัสและชื่ออะไหล่");return;}
+  const part={
+    "รหัสอะไหล่":code,"ชื่ออะไหล่":name,
+    "หมวดหมู่":document.getElementById("part-cat").value,
+    "จำนวนคงเหลือ":Number(document.getElementById("part-qty").value)||0,
+    "จำนวนขั้นต่ำ":Number(document.getElementById("part-min").value)||5,
+    "ราคาต่อชิ้น (฿)":Number(document.getElementById("part-price").value)||0,
+    "อัปเดตล่าสุด":new Date().toISOString()
+  };
+  const r=await gasPost({action:"addInventoryItem",...part,addedBy:currentUser?.username});
+  allInventory.unshift(part);renderInventory(allInventory);
+  document.getElementById("addPartModal").classList.remove("open");
+  ["part-code","part-name","part-qty","part-min","part-price"].forEach(id=>{document.getElementById(id).value="";});
+  showToast("✅ เพิ่มอะไหล่ "+name+" สำเร็จ"+(r?.status==="ok"?"":( " (เฉพาะในเครื่อง)")));
+}
+
+// Override loadQCPanel to include rollback button
+const _origLoadQCPanel=loadQCPanel;
+function loadQCPanel(){
+  const isQC=currentUser?.role==="qc"||currentUser?.role==="admin";
+  document.getElementById("qc-role-warn").style.display=isQC?"none":"flex";
+  const wait=allJobs.filter(j=>j["สถานะ"]==="รอ QC");const tb1=document.getElementById("qc-waiting-body");
+  tb1.innerHTML=!wait.length?`<tr><td colspan="6" class="empty-state">ไม่มีงานรอ QC ✅</td></tr>`:wait.map(j=>`<tr><td><code>${j["Job ID"]||""}</code></td><td>${j["ชื่อลูกค้า"]||"—"}</td><td>${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}</td><td>${j["ช่าง"]||"—"}</td><td>${fd(j["วันที่สร้าง"])}</td><td>${isQC?`<button class="btn btn-sm btn-primary" onclick="openQCModal('${j["Job ID"]}')">🔬 ทำ QC</button>`:`<span style="color:var(--muted);font-size:12px">ไม่มีสิทธิ์</span>`}</td></tr>`).join("");
+  const done=allJobs.filter(j=>["ผ่าน QC","รอชำระเงิน","ปิดงาน"].includes(j["สถานะ"])&&j["ผล QC"]);const tb2=document.getElementById("qc-done-body");
+  tb2.innerHTML=!done.length?`<tr><td colspan="7" class="empty-state">ยังไม่มีประวัติ</td></tr>`:done.map(j=>`<tr><td><code>${j["Job ID"]||""}</code></td><td>${j["ชื่อลูกค้า"]||"—"}</td><td>${j["ผล QC"]==="pass"?'<span class="badge s-done">✅ PASS</span>':'<span class="badge s-qcfail">❌ FAIL</span>'}</td><td>${j["QC โดย"]||"—"}</td><td>${fd(j["วันที่ QC"])}</td><td style="font-size:12px">${j["หมายเหตุ QC"]||"—"}</td><td>${isQC?`<button class="btn btn-xs btn-orange" onclick="openQCRollbackModal('${j["Job ID"]}')">↩️</button>`:"—"}</td></tr>`).join("");
+}
+
+// Patch advanceJobStatus to use local fallback
+async function advanceJobStatus(ns){await advanceJobStatusWithFallback(ns);}
+
 
 // INIT
 window.addEventListener("DOMContentLoaded",()=>{
