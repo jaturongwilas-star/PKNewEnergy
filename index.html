@@ -553,67 +553,90 @@ textarea{resize:vertical;min-height:80px}
   </section>
   </main>
 </div>
-<!-- JOB DETAIL MODAL -->
+<!-- JOB DETAIL MODAL v3 — one-action-per-tab design -->
 <div class="modal-overlay" id="jobDetailModal">
   <div class="modal modal-lg">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
-      <div><div style="font-size:18px;font-weight:700" id="jd-title">—</div><div id="jd-status-badge" style="margin-top:6px"></div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-size:17px;font-weight:700" id="jd-title">—</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
+          <div id="jd-status-badge"></div>
+          <span style="font-size:12px;color:var(--muted)" id="jd-header-info"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-sm" onclick="printJobOrder()">🖨️ ใบงาน</button>
         <button class="btn btn-sm" onclick="printReceipt()">🧾 ใบเสร็จ</button>
         <button class="btn btn-ghost btn-sm" onclick="document.getElementById('jobDetailModal').classList.remove('open')">✕ ปิด</button>
       </div>
     </div>
-    <div class="pipeline" id="jd-pipeline"></div>
+    <!-- Pipeline progress bar -->
+    <div class="pipeline" id="jd-pipeline" style="margin-bottom:8px"></div>
+    <!-- Next-action smart banner -->
+    <div id="jd-action-banner" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"></div>
+    <!-- Tabs -->
     <div class="sub-tab-bar">
-      <button class="sub-tab active" id="jdt-info" onclick="switchJobDetailTab('info')">ข้อมูล</button>
-      <button class="sub-tab" id="jdt-diag" onclick="switchJobDetailTab('diag')">วินิจฉัย</button>
-      <button class="sub-tab" id="jdt-quot" onclick="switchJobDetailTab('quot')">ใบเสนอราคา</button>
-      <button class="sub-tab" id="jdt-repair" onclick="switchJobDetailTab('repair')">ซ่อม/ทดสอบ</button>
-      <button class="sub-tab" id="jdt-pay" onclick="switchJobDetailTab('pay')">ชำระเงิน</button>
-      <button class="sub-tab" id="jdt-timeline" onclick="switchJobDetailTab('timeline')">Timeline</button>
+      <button class="sub-tab active" id="jdt-info"     onclick="switchJobDetailTab('info')">📋 ข้อมูล</button>
+      <button class="sub-tab"        id="jdt-diag"     onclick="switchJobDetailTab('diag')">🔍 วินิจฉัย</button>
+      <button class="sub-tab"        id="jdt-quot"     onclick="switchJobDetailTab('quot')">💬 เสนอราคา</button>
+      <button class="sub-tab"        id="jdt-repair"   onclick="switchJobDetailTab('repair')">🔧 ซ่อม/ทดสอบ</button>
+      <button class="sub-tab"        id="jdt-pay"      onclick="switchJobDetailTab('pay')">💳 ชำระเงิน</button>
+      <button class="sub-tab"        id="jdt-timeline" onclick="switchJobDetailTab('timeline')">📅 Timeline</button>
     </div>
+
+    <!-- ── TAB: ข้อมูล ── -->
     <div id="jd-tab-info">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Read-only summary row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;background:var(--surface2);border-radius:6px;padding:12px;border:1px solid var(--border)">
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase">ลูกค้า</div>
-          <div class="info-row"><span class="info-label">ชื่อ</span><span id="jd-name">—</span></div>
+          <div class="info-row"><span class="info-label">ชื่อลูกค้า</span><span id="jd-name" style="font-weight:600">—</span></div>
           <div class="info-row"><span class="info-label">เบอร์โทร</span><span id="jd-phone">—</span></div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);margin:12px 0 8px;text-transform:uppercase">รถ</div>
-          <div class="info-row"><span class="info-label">ยี่ห้อ/รุ่น</span><span id="jd-car">—</span></div>
+          <div class="info-row"><span class="info-label">รถ</span><span id="jd-car">—</span></div>
           <div class="info-row"><span class="info-label">ทะเบียน</span><span id="jd-plate">—</span></div>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase">งาน</div>
           <div class="info-row"><span class="info-label">ประเภทงาน</span><span id="jd-type">—</span></div>
           <div class="info-row"><span class="info-label">วันที่รับ</span><span id="jd-date">—</span></div>
           <div class="info-row"><span class="info-label">ช่าง</span><span id="jd-tech">—</span></div>
-          <div style="margin-top:10px"><div class="info-label">อาการที่แจ้ง</div><div id="jd-symptom" style="font-size:13px;margin-top:6px;line-height:1.6">—</div></div>
+          <div class="info-row"><span class="info-label">ราคาประเมิน</span><span id="jd-price-display">—</span></div>
         </div>
       </div>
-      <div class="inline-edit-grid">
-        <div class="form-group"><label>ชื่อลูกค้า</label><input type="text" id="jd-edit-name"></div>
-        <div class="form-group"><label>เบอร์โทร</label><input type="text" id="jd-edit-phone"></div>
-        <div class="form-group"><label>ยี่ห้อรถ</label><input type="text" id="jd-edit-brand"></div>
-        <div class="form-group"><label>รุ่นรถ</label><input type="text" id="jd-edit-model"></div>
-        <div class="form-group"><label>ทะเบียน</label><input type="text" id="jd-edit-plate"></div>
-        <div class="form-group"><label>ประเภทงาน</label><input type="text" id="jd-edit-type"></div>
-        <div class="form-group span2"><label>อาการ / หมายเหตุ</label><textarea id="jd-edit-notes" rows="2"></textarea></div>
-        <div class="form-group"><label>วันนัด / วันรับงาน</label><input type="date" id="jd-edit-appt-date"></div>
-        <div class="form-group"><label>ราคาประเมิน (฿)</label><input type="number" id="jd-edit-price" min="0"></div>
-      </div>
-      <div style="margin-top:12px"><button class="btn btn-primary" onclick="saveJobInfo()">💾 บันทึกข้อมูลรับงาน</button></div>
-      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔄 อัปเดตสถานะ</div>
-        <div class="status-flow" style="margin-bottom:10px">
-          <div class="form-group" style="min-width:220px;flex:1;max-width:320px"><label>สถานะงาน</label><select id="jd-status-select"></select></div>
-          <button class="btn btn-primary" onclick="saveJobStatusFromDropdown()">💾 บันทึกสถานะ</button>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">อาการที่แจ้ง: <span id="jd-symptom" style="font-weight:400;color:var(--text)">—</span></div>
+      <!-- Editable fields collapsible -->
+      <details style="margin-bottom:12px">
+        <summary style="font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;padding:6px 0">✏️ แก้ไขข้อมูลรับงาน</summary>
+        <div class="inline-edit-grid" style="margin-top:10px">
+          <div class="form-group"><label>ชื่อลูกค้า</label><input type="text" id="jd-edit-name"></div>
+          <div class="form-group"><label>เบอร์โทร</label><input type="text" id="jd-edit-phone"></div>
+          <div class="form-group"><label>ยี่ห้อรถ</label><input type="text" id="jd-edit-brand"></div>
+          <div class="form-group"><label>รุ่นรถ</label><input type="text" id="jd-edit-model"></div>
+          <div class="form-group"><label>ทะเบียน</label><input type="text" id="jd-edit-plate"></div>
+          <div class="form-group"><label>ประเภทงาน</label><input type="text" id="jd-edit-type"></div>
+          <div class="form-group span2"><label>อาการ / หมายเหตุ</label><textarea id="jd-edit-notes" rows="2"></textarea></div>
+          <div class="form-group"><label>วันนัด</label><input type="date" id="jd-edit-appt-date"></div>
+          <div class="form-group"><label>ราคาประเมิน (฿)</label><input type="number" id="jd-edit-price" min="0"></div>
         </div>
-        <div id="jd-status-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-        <div id="jd-status-blocked" class="alert alert-warning" style="display:none;margin-top:10px"></div>
+        <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="saveJobInfo()">💾 บันทึกข้อมูล</button>
+      </details>
+      <!-- Status action area — primary focus -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">เปลี่ยนสถานะงาน</div>
+        <div id="jd-status-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"></div>
+        <div id="jd-status-blocked" class="alert alert-warning" style="display:none;margin-top:8px"></div>
+        <details style="margin-top:8px">
+          <summary style="font-size:12px;color:var(--muted);cursor:pointer">เปลี่ยนสถานะด้วยตนเอง (Admin)</summary>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+            <select id="jd-status-select" style="flex:1;min-width:160px;max-width:280px"></select>
+            <button class="btn btn-sm btn-primary" onclick="saveJobStatusFromDropdown()">💾 บันทึก</button>
+          </div>
+        </details>
       </div>
     </div>
+
+    <!-- ── TAB: วินิจฉัย ── -->
     <div id="jd-tab-diag" style="display:none">
+      <div id="diag-saved-summary" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
       <div class="form-grid">
         <div class="form-group"><label>ช่างผู้วินิจฉัย</label><select id="jd-diag-tech"><option value="">— เลือกช่าง —</option></select></div>
         <div class="form-group"><label>วันที่วินิจฉัย</label><input type="date" id="jd-diag-date"></div>
@@ -621,53 +644,64 @@ textarea{resize:vertical;min-height:80px}
         <div class="form-group span2"><label>อะไหล่ที่ต้องใช้</label><textarea id="jd-diag-parts" rows="2"></textarea></div>
         <div class="form-group span2"><label>แผนการซ่อม</label><textarea id="jd-diag-plan" rows="3"></textarea></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveDiagnosis()">💾 บันทึกการวินิจฉัย</button>
-        <button class="btn btn-blue" onclick="advanceJobStatus('กำลังตรวจสอบ')">→ เริ่มตรวจสอบ</button>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-sm" onclick="saveDiagnosis(false)">💾 บันทึก (คงสถานะ)</button>
+        <button class="btn btn-primary" onclick="saveDiagnosis(true)" id="btn-diag-advance">💾 บันทึก + เปลี่ยนสถานะ ➜</button>
+        <span id="diag-status-hint" style="font-size:12px;color:var(--muted)"></span>
       </div>
     </div>
+
+    <!-- ── TAB: เสนอราคา ── -->
     <div id="jd-tab-quot" style="display:none">
+      <div id="quot-saved-summary" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
       <div class="form-grid">
         <div class="form-group"><label>ค่าแรง (฿)</label><input type="number" id="jd-labor" placeholder="0" min="0" oninput="calcTotal()"></div>
         <div class="form-group"><label>ค่าอะไหล่ (฿)</label><input type="number" id="jd-parts-cost" placeholder="0" min="0" oninput="calcTotal()"></div>
         <div class="form-group"><label>ส่วนลด (฿)</label><input type="number" id="jd-discount" placeholder="0" min="0" oninput="calcTotal()"></div>
-        <div class="form-group"><label>ราคารวม (฿)</label><input type="number" id="jd-total" readonly style="font-weight:700;font-size:16px"></div>
+        <div class="form-group"><label>ราคารวม (฿)</label><input type="number" id="jd-total" readonly style="font-weight:700;font-size:16px;color:var(--g1)"></div>
         <div class="form-group span2"><label>หมายเหตุ / เงื่อนไข</label><textarea id="jd-quot-note" rows="2"></textarea></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveQuotation()">💾 บันทึกใบเสนอราคา</button>
-        <button class="btn btn-blue" onclick="advanceJobStatus('รออนุมัติราคา')">→ ส่งอนุมัติ</button>
-        <button id="btn-approve-quot" class="btn btn-primary" onclick="approveQuotation()" style="display:none">✅ อนุมัติ (Manager)</button>
-        <button id="btn-reject-quot" class="btn btn-red" onclick="rejectJob()" style="display:none">❌ ปฏิเสธ</button>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-sm" onclick="saveQuotation(false)">💾 บันทึก (คงสถานะ)</button>
+        <button class="btn btn-primary" onclick="saveQuotation(true)" id="btn-quot-advance">💾 บันทึก + → ส่งอนุมัติ</button>
+        <button id="btn-approve-quot" class="btn btn-primary" style="display:none;background:var(--g1);border-color:var(--g1)" onclick="approveQuotation()">✅ อนุมัติทันที (Manager)</button>
+        <button id="btn-reject-quot" class="btn btn-red" style="display:none" onclick="rejectJob()">❌ ปฏิเสธ</button>
+        <span id="quot-status-hint" style="font-size:12px;color:var(--muted)"></span>
       </div>
     </div>
+
+    <!-- ── TAB: ซ่อม/ทดสอบ ── -->
     <div id="jd-tab-repair" style="display:none">
+      <div id="repair-saved-summary" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
       <div class="form-grid">
         <div class="form-group"><label>ช่างซ่อม</label><select id="jd-repair-tech"><option value="">— เลือกช่าง —</option></select></div>
         <div class="form-group"><label>วันที่เริ่มซ่อม</label><input type="datetime-local" id="jd-repair-start"></div>
-        <div class="form-group span2"><label>ขั้นตอนการซ่อม (step-by-step)</label><textarea id="jd-repair-actions" rows="4" placeholder="1. ตรวจสอบระบบ HVAC&#10;2. ล้าง Evaporator&#10;3. เติมน้ำยาแอร์..."></textarea></div>
+        <div class="form-group span2"><label>ขั้นตอนการซ่อม</label><textarea id="jd-repair-actions" rows="4" placeholder="1. ตรวจสอบระบบ&#10;2. ล้าง Evaporator&#10;3. เติมน้ำยา..."></textarea></div>
       </div>
-      <hr class="divider">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">🌡️ ผลการทดสอบ (Before / After)</div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px;text-transform:uppercase">ผลการทดสอบ Before / After</div>
       <div class="form-grid">
-        <div class="form-group"><label>อุณหภูมิแอร์ ก่อน (°C)</label><input type="number" id="jd-temp-before"></div>
-        <div class="form-group"><label>อุณหภูมิแอร์ หลัง (°C)</label><input type="number" id="jd-temp-after"></div>
-        <div class="form-group"><label>ความดัน Hi Side ก่อน</label><input type="text" id="jd-pressure-hi-b" placeholder="psi"></div>
-        <div class="form-group"><label>ความดัน Hi Side หลัง</label><input type="text" id="jd-pressure-hi-a" placeholder="psi"></div>
-        <div class="form-group"><label>ความดัน Lo Side ก่อน</label><input type="text" id="jd-pressure-lo-b" placeholder="psi"></div>
-        <div class="form-group"><label>ความดัน Lo Side หลัง</label><input type="text" id="jd-pressure-lo-a" placeholder="psi"></div>
+        <div class="form-group"><label>อุณหภูมิก่อน (°C)</label><input type="number" id="jd-temp-before"></div>
+        <div class="form-group"><label>อุณหภูมิหลัง (°C)</label><input type="number" id="jd-temp-after"></div>
+        <div class="form-group"><label>ความดัน Hi ก่อน</label><input type="text" id="jd-pressure-hi-b" placeholder="psi"></div>
+        <div class="form-group"><label>ความดัน Hi หลัง</label><input type="text" id="jd-pressure-hi-a" placeholder="psi"></div>
+        <div class="form-group"><label>ความดัน Lo ก่อน</label><input type="text" id="jd-pressure-lo-b" placeholder="psi"></div>
+        <div class="form-group"><label>ความดัน Lo หลัง</label><input type="text" id="jd-pressure-lo-a" placeholder="psi"></div>
         <div class="form-group"><label>Leak Test</label><select id="jd-leak"><option value="">—</option><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
         <div class="form-group"><label>Error Code</label><input type="text" id="jd-error-code" placeholder="ไม่มี"></div>
         <div class="form-group span2"><label>หมายเหตุการทดสอบ</label><textarea id="jd-test-note" rows="2"></textarea></div>
       </div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveRepairLog()">💾 บันทึกการซ่อม</button>
-        <button class="btn btn-blue" onclick="advanceJobStatus('รอ QC')">→ ส่ง QC</button>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-sm" onclick="saveRepairLog(false)">💾 บันทึก (คงสถานะ)</button>
+        <button class="btn btn-primary" onclick="saveRepairLog(true)" id="btn-repair-advance">💾 บันทึก + → ส่ง QC</button>
+        <span id="repair-status-hint" style="font-size:12px;color:var(--muted)"></span>
       </div>
     </div>
+
+    <!-- ── TAB: ชำระเงิน ── -->
     <div id="jd-tab-pay" style="display:none">
-      <div id="pay-qc-block" class="alert alert-warning" style="display:none">⚠️ ต้องผ่าน QC ก่อนจึงจะรับชำระเงินได้</div>
+      <div id="pay-qc-block" class="alert alert-warning" style="display:none;margin-bottom:10px">⚠️ ต้องผ่าน QC ก่อนจึงจะรับชำระเงินได้</div>
       <div id="pay-form">
+        <div id="pay-saved-summary" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
         <div class="form-grid">
           <div class="form-group"><label>ยอดชำระ (฿)</label><input type="number" id="jd-pay-amount" placeholder="0"></div>
           <div class="form-group"><label>วิธีชำระ</label><select id="jd-pay-method" onchange="togglePayMethod()"><option value="cash">เงินสด</option><option value="transfer">โอนเงิน</option></select></div>
@@ -675,12 +709,14 @@ textarea{resize:vertical;min-height:80px}
           <div class="form-group" id="pay-slip-group" style="display:none"><label>URL สลิป</label><input type="text" id="jd-pay-slip" placeholder="https://..."></div>
           <div class="form-group span2"><label>หมายเหตุ</label><textarea id="jd-pay-note" rows="2"></textarea></div>
         </div>
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-primary" onclick="savePayment()">💰 บันทึกการชำระ</button>
-          <button class="btn btn-primary" onclick="closeJob()" id="btn-close-job" style="display:none;background:#065F46;border-color:#065F46">✅ ปิดงาน</button>
+          <button class="btn btn-primary" id="btn-close-job" style="display:none;background:#065F46;border-color:#065F46" onclick="closeJob()">✅ ปิดงาน</button>
         </div>
       </div>
     </div>
+
+    <!-- ── TAB: Timeline ── -->
     <div id="jd-tab-timeline" style="display:none"><div id="jd-timeline" style="padding:4px 0"></div></div>
   </div>
 </div>
@@ -979,24 +1015,49 @@ function renderSlips(slips){
 
 // JOB DETAIL
 function openJobDetail(j){
-  if(typeof j==="string")j=JSON.parse(j);currentJobDetail=j;const st=j["สถานะ"]||"รอตรวจสอบ";
+  if(typeof j==="string")j=JSON.parse(j);
+  currentJobDetail=j;
+  const st=j["สถานะ"]||"รอตรวจสอบ";
   document.getElementById("jd-title").textContent=(j["Job ID"]||"")+" — "+(j["ชื่อลูกค้า"]||"");
   document.getElementById("jd-status-badge").innerHTML=bh(st);
-  ["jd-name","jd-phone","jd-car","jd-plate","jd-type","jd-date","jd-tech","jd-symptom"].forEach(id=>{
-    const map={"jd-name":"ชื่อลูกค้า","jd-phone":"เบอร์โทร","jd-type":"รายการซ่อม / ปัญหา","jd-symptom":"หมายเหตุ","jd-tech":"ช่าง"};
-    const el=document.getElementById(id);if(!el)return;
-    if(id==="jd-car")el.textContent=(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||"");
-    else if(id==="jd-plate")el.textContent=j["ทะเบียน"]||"—";
-    else if(id==="jd-date")el.textContent=fd(j["วันที่สร้าง"]);
-    else el.textContent=j[map[id]]||"—";
-  });
-  renderJobPipeline(st);renderStatusActions(j,st);populateJobStatusSelect(st);
+  // Info summary
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||"—";};
+  set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
+  set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));set("jd-plate",j["ทะเบียน"]);
+  set("jd-type",j["รายการซ่อม / ปัญหา"]);set("jd-date",fd(j["วันที่สร้าง"]));
+  set("jd-tech",j["ช่าง"]);set("jd-symptom",j["หมายเหตุ"]);
+  // Render saved-data summary banners
+  _renderSavedBanner("diag-saved-summary",
+    j["สาเหตุ"]?`🔍 วินิจฉัยแล้ว: <b>${j["สาเหตุ"]}</b>${j["ช่าง"]?" | ช่าง: "+j["ช่าง"]:""}`:null);
+  _renderSavedBanner("quot-saved-summary",
+    j["ราคาประเมิน (฿)"]?`💬 ราคาประเมิน: <b>฿${Number(j["ราคาประเมิน (฿)"]).toLocaleString()}</b> (แรง ฿${Number(j["ค่าแรง"]||0).toLocaleString()} + อะไหล่ ฿${Number(j["ค่าอะไหล่"]||0).toLocaleString()} - ส่วนลด ฿${Number(j["ส่วนลด"]||0).toLocaleString()})`:null);
+  _renderSavedBanner("repair-saved-summary",
+    j["ขั้นตอนการซ่อม"]?`🔧 บันทึกการซ่อมแล้ว${j["อุณหภูมิหลัง"]?" | อุณหภูมิหลัง: "+j["อุณหภูมิหลัง"]+"°C":""}${j["Error Code"]?" | Error: "+j["Error Code"]:""}`:null);
+  renderJobPipeline(st);renderStatusActions(j,st);
+  populateJobStatusSelect(st);  // ← fill admin override dropdown
   prefillJobInfo(j);populateTechSelects();prefillDiag(j);prefillQuot(j);prefillRepair(j);prefillPay(j,st);
   renderTimeline(j);
+  _updateAdvanceLabels(st);
   document.getElementById("btn-approve-quot").style.display=(st==="รออนุมัติราคา"&&isMgr())?"inline-flex":"none";
   document.getElementById("btn-reject-quot").style.display=(st==="รออนุมัติราคา"&&isMgr())?"inline-flex":"none";
-  switchJobDetailTab("info");document.getElementById("jobDetailModal").classList.add("open");
+  // Auto-switch to the most relevant tab for current status
+  const autoTab={
+    "รอตรวจสอบ":"info","กำลังตรวจสอบ":"diag",
+    "รออนุมัติราคา":"quot","รอซ่อม":"repair","รออะไหล่":"repair",
+    "กำลังซ่อม":"repair","รอ QC":"repair",
+    "ผ่าน QC":"pay","รอชำระเงิน":"pay","ปิดงาน":"timeline","ยกเลิก":"info"
+  };
+  switchJobDetailTab(autoTab[st]||"info");
+  document.getElementById("jobDetailModal").classList.add("open");
 }
+
+function _renderSavedBanner(id, html){
+  const el=document.getElementById(id);
+  if(!el)return;
+  if(html){el.innerHTML=html;el.style.display="block";}
+  else el.style.display="none";
+}
+
 function renderJobPipeline(cur){
   const el=document.getElementById("jd-pipeline");const idx=PIPELINE_STAGES.findIndex(s=>s.key===cur);
   el.innerHTML=PIPELINE_STAGES.map((s,i)=>`<div class="pipeline-step ${i<idx?"done":i===idx?"active":""}"><span class="pipeline-icon">${s.icon}</span>${s.label}</div>`).join('<div style="width:10px;flex-shrink:0;display:flex;align-items:center;padding-bottom:3px;color:var(--border)">›</div>');
@@ -1009,15 +1070,8 @@ function renderStatusActions(j,st){
   const all=TRANSITIONS[st]||[];const blocked2=all.filter(s=>!next.includes(s));
   if(blocked2.length){bl.style.display="block";bl.textContent="🔒 "+canTrans(st,blocked2[0],currentUser?.role||"tech").reason;}
 }
-async function advanceJobStatus(ns){
-  if(!currentJobDetail)return;const jobId=currentJobDetail["Job ID"];
-  const chk=canTrans(currentJobDetail["สถานะ"],ns,currentUser?.role||"tech");
-  if(!chk.ok){showToast("🔒 "+chk.reason);return;}
-  showToast("⏳ กำลังอัปเดต...");
-  const res=await gasPost({action:"updateJobStatus",jobId,status:ns,updatedBy:currentUser?.username});
-  if(res?.status==="ok"){showToast("✅ อัปเดต → "+ns);await loadJobs();document.getElementById("jobDetailModal").classList.remove("open");}
-  else showToast("❌ "+(res?.message||"เชื่อมต่อไม่ได้"));
-}
+// advanceJobStatus used from info tab quick-action buttons — stays in modal
+async function advanceJobStatus(ns){await _advanceAndStay(ns);}
 function populateJobStatusSelect(st){
   const sel=document.getElementById("jd-status-select");if(!sel)return;
   sel.innerHTML=JOB_STATUSES.map(s=>`<option value="${s}">${SI[s]||""} ${s}</option>`).join("");
@@ -1116,15 +1170,197 @@ function renderTimeline(j){
   el.innerHTML=ev.map((e,i)=>`<div class="tl-item"><div class="tl-dot"></div>${i<ev.length-1?'<div class="tl-line"></div>':""}<div style="flex:1"><div class="tl-time">${e.t?new Date(e.t).toLocaleString("th-TH"):""}</div><div class="tl-text">${e.tx}</div></div></div>`).join("");
 }
 
-// SAVE
-async function saveDiagnosis(){if(!currentJobDetail)return;const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ช่าง":document.getElementById("jd-diag-tech").value,"สาเหตุ":document.getElementById("jd-diag-cause").value,"อะไหล่ที่ต้องใช้":document.getElementById("jd-diag-parts").value,"แผนการซ่อม":document.getElementById("jd-diag-plan").value,"วันที่วินิจฉัย":document.getElementById("jd-diag-date").value}});if(r?.status==="ok"){showToast("✅ บันทึกการวินิจฉัยแล้ว");await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
-async function saveQuotation(){if(!currentJobDetail)return;const l=Number(document.getElementById("jd-labor").value)||0,p=Number(document.getElementById("jd-parts-cost").value)||0,d=Number(document.getElementById("jd-discount").value)||0,t=l+p-d;document.getElementById("jd-total").value=t;const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ค่าแรง":l,"ค่าอะไหล่":p,"ส่วนลด":d,"ราคาประเมิน (฿)":t,"เงื่อนไขใบเสนอราคา":document.getElementById("jd-quot-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกใบเสนอราคาแล้ว");await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
-async function approveQuotation(){if(!isMgr()){showToast("⛔ เฉพาะ Manager/Admin");return;}await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"วันที่อนุมัติ":new Date().toISOString(),"อนุมัติโดย":currentUser?.displayName}});await advanceJobStatus("รอซ่อม");}
-async function rejectJob(){if(!isMgr())return;if(!confirm("ยืนยันปฏิเสธงานนี้?"))return;await advanceJobStatus("ยกเลิก");}
-async function saveRepairLog(){if(!currentJobDetail)return;const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ช่าง":document.getElementById("jd-repair-tech").value,"วันที่เริ่มซ่อม":document.getElementById("jd-repair-start").value,"ขั้นตอนการซ่อม":document.getElementById("jd-repair-actions").value,"อุณหภูมิก่อน":document.getElementById("jd-temp-before").value,"อุณหภูมิหลัง":document.getElementById("jd-temp-after").value,"ความดัน Hi ก่อน":document.getElementById("jd-pressure-hi-b").value,"ความดัน Hi หลัง":document.getElementById("jd-pressure-hi-a").value,"ความดัน Lo ก่อน":document.getElementById("jd-pressure-lo-b").value,"ความดัน Lo หลัง":document.getElementById("jd-pressure-lo-a").value,"Leak Test":document.getElementById("jd-leak").value,"Error Code":document.getElementById("jd-error-code").value,"หมายเหตุการทดสอบ":document.getElementById("jd-test-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกการซ่อมแล้ว");await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
-async function savePayment(){if(!currentJobDetail)return;if(!["ผ่าน QC","รอชำระเงิน"].includes(currentJobDetail["สถานะ"])){showToast("⚠️ ต้องผ่าน QC ก่อน");return;}const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ราคาจริง (฿)":Number(document.getElementById("jd-pay-amount").value)||0,"วิธีชำระเงิน":document.getElementById("jd-pay-method").value,"เลขอ้างอิงโอน":document.getElementById("jd-pay-ref").value,"URL สลิป":document.getElementById("jd-pay-slip").value,"หมายเหตุชำระ":document.getElementById("jd-pay-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกการชำระเงิน");// Bug6 fix: update local state so closeJob knows current status is รอชำระเงิน
-currentJobDetail["สถานะ"]="รอชำระเงิน";document.getElementById("btn-close-job").style.display="inline-flex";await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
-async function closeJob(){if(!currentJobDetail)return;const chk=canTrans(currentJobDetail["สถานะ"],"ปิดงาน",currentUser?.role||"tech");if(!chk.ok){showToast("🔒 "+chk.reason);return;}await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"วันเสร็จ":new Date().toISOString()}});await advanceJobStatus("ปิดงาน");}
+// SAVE — after each save: update local state + refresh display panel
+function _mergeJob(fields){Object.assign(currentJobDetail,fields);}
+function _refreshDisplay(){
+  const j=currentJobDetail;
+  const st=j["สถานะ"]||"รอตรวจสอบ";
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||"—";};
+  set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
+  set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));
+  set("jd-plate",j["ทะเบียน"]);set("jd-type",j["รายการซ่อม / ปัญหา"]);
+  set("jd-date",fd(j["วันที่สร้าง"]));set("jd-tech",j["ช่าง"]);
+  set("jd-symptom",j["หมายเหตุ"]);
+  const sb=document.getElementById("jd-status-badge");if(sb)sb.innerHTML=bh(st);
+  renderJobPipeline(st);
+  renderStatusActions(j,st);
+  populateJobStatusSelect(st);
+  renderTimeline(j);
+  _updateAdvanceLabels(st);
+}
+
+function _updateAdvanceLabels(st){
+  // Diag advance button
+  const bd=document.getElementById("btn-diag-advance");
+  if(bd){
+    const diagNext={"รอตรวจสอบ":"กำลังตรวจสอบ","กำลังตรวจสอบ":"รออนุมัติราคา"};
+    const dn=diagNext[st];
+    bd.textContent=dn?"💾 บันทึก + → "+dn:"💾 บันทึกข้อมูลวินิจฉัย";
+    bd.style.background=dn?"":"var(--surface)";
+    bd.style.color=dn?"":"var(--text)";
+    bd.style.borderColor=dn?"":"var(--border)";
+  }
+  // Repair advance button
+  const br=document.getElementById("btn-repair-advance");
+  if(br){
+    const repairNext={"รอซ่อม":"กำลังซ่อม","รออะไหล่":"รอซ่อม","กำลังซ่อม":"รอ QC"};
+    const rn=repairNext[st];
+    br.textContent=rn?"💾 บันทึก + → "+rn:"💾 บันทึกการซ่อม";
+  }
+  // Quot advance button
+  const bq=document.getElementById("btn-quot-advance");
+  if(bq){
+    const quotNext={"กำลังตรวจสอบ":"รออนุมัติราคา","รออนุมัติราคา":"รออนุมัติราคา"};
+    bq.style.display=quotNext[st]?"inline-flex":"none";
+  }
+  // Approve/reject buttons
+  const showApprove=st==="รออนุมัติราคา"&&isMgr();
+  const ba=document.getElementById("btn-approve-quot"),brj=document.getElementById("btn-reject-quot");
+  if(ba)ba.style.display=showApprove?"inline-flex":"none";
+  if(brj)brj.style.display=showApprove?"inline-flex":"none";
+}
+
+async function saveDiagnosis(andAdvance){
+  if(!currentJobDetail)return;
+  const fields={
+    "ช่าง":document.getElementById("jd-diag-tech").value,
+    "สาเหตุ":document.getElementById("jd-diag-cause").value,
+    "อะไหล่ที่ต้องใช้":document.getElementById("jd-diag-parts").value,
+    "แผนการซ่อม":document.getElementById("jd-diag-plan").value,
+    "วันที่วินิจฉัย":document.getElementById("jd-diag-date").value||new Date().toISOString().slice(0,10)
+  };
+  showToast("⏳ กำลังบันทึก...");
+  const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"){
+    _mergeJob(fields);_refreshDisplay();
+    if(andAdvance){
+      // advance เฉพาะสถานะที่อยู่ใน diag flow เท่านั้น
+      const cur=currentJobDetail["สถานะ"];
+      const diagNext={"รอตรวจสอบ":"กำลังตรวจสอบ","กำลังตรวจสอบ":"รออนุมัติราคา"};
+      const next=diagNext[cur];
+      if(next){
+        await _advanceAndStay(next);
+      } else {
+        // สถานะอื่น (เช่น รอซ่อม) — บันทึกข้อมูลได้ แต่ไม่ต้องเปลี่ยนสถานะ
+        showToast("✅ บันทึกข้อมูลวินิจฉัยแล้ว (สถานะคงเดิม: "+cur+")");
+        await loadJobs();
+      }
+    } else {
+      showToast("✅ บันทึกการวินิจฉัยแล้ว");
+      await loadJobs();
+    }
+  } else showToast("❌ บันทึกล้มเหลว");
+}
+
+async function saveQuotation(andAdvance){
+  if(!currentJobDetail)return;
+  const l=Number(document.getElementById("jd-labor").value)||0,
+        p=Number(document.getElementById("jd-parts-cost").value)||0,
+        d=Number(document.getElementById("jd-discount").value)||0,t=l+p-d;
+  document.getElementById("jd-total").value=t;
+  const fields={"ค่าแรง":l,"ค่าอะไหล่":p,"ส่วนลด":d,"ราคาประเมิน (฿)":t,"เงื่อนไขใบเสนอราคา":document.getElementById("jd-quot-note").value};
+  const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"){
+    _mergeJob(fields);_refreshDisplay();
+    if(andAdvance){await _advanceAndStay("รออนุมัติราคา");}
+    else{showToast("✅ บันทึกใบเสนอราคาแล้ว");await loadJobs();}
+  } else showToast("❌ บันทึกล้มเหลว");
+}
+
+async function approveQuotation(){
+  if(!isMgr()){showToast("⛔ เฉพาะ Manager/Admin");return;}
+  const fields={"วันที่อนุมัติ":new Date().toISOString(),"อนุมัติโดย":currentUser?.displayName};
+  await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  _mergeJob(fields);
+  await _advanceAndStay("รอซ่อม");
+}
+async function rejectJob(){if(!isMgr())return;if(!confirm("ยืนยันปฏิเสธงานนี้?"))return;await _advanceAndStay("ยกเลิก");}
+
+async function saveRepairLog(andAdvance){
+  if(!currentJobDetail)return;
+  const fields={
+    "ช่าง":document.getElementById("jd-repair-tech").value,
+    "วันที่เริ่มซ่อม":document.getElementById("jd-repair-start").value||new Date().toISOString(),
+    "ขั้นตอนการซ่อม":document.getElementById("jd-repair-actions").value,
+    "อุณหภูมิก่อน":document.getElementById("jd-temp-before").value,
+    "อุณหภูมิหลัง":document.getElementById("jd-temp-after").value,
+    "ความดัน Hi ก่อน":document.getElementById("jd-pressure-hi-b").value,
+    "ความดัน Hi หลัง":document.getElementById("jd-pressure-hi-a").value,
+    "ความดัน Lo ก่อน":document.getElementById("jd-pressure-lo-b").value,
+    "ความดัน Lo หลัง":document.getElementById("jd-pressure-lo-a").value,
+    "Leak Test":document.getElementById("jd-leak").value,
+    "Error Code":document.getElementById("jd-error-code").value,
+    "หมายเหตุการทดสอบ":document.getElementById("jd-test-note").value
+  };
+  showToast("⏳ กำลังบันทึก...");
+  const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"){
+    _mergeJob(fields);_refreshDisplay();
+    if(andAdvance){
+      // advance ตามสถานะปัจจุบัน
+      const cur=currentJobDetail["สถานะ"];
+      const repairNext={"รอซ่อม":"กำลังซ่อม","รออะไหล่":"รอซ่อม","กำลังซ่อม":"รอ QC"};
+      const next=repairNext[cur];
+      if(next){await _advanceAndStay(next);}
+      else{showToast("✅ บันทึกการซ่อมแล้ว (สถานะคงเดิม: "+cur+")");await loadJobs();}
+    } else {showToast("✅ บันทึกการซ่อมแล้ว");await loadJobs();}
+  } else showToast("❌ บันทึกล้มเหลว");
+}
+
+async function savePayment(andClose){
+  if(!currentJobDetail)return;
+  if(!["ผ่าน QC","รอชำระเงิน"].includes(currentJobDetail["สถานะ"])){showToast("⚠️ ต้องผ่าน QC ก่อน");return;}
+  const fields={
+    "ราคาจริง (฿)":Number(document.getElementById("jd-pay-amount").value)||0,
+    "วิธีชำระเงิน":document.getElementById("jd-pay-method").value,
+    "เลขอ้างอิงโอน":document.getElementById("jd-pay-ref").value,
+    "URL สลิป":document.getElementById("jd-pay-slip").value,
+    "หมายเหตุชำระ":document.getElementById("jd-pay-note").value
+  };
+  const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"){
+    _mergeJob(fields);
+    currentJobDetail["สถานะ"]="รอชำระเงิน";
+    _refreshDisplay();
+    if(andClose){await closeJob();}
+    else{
+      showToast("✅ บันทึกการชำระเงิน — กด ปิดงาน เพื่อจบ");
+      document.getElementById("btn-close-job").style.display="inline-flex";
+      await loadJobs();
+    }
+  } else showToast("❌ บันทึกล้มเหลว");
+}
+
+async function closeJob(){
+  if(!currentJobDetail)return;
+  const chk=canTrans(currentJobDetail["สถานะ"],"ปิดงาน",currentUser?.role||"tech");
+  if(!chk.ok){showToast("🔒 "+chk.reason);return;}
+  const fields={"วันเสร็จ":new Date().toISOString()};
+  await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields});
+  _mergeJob(fields);
+  await _advanceAndStay("ปิดงาน");
+}
+
+// advance status but STAY in modal and refresh everything
+async function _advanceAndStay(ns){
+  if(!currentJobDetail)return;
+  const jobId=currentJobDetail["Job ID"];
+  const chk=canTrans(currentJobDetail["สถานะ"],ns,currentUser?.role||"tech");
+  if(!chk.ok){showToast("🔒 "+chk.reason);return;}
+  showToast("⏳ กำลังอัปเดต → "+ns+"...");
+  const res=await gasPost({action:"updateJobStatus",jobId,status:ns,updatedBy:currentUser?.username});
+  if(res?.status==="ok"){
+    currentJobDetail["สถานะ"]=ns;
+    _refreshDisplay();
+    prefillPay(currentJobDetail,ns);
+    showToast("✅ สถานะ → "+ns);
+    await loadJobs();
+    // auto-switch to the relevant tab for the new status
+    const tabMap={"กำลังตรวจสอบ":"diag","รออนุมัติราคา":"quot","รอซ่อม":"repair","กำลังซ่อม":"repair","รอ QC":"repair","ผ่าน QC":"pay","รอชำระเงิน":"pay","ปิดงาน":"timeline"};
+    _updateAdvanceLabels(ns);
+    if(tabMap[ns])switchJobDetailTab(tabMap[ns]);
+  } else showToast("❌ "+(res?.message||"เชื่อมต่อไม่ได้"));
+}
 function togglePayMethod(){const m=document.getElementById("jd-pay-method").value;document.getElementById("pay-ref-group").style.display=m==="transfer"?"flex":"none";document.getElementById("pay-slip-group").style.display=m==="transfer"?"flex":"none";}
 
 // CREATE JOB
