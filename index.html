@@ -899,7 +899,11 @@ function switchTab(id,el){
 }
 
 // DATA
-async function refreshAllData(){await Promise.all([loadDashboard(),loadJobs(),loadCustomers(),loadInventory()]);}
+async function refreshAllData(){
+  // Bug7 fix: load jobs first, then dashboard, so allJobs is populated for qc-wait count
+  await loadJobs();
+  await Promise.all([loadDashboard(),loadCustomers(),loadInventory()]);
+}
 async function loadDashboard(){
   const d=await gasGet({action:"getDashboard"});if(!d||d.status!=="ok")return;
   const s=d.summary;
@@ -1064,9 +1068,32 @@ async function saveJobInfo(){
 function switchJobDetailTab(t){
   ["info","diag","quot","repair","pay","timeline"].forEach(x=>{document.getElementById("jd-tab-"+x).style.display=x===t?"block":"none";document.getElementById("jdt-"+x).classList.toggle("active",x===t);});
 }
-function prefillDiag(j){document.getElementById("jd-diag-cause").value=j["สาเหตุ"]||"";document.getElementById("jd-diag-parts").value=j["อะไหล่ที่ต้องใช้"]||"";document.getElementById("jd-diag-plan").value=j["แผนการซ่อม"]||"";document.getElementById("jd-diag-tech").value=j["ช่าง"]||"";}
+function prefillDiag(j){
+  document.getElementById("jd-diag-cause").value=j["สาเหตุ"]||"";
+  document.getElementById("jd-diag-parts").value=j["อะไหล่ที่ต้องใช้"]||"";
+  document.getElementById("jd-diag-plan").value=j["แผนการซ่อม"]||"";
+  document.getElementById("jd-diag-tech").value=j["ช่าง"]||"";
+  // Bug1 fix: prefill diagnosis date
+  const dd=j["วันที่วินิจฉัย"];
+  document.getElementById("jd-diag-date").value=dd?String(dd).slice(0,10):"";
+}
 function prefillQuot(j){document.getElementById("jd-labor").value=j["ค่าแรง"]||"";document.getElementById("jd-parts-cost").value=j["ค่าอะไหล่"]||"";document.getElementById("jd-discount").value=j["ส่วนลด"]||"";document.getElementById("jd-total").value=j["ราคาประเมิน (฿)"]||"";document.getElementById("jd-quot-note").value=j["เงื่อนไขใบเสนอราคา"]||"";}
-function prefillRepair(j){document.getElementById("jd-repair-actions").value=j["ขั้นตอนการซ่อม"]||"";document.getElementById("jd-repair-tech").value=j["ช่าง"]||"";document.getElementById("jd-temp-before").value=j["อุณหภูมิก่อน"]||"";document.getElementById("jd-temp-after").value=j["อุณหภูมิหลัง"]||"";document.getElementById("jd-error-code").value=j["Error Code"]||"";}
+function prefillRepair(j){
+  document.getElementById("jd-repair-actions").value=j["ขั้นตอนการซ่อม"]||"";
+  document.getElementById("jd-repair-tech").value=j["ช่าง"]||"";
+  document.getElementById("jd-temp-before").value=j["อุณหภูมิก่อน"]||"";
+  document.getElementById("jd-temp-after").value=j["อุณหภูมิหลัง"]||"";
+  document.getElementById("jd-error-code").value=j["Error Code"]||"";
+  document.getElementById("jd-pressure-hi-b").value=j["ความดัน Hi ก่อน"]||"";
+  document.getElementById("jd-pressure-hi-a").value=j["ความดัน Hi หลัง"]||"";
+  document.getElementById("jd-pressure-lo-b").value=j["ความดัน Lo ก่อน"]||"";
+  document.getElementById("jd-pressure-lo-a").value=j["ความดัน Lo หลัง"]||"";
+  document.getElementById("jd-leak").value=j["Leak Test"]||"";
+  document.getElementById("jd-test-note").value=j["หมายเหตุการทดสอบ"]||"";
+  // Bug5 fix: prefill repair start datetime
+  const rs=j["วันที่เริ่มซ่อม"];
+  if(rs){try{document.getElementById("jd-repair-start").value=new Date(rs).toISOString().slice(0,16);}catch{}}
+}
 function prefillPay(j,st){
   const blocked=document.getElementById("pay-qc-block"),form=document.getElementById("pay-form");
   const needQC=!["ผ่าน QC","รอชำระเงิน","ปิดงาน"].includes(st);
@@ -1095,7 +1122,8 @@ async function saveQuotation(){if(!currentJobDetail)return;const l=Number(docume
 async function approveQuotation(){if(!isMgr()){showToast("⛔ เฉพาะ Manager/Admin");return;}await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"วันที่อนุมัติ":new Date().toISOString(),"อนุมัติโดย":currentUser?.displayName}});await advanceJobStatus("รอซ่อม");}
 async function rejectJob(){if(!isMgr())return;if(!confirm("ยืนยันปฏิเสธงานนี้?"))return;await advanceJobStatus("ยกเลิก");}
 async function saveRepairLog(){if(!currentJobDetail)return;const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ช่าง":document.getElementById("jd-repair-tech").value,"วันที่เริ่มซ่อม":document.getElementById("jd-repair-start").value,"ขั้นตอนการซ่อม":document.getElementById("jd-repair-actions").value,"อุณหภูมิก่อน":document.getElementById("jd-temp-before").value,"อุณหภูมิหลัง":document.getElementById("jd-temp-after").value,"ความดัน Hi ก่อน":document.getElementById("jd-pressure-hi-b").value,"ความดัน Hi หลัง":document.getElementById("jd-pressure-hi-a").value,"ความดัน Lo ก่อน":document.getElementById("jd-pressure-lo-b").value,"ความดัน Lo หลัง":document.getElementById("jd-pressure-lo-a").value,"Leak Test":document.getElementById("jd-leak").value,"Error Code":document.getElementById("jd-error-code").value,"หมายเหตุการทดสอบ":document.getElementById("jd-test-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกการซ่อมแล้ว");await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
-async function savePayment(){if(!currentJobDetail)return;if(!["ผ่าน QC","รอชำระเงิน"].includes(currentJobDetail["สถานะ"])){showToast("⚠️ ต้องผ่าน QC ก่อน");return;}const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ราคาจริง (฿)":Number(document.getElementById("jd-pay-amount").value)||0,"วิธีชำระเงิน":document.getElementById("jd-pay-method").value,"เลขอ้างอิงโอน":document.getElementById("jd-pay-ref").value,"URL สลิป":document.getElementById("jd-pay-slip").value,"หมายเหตุชำระ":document.getElementById("jd-pay-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกการชำระเงิน");document.getElementById("btn-close-job").style.display="inline-flex";await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
+async function savePayment(){if(!currentJobDetail)return;if(!["ผ่าน QC","รอชำระเงิน"].includes(currentJobDetail["สถานะ"])){showToast("⚠️ ต้องผ่าน QC ก่อน");return;}const r=await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"ราคาจริง (฿)":Number(document.getElementById("jd-pay-amount").value)||0,"วิธีชำระเงิน":document.getElementById("jd-pay-method").value,"เลขอ้างอิงโอน":document.getElementById("jd-pay-ref").value,"URL สลิป":document.getElementById("jd-pay-slip").value,"หมายเหตุชำระ":document.getElementById("jd-pay-note").value}});if(r?.status==="ok"){showToast("✅ บันทึกการชำระเงิน");// Bug6 fix: update local state so closeJob knows current status is รอชำระเงิน
+currentJobDetail["สถานะ"]="รอชำระเงิน";document.getElementById("btn-close-job").style.display="inline-flex";await loadJobs();}else showToast("❌ บันทึกล้มเหลว");}
 async function closeJob(){if(!currentJobDetail)return;const chk=canTrans(currentJobDetail["สถานะ"],"ปิดงาน",currentUser?.role||"tech");if(!chk.ok){showToast("🔒 "+chk.reason);return;}await gasPost({action:"updateJob",jobId:currentJobDetail["Job ID"],fields:{"วันเสร็จ":new Date().toISOString()}});await advanceJobStatus("ปิดงาน");}
 function togglePayMethod(){const m=document.getElementById("jd-pay-method").value;document.getElementById("pay-ref-group").style.display=m==="transfer"?"flex":"none";document.getElementById("pay-slip-group").style.display=m==="transfer"?"flex":"none";}
 
@@ -1111,7 +1139,8 @@ async function submitJob(){
   else showToast("❌ "+(r?.message||"เชื่อมต่อไม่ได้"));
 }
 function clearNewJobForm(){["f-name","f-phone","f-plate","f-notes","f-price","f-date"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("f-brand").value="";document.getElementById("f-repair").value="";document.getElementById("f-model").innerHTML=`<option value="">— เลือกยี่ห้อก่อน —</option>`;}
-function filterJobs(){const q=document.getElementById("job-search").value.toLowerCase(),st=document.getElementById("job-filter-status").value,tc=document.getElementById("job-filter-tech").value;renderJobs(allJobs.filter(j=>{const mq=!q||Object.values(j).some(v=>String(v).toLowerCase().includes(q));return mq&&(!st||j["สถานะ"]===st)&&(!tc||j["ช่าง"]===tc);}));}
+function filterJobs(){const q=document.getElementById("job-search").value.toLowerCase(),st=document.getElementById("job-filter-status").value,tc=document.getElementById("job-filter-tech").value;renderJobs(allJobs.filter(j=>{const mq=!q||Object.values(j).some(v=>String(v).toLowerCase().includes(q));// Bug8 fix: match both displayName and username for tech filter
+return mq&&(!st||j["สถานะ"]===st)&&(!tc||(j["ช่าง"]===tc||String(j["ช่าง"]||"").toLowerCase().includes(tc.toLowerCase())));}));}
 function filterCustomers(){const q=document.getElementById("cust-search").value.toLowerCase();renderCustomers(allCustomers.filter(c=>Object.values(c).some(v=>String(v).toLowerCase().includes(q))));}
 const CM={BYD:["Atto 3","Dolphin","Seal","Han","Tang"],Tesla:["Model 3","Model Y","Model S","Model X"],Neta:["V","V-II","U","X"],MG:["EP","4","ZS EV"],ORA:["Good Cat","Funky Cat"],Volvo:["XC40 Recharge","C40 Recharge","EX30"],BMW:["i3","i4","iX","iX1"],Nissan:["Leaf","Ariya"],Toyota:["bZ4X"]};
 function updateModels(){const b=document.getElementById("f-brand").value,sel=document.getElementById("f-model"),ms=CM[b]||[];sel.innerHTML=ms.length?`<option value="">— เลือกรุ่น —</option>`+ms.map(m=>`<option>${m}</option>`).join(""):`<option value="">— ระบุเองใน Notes —</option>`;}
@@ -1202,6 +1231,33 @@ function fillJobFromAppt(a){
   document.getElementById("f-plate").value=a.plate||"";
   document.getElementById("f-date").value=a.date||"";
   document.getElementById("f-repair").value=a.type||"";
+  // Bug2 fix: parse car field "Brand Model" and set dropdowns
+  if(a.car){
+    const carStr=a.car.trim();
+    const knownBrands=Object.keys(CM);
+    let matchedBrand="",matchedModel="";
+    for(const b of knownBrands){
+      if(carStr.toLowerCase().startsWith(b.toLowerCase())){
+        matchedBrand=b;
+        const modelPart=carStr.slice(b.length).trim();
+        matchedModel=modelPart||"";
+        break;
+      }
+    }
+    const brandSel=document.getElementById("f-brand");
+    if(matchedBrand){
+      brandSel.value=matchedBrand;
+      updateModels();
+      const modelSel=document.getElementById("f-model");
+      // try exact match first, then first available
+      const opt=[...modelSel.options].find(o=>o.value===matchedModel||o.text===matchedModel);
+      if(opt)modelSel.value=opt.value;
+    } else {
+      // Set to อื่นๆ
+      brandSel.value="อื่นๆ";
+      updateModels();
+    }
+  }
   const noteParts=[];
   if(a.notes)noteParts.push(a.notes);
   if(a.car)noteParts.push("รถจากนัดหมาย: "+a.car);
@@ -1214,7 +1270,7 @@ async function apptToJobById(id){const a=allAppts.find(x=>x.id===id);if(!a)retur
 
 // LINE
 function loadLINEConfig(){const oi=localStorage.getItem("line_oa_id")||"",ol=localStorage.getItem("line_oa_link")||"";const ie=document.getElementById("line-oa-id"),le=document.getElementById("line-oa-link");if(ie)ie.value=oi;if(le)le.value=ol;updateLINED(oi,ol);}
-function saveLINEConfig(){const oi=(document.getElementById("line-oa-id")||{}).value||"",ol=(document.getElementById("line-oa-link")||{}).value||"";localStorage.setItem("line_oa_id",oi);localStorage.setItem("line_oa_link",ol);updateLINED(oi,ol);}
+function saveLINEConfig(){const oi=(document.getElementById("line-oa-id")||{}).value||"",ol=(document.getElementById("line-oa-link")||{}).value||"";localStorage.setItem("line_oa_id",oi);localStorage.setItem("line_oa_link",ol);updateLINED(oi,ol);updateSetupProgress();showToast("✅ บันทึก LINE Config สำเร็จ");}
 function updateLINED(oi,ol){
   const has=oi.trim().length>0||ol.trim().length>0;
   const badge=document.getElementById("line-config-badge"),display=document.getElementById("line-oa-display"),btn=document.getElementById("line-oa-btn"),qrImg=document.getElementById("line-qr-img"),qrPl=document.getElementById("line-qr-placeholder"),shareText=document.getElementById("line-share-text");
@@ -1226,7 +1282,9 @@ function updateLINED(oi,ol){
 }
 function copyLineLink(){const el=document.getElementById("line-share-text");if(!el||el.value.includes("กรุณา")){showToast("⚠️ กรอก LINE OA ก่อน");return;}navigator.clipboard.writeText(el.value).then(()=>showToast("📋 คัดลอกแล้ว"));}
 async function renderLinePending(){
-  const pending=allAppts.filter(a=>a.source==="line"&&a.status==="รอยืนยัน");const el=document.getElementById("line-pending-list");if(!el)return;
+  await loadAppts(); // Bug3 fix: ensure allAppts is fresh before rendering
+  const pending=allAppts.filter(a=>a.source==="line"&&a.status==="รอยืนยัน");
+  const el=document.getElementById("line-pending-list");if(!el)return;
   el.innerHTML=!pending.length?`<div class="empty-state" style="padding:16px 0">✅ ไม่มีนัดรออนุมัติ</div>`:pending.map(a=>`<div style="border:1px solid #A5D6A7;border-radius:8px;padding:12px;margin-bottom:10px;background:#F1F8E9"><div style="display:flex;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:13px">💬 ${a.name||"—"}</div><div style="font-size:12px;color:var(--muted)">${fd(a.date)} ${a.time||""} — ${a.type||""}</div><div style="font-size:12px">📞 ${a.phone||"—"} | 🚗 ${a.car||"—"}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn btn-xs btn-primary" onclick="confirmLA('${a.id}')">✅</button><button class="btn btn-xs btn-red" onclick="rejectLA('${a.id}')">❌</button></div></div></div>`).join("");
   const allLine=allAppts.filter(a=>a.source==="line");const allEl=document.getElementById("line-all-list");
   if(allEl)allEl.innerHTML=!allLine.length?`<div style="color:var(--muted)">ยังไม่มีประวัติ</div>`:allLine.map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">${a.name||"—"}</span><div>${fd(a.date)} ${ba(a.status)}</div></div>`).join("");
@@ -1431,8 +1489,9 @@ function wizardSaveUrl(){
 function skipWizard(){
   localStorage.setItem("ev_setup_done","1");
   document.getElementById("setupWizardModal").classList.remove("open");
-  // ชี้ไปที่ settings tab
-  switchTab("settings", document.querySelector(".tab:last-child"));
+  // Bug4 fix: safe tab switch using ID instead of :last-child selector
+  const settingsTab=document.querySelector('.tab[onclick*="settings"]');
+  switchTab("settings", settingsTab);
   showToast("ℹ️ ไปที่ ⚙️ ตั้งค่า เพื่อกรอก GAS URL");
 }
 
