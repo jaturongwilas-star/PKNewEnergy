@@ -115,6 +115,9 @@ textarea{resize:vertical;min-height:80px}
 .cal-day-num{font-weight:700;font-size:12px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .cal-day.today .cal-day-num{background:var(--g1);color:#fff}
 .cal-appt{background:var(--g3);color:var(--g1);border-left:3px solid var(--g1);padding:2px 4px;margin-top:2px;border-radius:0 4px 4px 0;font-size:10px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inline-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.status-flow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.status-flow select{min-width:220px}
 .alert{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:12px}
 .alert-warning{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E}
 .flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
@@ -307,6 +310,14 @@ textarea{resize:vertical;min-height:80px}
       <button class="sub-tab active" id="appt-tab-calendar" onclick="switchApptTab('calendar')">📆 ปฏิทิน</button>
       <button class="sub-tab" id="appt-tab-list" onclick="switchApptTab('list')">📋 รายการ</button>
       <button class="sub-tab" id="appt-tab-line" onclick="switchApptTab('line')">💬 LINE Booking</button>
+    </div>
+    <div class="card" style="padding:12px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)">
+        <span class="badge s-wait">โทรศัพท์ / LINE / Walk-in</span><span>→</span>
+        <span class="badge s-qcpass">ยืนยัน</span><span>→</span>
+        <span class="badge s-diag">บันทึกลงปฏิทินและรายการนัดหมาย</span><span>→</span>
+        <span class="badge s-repair">รับงานและเปิดใบงานซ่อม</span>
+      </div>
     </div>
     <div id="appt-view-calendar"><div class="card">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
@@ -580,8 +591,24 @@ textarea{resize:vertical;min-height:80px}
           <div style="margin-top:10px"><div class="info-label">อาการที่แจ้ง</div><div id="jd-symptom" style="font-size:13px;margin-top:6px;line-height:1.6">—</div></div>
         </div>
       </div>
+      <div class="inline-edit-grid">
+        <div class="form-group"><label>ชื่อลูกค้า</label><input type="text" id="jd-edit-name"></div>
+        <div class="form-group"><label>เบอร์โทร</label><input type="text" id="jd-edit-phone"></div>
+        <div class="form-group"><label>ยี่ห้อรถ</label><input type="text" id="jd-edit-brand"></div>
+        <div class="form-group"><label>รุ่นรถ</label><input type="text" id="jd-edit-model"></div>
+        <div class="form-group"><label>ทะเบียน</label><input type="text" id="jd-edit-plate"></div>
+        <div class="form-group"><label>ประเภทงาน</label><input type="text" id="jd-edit-type"></div>
+        <div class="form-group span2"><label>อาการ / หมายเหตุ</label><textarea id="jd-edit-notes" rows="2"></textarea></div>
+        <div class="form-group"><label>วันนัด / วันรับงาน</label><input type="date" id="jd-edit-appt-date"></div>
+        <div class="form-group"><label>ราคาประเมิน (฿)</label><input type="number" id="jd-edit-price" min="0"></div>
+      </div>
+      <div style="margin-top:12px"><button class="btn btn-primary" onclick="saveJobInfo()">💾 บันทึกข้อมูลรับงาน</button></div>
       <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔄 อัปเดตสถานะ</div>
+        <div class="status-flow" style="margin-bottom:10px">
+          <div class="form-group" style="min-width:220px;flex:1;max-width:320px"><label>สถานะงาน</label><select id="jd-status-select"></select></div>
+          <button class="btn btn-primary" onclick="saveJobStatusFromDropdown()">💾 บันทึกสถานะ</button>
+        </div>
         <div id="jd-status-actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
         <div id="jd-status-blocked" class="alert alert-warning" style="display:none;margin-top:10px"></div>
       </div>
@@ -697,7 +724,7 @@ textarea{resize:vertical;min-height:80px}
       </div>
       <div class="form-group span2"><label>หมายเหตุ</label><textarea id="appt-notes" rows="2"></textarea></div>
       <div class="form-group"><label>สถานะ</label><select id="appt-status"><option>รอยืนยัน</option><option>ยืนยันแล้ว</option><option>ยกเลิก</option><option>เสร็จสิ้น</option></select></div>
-      <div class="form-group"><label>แหล่งที่มา</label><select id="appt-source"><option value="manual">Manual</option><option value="line">LINE</option><option value="phone">โทรศัพท์</option><option value="walkin">Walk-in</option></select></div>
+      <div class="form-group"><label>แหล่งที่มา</label><select id="appt-source"><option value="phone">โทรศัพท์</option><option value="line">LINE</option><option value="walkin">Walk-in</option><option value="manual">Manual</option></select></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="saveAppointment()">💾 บันทึก</button>
@@ -808,6 +835,7 @@ const PIPELINE_STAGES=[
   {key:"ปิดงาน",icon:"✅",label:"ปิดงาน"}
 ];
 const SC={"รอตรวจสอบ":"s-wait","กำลังตรวจสอบ":"s-diag","รออนุมัติราคา":"s-quot","รอซ่อม":"s-waitfix","รออะไหล่":"s-waitpart","กำลังซ่อม":"s-repair","รอ QC":"s-qcwait","ผ่าน QC":"s-qcpass","ไม่ผ่าน QC":"s-qcfail","รอชำระเงิน":"s-pay","ปิดงาน":"s-done","ยกเลิก":"s-cancel"};
+const JOB_STATUSES=["รอตรวจสอบ","กำลังตรวจสอบ","รออนุมัติราคา","รอซ่อม","รออะไหล่","กำลังซ่อม","รอ QC","ผ่าน QC","รอชำระเงิน","ปิดงาน","ยกเลิก"];
 const SI={"รอตรวจสอบ":"📥","กำลังตรวจสอบ":"🔍","รออนุมัติราคา":"💬","รอซ่อม":"⏳","รออะไหล่":"📦","กำลังซ่อม":"🔧","รอ QC":"🔬","ผ่าน QC":"✅","รอชำระเงิน":"💳","ปิดงาน":"🎉","ยกเลิก":"❌"};
 function bh(s){return`<span class="badge ${SC[s]||'s-wait'}">${s||'—'}</span>`;}
 function ba(s){const m={"รอยืนยัน":"s-wait","ยืนยันแล้ว":"s-qcpass","ยกเลิก":"s-cancel","เสร็จสิ้น":"s-done"};return`<span class="badge ${m[s]||'s-wait'}">${s||"—"}</span>`;}
@@ -958,9 +986,9 @@ function openJobDetail(j){
     else if(id==="jd-date")el.textContent=fd(j["วันที่สร้าง"]);
     else el.textContent=j[map[id]]||"—";
   });
-  renderJobPipeline(st);renderStatusActions(j,st);
-  prefillDiag(j);prefillQuot(j);prefillRepair(j);prefillPay(j,st);
-  renderTimeline(j);populateTechSelects();
+  renderJobPipeline(st);renderStatusActions(j,st);populateJobStatusSelect(st);
+  prefillJobInfo(j);populateTechSelects();prefillDiag(j);prefillQuot(j);prefillRepair(j);prefillPay(j,st);
+  renderTimeline(j);
   document.getElementById("btn-approve-quot").style.display=(st==="รออนุมัติราคา"&&isMgr())?"inline-flex":"none";
   document.getElementById("btn-reject-quot").style.display=(st==="รออนุมัติราคา"&&isMgr())?"inline-flex":"none";
   switchJobDetailTab("info");document.getElementById("jobDetailModal").classList.add("open");
@@ -985,6 +1013,53 @@ async function advanceJobStatus(ns){
   const res=await gasPost({action:"updateJobStatus",jobId,status:ns,updatedBy:currentUser?.username});
   if(res?.status==="ok"){showToast("✅ อัปเดต → "+ns);await loadJobs();document.getElementById("jobDetailModal").classList.remove("open");}
   else showToast("❌ "+(res?.message||"เชื่อมต่อไม่ได้"));
+}
+function populateJobStatusSelect(st){
+  const sel=document.getElementById("jd-status-select");if(!sel)return;
+  sel.innerHTML=JOB_STATUSES.map(s=>`<option value="${s}">${SI[s]||""} ${s}</option>`).join("");
+  sel.value=st||"รอตรวจสอบ";
+}
+async function saveJobStatusFromDropdown(){
+  if(!currentJobDetail)return;
+  const ns=document.getElementById("jd-status-select").value;
+  const jobId=currentJobDetail["Job ID"];
+  showToast("⏳ กำลังบันทึกสถานะ...");
+  const res=await gasPost({action:"updateJobStatus",jobId,status:ns,updatedBy:currentUser?.username});
+  if(res?.status==="ok"){showToast("✅ บันทึกสถานะแล้ว: "+ns);currentJobDetail["สถานะ"]=ns;await loadJobs();document.getElementById("jobDetailModal").classList.remove("open");}
+  else showToast("❌ "+(res?.message||"บันทึกสถานะไม่สำเร็จ"));
+}
+function prefillJobInfo(j){
+  const values={
+    "jd-edit-name":j["ชื่อลูกค้า"]||"",
+    "jd-edit-phone":j["เบอร์โทร"]||"",
+    "jd-edit-brand":j["ยี่ห้อรถ"]||"",
+    "jd-edit-model":j["รุ่นรถ"]||"",
+    "jd-edit-plate":j["ทะเบียน"]||"",
+    "jd-edit-type":j["รายการซ่อม / ปัญหา"]||"",
+    "jd-edit-notes":j["หมายเหตุ"]||"",
+    "jd-edit-appt-date":String(j["วันนัด"]||j["Appointment Date"]||"").slice(0,10),
+    "jd-edit-price":j["ราคาประเมิน (฿)"]||""
+  };
+  Object.entries(values).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
+}
+async function saveJobInfo(){
+  if(!currentJobDetail)return;
+  const jobId=currentJobDetail["Job ID"];
+  const fields={
+    "ชื่อลูกค้า":document.getElementById("jd-edit-name").value.trim(),
+    "เบอร์โทร":document.getElementById("jd-edit-phone").value.trim(),
+    "ยี่ห้อรถ":document.getElementById("jd-edit-brand").value.trim(),
+    "รุ่นรถ":document.getElementById("jd-edit-model").value.trim(),
+    "ทะเบียน":document.getElementById("jd-edit-plate").value.trim(),
+    "รายการซ่อม / ปัญหา":document.getElementById("jd-edit-type").value.trim(),
+    "หมายเหตุ":document.getElementById("jd-edit-notes").value.trim(),
+    "วันนัด":document.getElementById("jd-edit-appt-date").value,
+    "ราคาประเมิน (฿)":Number(document.getElementById("jd-edit-price").value)||0
+  };
+  showToast("⏳ กำลังบันทึกข้อมูล...");
+  const r=await gasPost({action:"updateJob",jobId,fields,updatedBy:currentUser?.username});
+  if(r?.status==="ok"){Object.assign(currentJobDetail,fields);showToast("✅ บันทึกข้อมูลรับงานแล้ว");await loadJobs();openJobDetail(currentJobDetail);}
+  else showToast("❌ "+(r?.message||"บันทึกข้อมูลไม่สำเร็จ"));
 }
 function switchJobDetailTab(t){
   ["info","diag","quot","repair","pay","timeline"].forEach(x=>{document.getElementById("jd-tab-"+x).style.display=x===t?"block":"none";document.getElementById("jdt-"+x).classList.toggle("active",x===t);});
@@ -1099,10 +1174,10 @@ function renderCalendar(){
 function renderApptList(list){
   const data=list||allAppts;const tbody=document.getElementById("appt-list-body");
   if(!data.length){tbody.innerHTML=`<tr><td colspan="9" class="empty-state">ยังไม่มีนัดหมาย</td></tr>`;return;}
-  tbody.innerHTML=[...data].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(a=>`<tr><td>${fd(a.date)}</td><td>${a.time||"—"}</td><td><strong>${a.name||"—"}</strong></td><td>${a.phone||"—"}</td><td>${a.car||"—"}</td><td>${a.type||"—"}</td><td><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${a.source==="line"?"#E6F9E6;color:#056005":"#F5F5F5;color:#555"}">${a.source==="line"?"💬 LINE":a.source==="phone"?"📞 โทร":a.source==="walkin"?"🚶 Walk-in":"✍️ Manual"}</span></td><td>${ba(a.status)}</td><td style="white-space:nowrap"><button class="btn btn-xs" onclick="editApptById('${a.id}')">✏️</button><button class="btn btn-xs btn-blue" style="margin-left:3px" onclick="apptToJobById('${a.id}')">📋</button><button class="btn btn-xs btn-red" style="margin-left:3px" onclick="deleteAppt('${a.id}')">🗑</button></td></tr>`).join("");
+  tbody.innerHTML=[...data].sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(a=>`<tr><td>${fd(a.date)}</td><td>${a.time||"—"}</td><td><strong>${a.name||"—"}</strong></td><td>${a.phone||"—"}</td><td>${a.car||"—"}</td><td>${a.type||"—"}</td><td><span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${a.source==="line"?"#E6F9E6;color:#056005":a.source==="phone"?"#EAF2FF;color:#155EA0":a.source==="walkin"?"#FFF3E0;color:#9A3412":"#F5F5F5;color:#555"}">${a.source==="line"?"💬 LINE":a.source==="phone"?"📞 โทร":a.source==="walkin"?"🚶 Walk-in":"✍️ Manual"}</span></td><td>${ba(a.status)}</td><td style="white-space:nowrap">${a.status!=="ยืนยันแล้ว"?`<button class="btn btn-xs btn-primary" onclick="confirmAppt('${a.id}')">ยืนยัน</button>`:""}<button class="btn btn-xs" style="margin-left:3px" onclick="editApptById('${a.id}')">✏️</button><button class="btn btn-xs btn-blue" style="margin-left:3px" onclick="apptToJobById('${a.id}')">📋</button><button class="btn btn-xs btn-red" style="margin-left:3px" onclick="deleteAppt('${a.id}')">🗑</button></td></tr>`).join("");
 }
 function filterAppointments(){const q=document.getElementById("appt-search").value.toLowerCase(),s=document.getElementById("appt-filter-status").value;renderApptList(allAppts.filter(a=>{const mq=!q||Object.values(a).some(v=>String(v).toLowerCase().includes(q));return mq&&(!s||a.status===s);}));}
-function openApptModal(ds){document.getElementById("appt-modal-title").textContent="➕ สร้างนัดหมาย";document.getElementById("appt-edit-id").value="";["name","phone","car","plate","notes"].forEach(f=>{document.getElementById("appt-"+f).value="";});document.getElementById("appt-date").value=ds||new Date().toISOString().slice(0,10);document.getElementById("appt-time").value="09:00";document.getElementById("appt-type").value="ตรวจเช็คทั่วไป";document.getElementById("appt-status").value="รอยืนยัน";document.getElementById("appt-source").value="manual";document.getElementById("apptModal").classList.add("open");}
+function openApptModal(ds){document.getElementById("appt-modal-title").textContent="➕ สร้างนัดหมาย";document.getElementById("appt-edit-id").value="";["name","phone","car","plate","notes"].forEach(f=>{document.getElementById("appt-"+f).value="";});document.getElementById("appt-date").value=ds||new Date().toISOString().slice(0,10);document.getElementById("appt-time").value="09:00";document.getElementById("appt-type").value="ตรวจเช็คทั่วไป";document.getElementById("appt-status").value="รอยืนยัน";document.getElementById("appt-source").value="phone";document.getElementById("apptModal").classList.add("open");}
 function editApptById(id){const a=allAppts.find(x=>x.id===id);if(!a)return;document.getElementById("appt-modal-title").textContent="✏️ แก้ไขนัดหมาย";document.getElementById("appt-edit-id").value=id;["name","phone","date","time","car","plate","type","notes","status","source"].forEach(f=>{const el=document.getElementById("appt-"+f);if(el)el.value=a[f]||"";});document.getElementById("apptModal").classList.add("open");}
 async function saveAppointment(){
   const name=document.getElementById("appt-name").value.trim(),date=document.getElementById("appt-date").value,time=document.getElementById("appt-time").value;
@@ -1110,12 +1185,32 @@ async function saveAppointment(){
   const editId=document.getElementById("appt-edit-id").value;
   const appt={id:editId||("APT-"+Date.now()),name,date,time,phone:document.getElementById("appt-phone").value.trim(),car:document.getElementById("appt-car").value.trim(),plate:document.getElementById("appt-plate").value.trim(),type:document.getElementById("appt-type").value,notes:document.getElementById("appt-notes").value.trim(),status:document.getElementById("appt-status").value,source:document.getElementById("appt-source").value,createdBy:currentUser?.username||"system"};
   showToast("⏳ กำลังบันทึก...");
-  if(editId){await gasUA(appt);await loadAppts();}else{const gid=await gasCA(appt);if(gid)appt.id=gid;allAppts.unshift(appt);saveApptLocal();}
+  if(editId){await gasUA(appt);const i=allAppts.findIndex(a=>a.id===editId);if(i>=0)allAppts[i]={...allAppts[i],...appt};else allAppts.unshift(appt);saveApptLocal();}else{const gid=await gasCA(appt);if(gid)appt.id=gid;allAppts.unshift(appt);saveApptLocal();}
   document.getElementById("apptModal").classList.remove("open");renderCalendar();renderApptList();showToast("✅ บันทึกนัดหมายสำเร็จ: "+name);
 }
 async function deleteAppt(id){if(!confirm("ยืนยันลบ?"))return;await gasDA(id);allAppts=allAppts.filter(x=>x.id!==id);saveApptLocal();renderApptList();renderCalendar();showToast("✅ ลบแล้ว");}
-function apptToJob(){const name=document.getElementById("appt-name").value.trim();if(!name)return;document.getElementById("apptModal").classList.remove("open");switchTab("newjob",document.getElementById("tab-newjob"));document.getElementById("f-name").value=name;document.getElementById("f-phone").value=document.getElementById("appt-phone").value;document.getElementById("f-plate").value=document.getElementById("appt-plate").value;document.getElementById("f-date").value=document.getElementById("appt-date").value;document.getElementById("f-notes").value=document.getElementById("appt-notes").value;showToast("📋 โอนข้อมูลแล้ว");}
-function apptToJobById(id){const a=allAppts.find(x=>x.id===id);if(!a)return;switchTab("newjob",document.getElementById("tab-newjob"));document.getElementById("f-name").value=a.name||"";document.getElementById("f-phone").value=a.phone||"";document.getElementById("f-plate").value=a.plate||"";document.getElementById("f-date").value=a.date||"";document.getElementById("f-notes").value=a.notes||"";showToast("📋 โอนข้อมูลแล้ว");}
+async function confirmAppt(id){
+  const a=allAppts.find(x=>x.id===id);if(!a)return;
+  a.status="ยืนยันแล้ว";a.confirmedAt=new Date().toISOString();a.confirmedBy=currentUser?.username||"system";
+  saveApptLocal();await gasUA({id,status:a.status,confirmedAt:a.confirmedAt,confirmedBy:a.confirmedBy});
+  renderCalendar();renderApptList();renderLinePending();showToast("✅ ยืนยันนัดหมายแล้ว");
+}
+function fillJobFromAppt(a){
+  switchTab("newjob",document.getElementById("tab-newjob"));
+  document.getElementById("f-name").value=a.name||"";
+  document.getElementById("f-phone").value=a.phone||"";
+  document.getElementById("f-plate").value=a.plate||"";
+  document.getElementById("f-date").value=a.date||"";
+  document.getElementById("f-repair").value=a.type||"";
+  const noteParts=[];
+  if(a.notes)noteParts.push(a.notes);
+  if(a.car)noteParts.push("รถจากนัดหมาย: "+a.car);
+  if(a.time)noteParts.push("เวลานัด: "+a.time);
+  if(a.source)noteParts.push("ช่องทางนัดหมาย: "+(a.source==="phone"?"โทรศัพท์":a.source==="line"?"LINE":a.source==="walkin"?"Walk-in":"Manual"));
+  document.getElementById("f-notes").value=noteParts.join("\n");
+}
+function apptToJob(){const name=document.getElementById("appt-name").value.trim();if(!name)return;const a={name,phone:document.getElementById("appt-phone").value,plate:document.getElementById("appt-plate").value,date:document.getElementById("appt-date").value,time:document.getElementById("appt-time").value,car:document.getElementById("appt-car").value,type:document.getElementById("appt-type").value,notes:document.getElementById("appt-notes").value,source:document.getElementById("appt-source").value};document.getElementById("apptModal").classList.remove("open");fillJobFromAppt(a);showToast("📋 โอนข้อมูลนัดหมายไปหน้ารับงานแล้ว");}
+async function apptToJobById(id){const a=allAppts.find(x=>x.id===id);if(!a)return;if(a.status==="รอยืนยัน")await confirmAppt(id);fillJobFromAppt(a);showToast("📋 ยืนยันและโอนข้อมูลไปหน้ารับงานแล้ว");}
 
 // LINE
 function loadLINEConfig(){const oi=localStorage.getItem("line_oa_id")||"",ol=localStorage.getItem("line_oa_link")||"";const ie=document.getElementById("line-oa-id"),le=document.getElementById("line-oa-link");if(ie)ie.value=oi;if(le)le.value=ol;updateLINED(oi,ol);}
