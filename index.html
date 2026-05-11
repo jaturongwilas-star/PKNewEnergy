@@ -401,6 +401,37 @@ tr:hover td{background:#F4F7FB}
 }
 
 
+
+/* ══ ACCOUNTING MODULE CSS ══ */
+.acc-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:1024px){.acc-summary-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.acc-summary-grid{grid-template-columns:1fr 1fr}}
+.acc-card{border-radius:8px;padding:14px 16px;border:1px solid transparent}
+.acc-card-income{background:#ECFDF5;border-color:#6EE7B7}
+.acc-card-expense{background:#FEF2F2;border-color:#FCA5A5}
+.acc-card-cost{background:#FFF7ED;border-color:#FCD34D}
+.acc-card-profit{background:#EFF6FF;border-color:#93C5FD}
+.acc-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.acc-card-income .acc-lbl{color:#065F46}
+.acc-card-expense .acc-lbl{color:#991B1B}
+.acc-card-cost .acc-lbl{color:#92400E}
+.acc-card-profit .acc-lbl{color:#1E40AF}
+.acc-val{font-size:22px;font-weight:700;line-height:1}
+.acc-card-income .acc-val{color:#059669}
+.acc-card-expense .acc-val{color:#DC2626}
+.acc-card-cost .acc-val{color:#D97706}
+.acc-card-profit .acc-val{color:#2563EB}
+.acc-sub{font-size:11px;margin-top:4px}
+.acc-card-income .acc-sub{color:#059669}
+.acc-card-expense .acc-sub{color:#DC2626}
+.acc-card-cost .acc-sub{color:#D97706}
+.acc-card-profit .acc-sub{color:#2563EB}
+.ab{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.ab-income{background:#D1FAE5;color:#065F46}
+.ab-expense{background:#FEE2E2;color:#991B1B}
+.ab-cost{background:#FEF3C7;color:#92400E}
+.bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:3px}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
 /* ── PAYMENT v2 CSS ── */
 #pay-summary-card{transition:opacity .2s}
 #pay-total-display,#pay-paid-display,#pay-balance-display{transition:all .3s}
@@ -445,6 +476,7 @@ tr:hover td{background:#F4F7FB}
       <button class="tab" onclick="switchTab('appointments',this)">📅 นัดหมาย</button>
       <button class="tab" onclick="switchTab('slips',this)">💳 สลิป</button>
       <button class="tab" onclick="switchTab('reports',this)">📈 รายงาน</button>
+      <button class="tab" id="tab-accounting" onclick="switchTab('accounting',this)">💰 บัญชี</button>
       <button class="tab" onclick="switchTab('settings',this)">⚙️ ตั้งค่า</button>
     </nav>
     <div class="topbar-right" id="topbar-user" style="display:none">
@@ -701,6 +733,113 @@ tr:hover td{background:#F4F7FB}
     </div>
     <div class="card"><div class="card-title">📋 สรุปสถานะงาน</div><div id="status-breakdown" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
   </section>
+
+  <!-- ══════════ ACCOUNTING ══════════ -->
+  <section id="accounting" class="section">
+    <div class="flex-between">
+      <h1 class="page-title">💰 บัญชี — รายรับ / รายจ่าย / ต้นทุน</h1>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="acc-filter-month" style="width:128px" onchange="renderAccounting()">
+          <option value="">ทุกเดือน</option>
+          <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option>
+          <option value="3">มีนาคม</option><option value="4">เมษายน</option>
+          <option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
+          <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option>
+          <option value="9">กันยายน</option><option value="10">ตุลาคม</option>
+          <option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+        </select>
+        <select id="acc-filter-year" style="width:88px" onchange="renderAccounting()"></select>
+        <button class="btn btn-primary btn-sm" onclick="openAccModal()">➕ เพิ่มรายการ</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="acc-summary-grid">
+      <div class="acc-card acc-card-income">
+        <div class="acc-lbl">💚 รายรับทั้งหมด</div>
+        <div class="acc-val" id="acc-total-income">฿0</div>
+        <div class="acc-sub" id="acc-income-count">0 รายการ</div>
+      </div>
+      <div class="acc-card acc-card-expense">
+        <div class="acc-lbl">❤️ รายจ่ายทั้งหมด</div>
+        <div class="acc-val" id="acc-total-expense">฿0</div>
+        <div class="acc-sub" id="acc-expense-count">0 รายการ</div>
+      </div>
+      <div class="acc-card acc-card-cost">
+        <div class="acc-lbl">🟡 ต้นทุนทั้งหมด</div>
+        <div class="acc-val" id="acc-total-cost">฿0</div>
+        <div class="acc-sub" id="acc-cost-count">0 รายการ</div>
+      </div>
+      <div class="acc-card acc-card-profit">
+        <div class="acc-lbl">💙 กำไรสุทธิ</div>
+        <div class="acc-val" id="acc-net-profit">฿0</div>
+        <div class="acc-sub" id="acc-margin-pct">อัตรากำไร —%</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">📊 สัดส่วนตามหมวดหมู่</div>
+        <div id="acc-cat-breakdown"><div class="empty-state" style="padding:16px">ยังไม่มีรายการ</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 รายเดือน (12 เดือนล่าสุด)</div>
+        <div id="acc-monthly-chart" style="min-height:130px;display:flex;align-items:flex-end;gap:3px;padding:4px 0 0">
+          <div class="empty-state" style="padding:16px;width:100%">ยังไม่มีข้อมูล</div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:10.5px;margin-top:6px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#059669;display:inline-block"></span>รายรับ</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#DC2626;display:inline-block"></span>รายจ่าย</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#D97706;display:inline-block"></span>ต้นทุน</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tab-bar" id="acc-subtab-bar" style="margin-bottom:0">
+      <button class="sub-tab active" onclick="switchAccTab('all',this)">📋 ทั้งหมด</button>
+      <button class="sub-tab" onclick="switchAccTab('income',this)">💚 รายรับ</button>
+      <button class="sub-tab" onclick="switchAccTab('expense',this)">❤️ รายจ่าย</button>
+      <button class="sub-tab" onclick="switchAccTab('cost',this)">🟡 ต้นทุน</button>
+    </div>
+
+    <div class="card" style="border-top-left-radius:0;border-top-right-radius:0;border-top:none;margin-top:0">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" placeholder="ค้นหารายการ..." id="acc-search" style="flex:1;min-width:160px" oninput="renderAccounting()">
+        <select id="acc-filter-cat" style="width:170px" onchange="renderAccounting()">
+          <option value="">ทุกหมวดหมู่</option>
+          <optgroup label="💚 รายรับ">
+            <option>ค่าแรงซ่อม</option><option>ค่าอะไหล่ (ขาย)</option><option>รายรับอื่นๆ</option>
+          </optgroup>
+          <optgroup label="❤️ รายจ่าย">
+            <option>ค่าเช่าสถานที่</option><option>ค่าสาธารณูปโภค</option><option>ค่าจ้างพนักงาน</option>
+            <option>ค่าการตลาด</option><option>รายจ่ายอื่นๆ</option>
+          </optgroup>
+          <optgroup label="🟡 ต้นทุน">
+            <option>ต้นทุนอะไหล่</option><option>ต้นทุนน้ำมัน/สารหล่อลื่น</option>
+            <option>ต้นทุนอุปกรณ์/เครื่องมือ</option><option>ต้นทุนอื่นๆ</option>
+          </optgroup>
+        </select>
+        <button class="btn btn-sm" onclick="exportAccCSV()">📥 CSV</button>
+        <button class="btn btn-sm" onclick="renderAccounting()">🔄</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>วันที่</th><th>ประเภท</th><th>หมวดหมู่</th><th>รายละเอียด</th>
+              <th>อ้างอิง</th><th style="text-align:right">จำนวน (฿)</th><th>บันทึกโดย</th><th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="acc-tbody">
+            <tr><td colspan="8" class="empty-state">ยังไม่มีรายการ — กด ➕ เพิ่มรายการ เพื่อเริ่มต้น</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
 
   <!-- SETTINGS -->
   <section id="settings" class="section">
@@ -1219,6 +1358,48 @@ tr:hover td{background:#F4F7FB}
   </div>
 </div>
 
+
+<!-- ══ ACCOUNTING MODAL ══ -->
+<div class="modal-overlay" id="accModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="acc-modal-title">➕ เพิ่มรายการบัญชี</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="required">ประเภท</label>
+        <select id="acc-etype" onchange="accUpdateCats()">
+          <option value="income">💚 รายรับ</option>
+          <option value="expense">❤️ รายจ่าย</option>
+          <option value="cost">🟡 ต้นทุน</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="required">หมวดหมู่</label>
+        <select id="acc-ecat"></select>
+      </div>
+      <div class="form-group">
+        <label class="required">วันที่</label>
+        <input type="date" id="acc-edate">
+      </div>
+      <div class="form-group">
+        <label class="required">จำนวนเงิน (฿)</label>
+        <input type="number" id="acc-eamt" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group span2">
+        <label>รายละเอียด</label>
+        <input type="text" id="acc-edesc" placeholder="ระบุรายละเอียด...">
+      </div>
+      <div class="form-group span2">
+        <label>อ้างอิง (Job ID / เลขสลิป)</label>
+        <input type="text" id="acc-eref" placeholder="เช่น JOB-2568-0001">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveAccEntry()">💾 บันทึก</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('accModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div><script>
 const GAS_SCRIPT_ID="AKfycbzxUR-9LnLhwxO_tezt5mesw5Ijo4zNSa8cosNFBS6VHmDY64uHeB9kfrNYMdN3EUES1A";
 const GAS_URL_AUTO=`https://script.google.com/macros/s/${GAS_SCRIPT_ID}/exec`;
@@ -1388,6 +1569,7 @@ function switchTab(id,el){
   if(id==="qc")loadQCPanel();if(id==="appointments")renderAppointments();
   if(id==="settings"){renderUsersTable();loadSettingsForm();}
   if(id==="reports")loadRevenue();if(id==="slips")loadSlips();
+  if(id==="accounting"){accLoad();accInitYears();renderAccounting();}
 }
 
 // DATA
@@ -2612,6 +2794,216 @@ function showAPIRef(){
     createAppointment | updateAppointment | deleteAppointment
   </div>`;
   showToast("ดู API Reference ใน README.md");
+}
+
+
+// ══════════════════════════════════════════════════════
+// ACCOUNTING MODULE
+// ══════════════════════════════════════════════════════
+let accEntries = [];
+let accCurrentTab = 'all';
+let accEditId = null;
+
+const ACC_CATS = {
+  income:  ['ค่าแรงซ่อม','ค่าอะไหล่ (ขาย)','รายรับอื่นๆ'],
+  expense: ['ค่าเช่าสถานที่','ค่าสาธารณูปโภค','ค่าจ้างพนักงาน','ค่าการตลาด','รายจ่ายอื่นๆ'],
+  cost:    ['ต้นทุนอะไหล่','ต้นทุนน้ำมัน/สารหล่อลื่น','ต้นทุนอุปกรณ์/เครื่องมือ','ต้นทุนอื่นๆ']
+};
+const ACC_LABEL = {income:'รายรับ', expense:'รายจ่าย', cost:'ต้นทุน'};
+const ACC_BADGE = {income:'ab-income', expense:'ab-expense', cost:'ab-cost'};
+const ACC_COLOR = {income:'#059669', expense:'#DC2626', cost:'#D97706'};
+const THAI_MON  = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THAI_MON_S = ['','ม.ค','ก.พ','มี.ค','เม.ย','พ.ค','มิ.ย','ก.ค','ส.ค','ก.ย','ต.ค','พ.ย','ธ.ค'];
+
+function accLoad(){ try{ accEntries = JSON.parse(localStorage.getItem('ev_acc')||'[]'); }catch{ accEntries=[]; } }
+function accSave(){ localStorage.setItem('ev_acc', JSON.stringify(accEntries)); }
+function accFmt(n){ return '฿' + Math.abs(n).toLocaleString('th-TH',{minimumFractionDigits:0}); }
+
+function accInitYears(){
+  const sel = document.getElementById('acc-filter-year'); if(!sel) return;
+  const years = [...new Set(accEntries.map(e=>new Date(e.date).getFullYear()))];
+  const y = new Date().getFullYear(); if(!years.includes(y)) years.push(y);
+  years.sort((a,b)=>b-a);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">ทุกปี</option>' + years.map(yr=>`<option value="${yr}" ${yr==cur?'selected':''}>${yr+543}</option>`).join('');
+}
+
+function accUpdateCats(){
+  const t = document.getElementById('acc-etype').value;
+  const cats = ACC_CATS[t]||[];
+  document.getElementById('acc-ecat').innerHTML = cats.map(c=>`<option>${c}</option>`).join('');
+}
+
+function openAccModal(id=null){
+  accEditId = id;
+  document.getElementById('acc-modal-title').textContent = id ? '✏️ แก้ไขรายการ' : '➕ เพิ่มรายการบัญชี';
+  const e = id ? accEntries.find(x=>x.id===id) : null;
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('acc-etype').value = e ? e.type : 'income';
+  accUpdateCats();
+  if(e) document.getElementById('acc-ecat').value = e.category;
+  document.getElementById('acc-edate').value = e ? e.date : today;
+  document.getElementById('acc-eamt').value  = e ? e.amount : '';
+  document.getElementById('acc-edesc').value = e ? e.desc : '';
+  document.getElementById('acc-eref').value  = e ? e.ref  : '';
+  document.getElementById('accModal').classList.add('open');
+}
+
+function saveAccEntry(){
+  const type = document.getElementById('acc-etype').value;
+  const cat  = document.getElementById('acc-ecat').value;
+  const date = document.getElementById('acc-edate').value;
+  const amt  = parseFloat(document.getElementById('acc-eamt').value)||0;
+  const desc = document.getElementById('acc-edesc').value.trim();
+  const ref  = document.getElementById('acc-eref').value.trim();
+  if(!date||amt<=0){ showToast('⚠️ กรุณากรอกวันที่และจำนวนเงิน'); return; }
+  if(accEditId){
+    const idx = accEntries.findIndex(e=>e.id===accEditId);
+    if(idx>=0) accEntries[idx]={...accEntries[idx], type, category:cat, date, amount:amt, desc, ref};
+  } else {
+    accEntries.push({id:'ACC-'+Date.now(), type, category:cat, date, amount:amt, desc, ref, by:currentUser?.displayName||'Admin', createdAt:new Date().toISOString()});
+  }
+  accSave(); accInitYears(); renderAccounting();
+  document.getElementById('accModal').classList.remove('open');
+  showToast('✅ บันทึกรายการแล้ว');
+}
+
+function deleteAccEntry(id){
+  if(!confirm('ลบรายการนี้?')) return;
+  accEntries = accEntries.filter(e=>e.id!==id);
+  accSave(); renderAccounting(); showToast('🗑️ ลบรายการแล้ว');
+}
+
+function switchAccTab(tab, el){
+  accCurrentTab = tab;
+  document.querySelectorAll('#acc-subtab-bar .sub-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderAccounting();
+}
+
+function accGetFiltered(){
+  const month  = document.getElementById('acc-filter-month')?.value||'';
+  const year   = document.getElementById('acc-filter-year')?.value||'';
+  const search = (document.getElementById('acc-search')?.value||'').toLowerCase();
+  const cat    = document.getElementById('acc-filter-cat')?.value||'';
+  return accEntries.filter(e=>{
+    const d = new Date(e.date);
+    if(month && (d.getMonth()+1)!=parseInt(month)) return false;
+    if(year  && d.getFullYear()!=parseInt(year))   return false;
+    if(cat   && e.category!==cat)                  return false;
+    if(accCurrentTab!=='all' && e.type!==accCurrentTab) return false;
+    if(search && !(e.desc+e.category+e.ref+ACC_LABEL[e.type]).toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function renderAccounting(){
+  accLoad(); accInitYears();
+  const entries = accGetFiltered();
+  let tI=0,tE=0,tC=0,cI=0,cE=0,cC=0;
+  entries.forEach(e=>{
+    if(e.type==='income'){tI+=e.amount;cI++;}
+    if(e.type==='expense'){tE+=e.amount;cE++;}
+    if(e.type==='cost'){tC+=e.amount;cC++;}
+  });
+  const net = tI-tE-tC;
+  const margin = tI>0?((net/tI)*100).toFixed(1):0;
+
+  document.getElementById('acc-total-income').textContent  = accFmt(tI);
+  document.getElementById('acc-total-expense').textContent = accFmt(tE);
+  document.getElementById('acc-total-cost').textContent    = accFmt(tC);
+  document.getElementById('acc-income-count').textContent  = cI+' รายการ';
+  document.getElementById('acc-expense-count').textContent = cE+' รายการ';
+  document.getElementById('acc-cost-count').textContent    = cC+' รายการ';
+  const np = document.getElementById('acc-net-profit');
+  np.textContent = (net<0?'-':'')+accFmt(net);
+  np.style.color = net>=0?'#2563EB':'#DC2626';
+  document.getElementById('acc-margin-pct').textContent = 'อัตรากำไร '+margin+'%';
+
+  // Category breakdown
+  const catMap={};
+  entries.forEach(e=>{ catMap[e.category]=(catMap[e.category]||{sum:0,type:e.type}); catMap[e.category].sum+=e.amount; });
+  const maxCat = Math.max(...Object.values(catMap).map(v=>v.sum),1);
+  const brkEl = document.getElementById('acc-cat-breakdown');
+  if(!Object.keys(catMap).length){
+    brkEl.innerHTML='<div class="empty-state" style="padding:16px">ยังไม่มีรายการ</div>';
+  } else {
+    brkEl.innerHTML = Object.entries(catMap).sort((a,b)=>b[1].sum-a[1].sum).map(([cat,v])=>{
+      const col = ACC_COLOR[v.type]||'#64748B';
+      const pct = (v.sum/maxCat*100).toFixed(0);
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">
+          <span style="font-weight:600">${cat}</span>
+          <span style="color:${col};font-weight:700">${accFmt(v.sum)}</span>
+        </div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Monthly bar chart (12 months, all accEntries)
+  const now = new Date();
+  const mData = Array.from({length:12},(_,i)=>{
+    const d2 = new Date(now.getFullYear(), now.getMonth()-11+i, 1);
+    return {y:d2.getFullYear(), m:d2.getMonth()+1, lbl:THAI_MON_S[d2.getMonth()+1]};
+  }).map(mo=>{
+    const es = accEntries.filter(e=>{ const d3=new Date(e.date); return d3.getFullYear()===mo.y&&(d3.getMonth()+1)===mo.m; });
+    return {...mo, i:es.filter(e=>e.type==='income').reduce((s,e)=>s+e.amount,0), e:es.filter(e=>e.type==='expense').reduce((s,e)=>s+e.amount,0), c:es.filter(e=>e.type==='cost').reduce((s,e)=>s+e.amount,0)};
+  });
+  const maxM = Math.max(...mData.flatMap(m=>[m.i,m.e,m.c]),1);
+  const chartEl = document.getElementById('acc-monthly-chart');
+  if(mData.every(m=>m.i===0&&m.e===0&&m.c===0)){
+    chartEl.innerHTML='<div class="empty-state" style="padding:16px;width:100%">ยังไม่มีข้อมูล</div>';
+  } else {
+    chartEl.innerHTML = mData.map(m=>{
+      const iH=Math.round((m.i/maxM)*110), eH=Math.round((m.e/maxM)*110), cH=Math.round((m.c/maxM)*110);
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0">
+        <div style="display:flex;gap:1px;align-items:flex-end;height:110px">
+          <div title="${accFmt(m.i)}" style="width:6px;min-height:1px;height:${iH}px;background:#059669;border-radius:2px 2px 0 0;cursor:default"></div>
+          <div title="${accFmt(m.e)}" style="width:6px;min-height:1px;height:${eH}px;background:#DC2626;border-radius:2px 2px 0 0;cursor:default"></div>
+          <div title="${accFmt(m.c)}" style="width:6px;min-height:1px;height:${cH}px;background:#D97706;border-radius:2px 2px 0 0;cursor:default"></div>
+        </div>
+        <div style="font-size:8.5px;color:var(--muted);white-space:nowrap">${m.lbl}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Table
+  const sorted = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tbody = document.getElementById('acc-tbody');
+  if(!sorted.length){
+    tbody.innerHTML='<tr><td colspan="8" class="empty-state">ไม่มีรายการที่ตรงกับตัวกรอง</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sorted.map(e=>{
+    const d4=new Date(e.date);
+    const ds=d4.getDate()+' '+THAI_MON[d4.getMonth()+1]+' '+(d4.getFullYear()+543);
+    const col=ACC_COLOR[e.type]||'#64748B';
+    return `<tr>
+      <td>${ds}</td>
+      <td><span class="ab ${ACC_BADGE[e.type]||''}">${ACC_LABEL[e.type]||e.type}</span></td>
+      <td>${e.category}</td>
+      <td style="color:var(--muted)">${e.desc||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${e.ref||'—'}</td>
+      <td style="text-align:right;font-weight:700;font-family:var(--mono);color:${col}">${accFmt(e.amount)}</td>
+      <td style="font-size:11px;color:var(--muted)">${e.by||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-xs btn-ghost" onclick="openAccModal('${e.id}')">✏️</button>
+        <button class="btn btn-xs btn-red"   onclick="deleteAccEntry('${e.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function exportAccCSV(){
+  const entries = accGetFiltered().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const rows = [['วันที่','ประเภท','หมวดหมู่','รายละเอียด','อ้างอิง','จำนวน (฿)','บันทึกโดย']];
+  entries.forEach(e=>rows.push([e.date, ACC_LABEL[e.type]||e.type, e.category, e.desc||'', e.ref||'', e.amount, e.by||'']));
+  const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='บัญชี_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  showToast('📥 Export CSV สำเร็จ');
 }
 
 // INIT
