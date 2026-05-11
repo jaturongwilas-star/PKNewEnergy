@@ -402,7 +402,46 @@ tr:hover td{background:#F4F7FB}
 
 
 
-/* ══ ACCOUNTING MODULE CSS ══ */
+/* ══ PREMIUM ERP WHITE THEME + ACCOUNTING MODULE CSS ══ */
+:root{
+  --g1:#2563EB;--g2:#3B82F6;--g3:#EFF6FF;
+  --blue:#2563EB;--orange:#F59E0B;--red:#DC2626;--purple:#7C3AED;
+  --bg:#F8FAFC;--surface:#FFFFFF;--surface2:#F1F5F9;
+  --border:#E2E8F0;--text:#0F172A;--muted:#64748B;
+  --radius:12px;--shadow:0 12px 30px rgba(15,23,42,.06);
+}
+body{background:linear-gradient(180deg,#FFFFFF 0,#F8FAFC 280px);letter-spacing:.01em}
+.topbar{background:rgba(255,255,255,.92);backdrop-filter:blur(16px);color:var(--text);border-bottom:1px solid rgba(226,232,240,.9);box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.logo-text{color:var(--text);font-size:16px}.logo-sub{color:#2563EB;font-weight:700}
+.tab{color:#64748B;border:1px solid transparent}.tab.active,.tab:hover{background:#EFF6FF;color:#1D4ED8;border-color:#BFDBFE}.tab.active{box-shadow:inset 0 0 0 1px #DBEAFE}
+.user-chip{background:#F8FAFC;border:1px solid var(--border)}.user-name{color:var(--text)}.user-av{background:linear-gradient(135deg,#2563EB,#0EA5E9)}
+.lang-switch{display:inline-flex;align-items:center;padding:3px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;gap:2px}
+.lang-btn{border:none;background:transparent;color:#64748B;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:800;line-height:1;cursor:pointer}
+.lang-btn.active{background:#2563EB;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.22)}
+.main{max-width:1440px;padding:22px}.page-title{font-size:22px;letter-spacing:0;color:#0F172A}
+.card,.metric-card,.acc-card{border-color:#E2E8F0;box-shadow:0 10px 28px rgba(15,23,42,.06);border-radius:14px}
+.card-title{font-size:14px;color:#0F172A;letter-spacing:0}
+.metric-card{background:linear-gradient(180deg,#FFFFFF,#F8FAFC);position:relative;overflow:hidden}
+.metric-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#2563EB,#38BDF8)}
+.metric-label{color:#64748B;letter-spacing:.08em}.metric-value{color:#0F172A}
+.table-wrap{border-color:#E2E8F0;border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+th{background:#F8FAFC;color:#475569;border-bottom-color:#E2E8F0}td{border-bottom-color:#EEF2F7}tr:hover td{background:#F8FAFC}
+.btn{border-radius:10px;border-color:#CBD5E1;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.btn-primary,.btn-blue{background:linear-gradient(135deg,#2563EB,#1D4ED8);border-color:#2563EB;color:#fff}.btn-primary:hover,.btn-blue:hover{background:#1D4ED8}
+input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}input:focus,select:focus,textarea:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.badge,.ab{border-radius:999px}.step-num{background:linear-gradient(135deg,#2563EB,#0EA5E9)}
+.erp-hero{display:grid;grid-template-columns:1.35fr .65fr;gap:16px;margin-bottom:16px}
+.erp-panel{background:linear-gradient(135deg,#FFFFFF 0,#F8FBFF 100%);border:1px solid #E2E8F0;border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.erp-panel h2{font-size:18px;margin-bottom:4px}.erp-panel p{color:var(--muted);font-size:13px}
+.finance-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.finance-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,.05)}
+.finance-label{font-size:10.5px;color:#64748B;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.finance-value{font-size:22px;font-weight:800;margin-top:4px}.finance-sub{font-size:11px;color:#64748B;margin-top:3px}
+.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.mini-tile{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+.mini-tile b{display:block;font-size:18px;color:#0F172A}.mini-tile span{font-size:11px;color:#64748B}
+.toolbar-card{padding:12px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.money-pos{color:#059669}.money-blue{color:#2563EB}.money-warn{color:#D97706}.money-red{color:#DC2626}
+@media(max-width:1024px){.erp-hero{grid-template-columns:1fr}.finance-grid{grid-template-columns:repeat(2,1fr)}.mini-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.main{padding:14px}.finance-grid,.metric-grid{grid-template-columns:1fr 1fr!important}.page-title{font-size:18px}}
 .acc-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 @media(max-width:1024px){.acc-summary-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.acc-summary-grid{grid-template-columns:1fr 1fr}}
@@ -430,6 +469,7 @@ tr:hover td{background:#F4F7FB}
 .ab-income{background:#D1FAE5;color:#065F46}
 .ab-expense{background:#FEE2E2;color:#991B1B}
 .ab-cost{background:#FEF3C7;color:#92400E}
+.ab-profit{background:#DBEAFE;color:#1E40AF}
 .bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:3px}
 .bar-fill{height:100%;border-radius:4px;transition:width .4s}
 /* ── PAYMENT v2 CSS ── */
@@ -467,19 +507,23 @@ tr:hover td{background:#F4F7FB}
       <div><div class="logo-text" id="topbar-shop-name">P&K New Energy</div><div class="logo-sub">EV Garage</div></div>
     </div>
     <nav class="tab-bar">
-      <button class="tab active" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
-      <button class="tab" onclick="switchTab('jobs',this)">🔧 งานซ่อม</button>
-      <button class="tab" id="tab-newjob" onclick="switchTab('newjob',this)">➕ รับงาน</button>
-      <button class="tab" onclick="switchTab('customers',this)">👥 ลูกค้า</button>
-      <button class="tab" onclick="switchTab('inventory',this)">📦 คลัง</button>
-      <button class="tab" id="tab-qc" onclick="switchTab('qc',this)">✅ QC</button>
-      <button class="tab" onclick="switchTab('appointments',this)">📅 นัดหมาย</button>
-      <button class="tab" onclick="switchTab('slips',this)">💳 สลิป</button>
-      <button class="tab" onclick="switchTab('reports',this)">📈 รายงาน</button>
-      <button class="tab" id="tab-accounting" onclick="switchTab('accounting',this)">💰 บัญชี</button>
-      <button class="tab" onclick="switchTab('settings',this)">⚙️ ตั้งค่า</button>
+      <button class="tab active" data-i18n="nav.dashboard" onclick="switchTab('dashboard',this)">แดชบอร์ด</button>
+      <button class="tab" data-i18n="nav.jobs" onclick="switchTab('jobs',this)">งานซ่อม</button>
+      <button class="tab" data-i18n="nav.newjob" id="tab-newjob" onclick="switchTab('newjob',this)">รับงาน</button>
+      <button class="tab" data-i18n="nav.customers" onclick="switchTab('customers',this)">ลูกค้า</button>
+      <button class="tab" data-i18n="nav.inventory" onclick="switchTab('inventory',this)">คลังอะไหล่</button>
+      <button class="tab" data-i18n="nav.qc" id="tab-qc" onclick="switchTab('qc',this)">QC</button>
+      <button class="tab" data-i18n="nav.appointments" onclick="switchTab('appointments',this)">นัดหมาย</button>
+      <button class="tab" data-i18n="nav.slips" onclick="switchTab('slips',this)">สลิป</button>
+      <button class="tab" data-i18n="nav.reports" onclick="switchTab('reports',this)">รายงาน</button>
+      <button class="tab" data-i18n="nav.accounting" id="tab-accounting" onclick="switchTab('accounting',this)">บัญชี</button>
+      <button class="tab" data-i18n="nav.settings" onclick="switchTab('settings',this)">ตั้งค่า</button>
     </nav>
     <div class="topbar-right" id="topbar-user" style="display:none">
+      <div class="lang-switch" aria-label="Language selector">
+        <button type="button" class="lang-btn active" id="lang-th" onclick="setLanguage('th')">TH</button>
+        <button type="button" class="lang-btn" id="lang-en" onclick="setLanguage('en')">EN</button>
+      </div>
       <div class="user-chip" onclick="doLogout()">
         <div class="user-av" id="user-avatar-char">A</div>
         <span class="user-name" id="topbar-username">—</span>
@@ -491,7 +535,33 @@ tr:hover td{background:#F4F7FB}
 
   <!-- DASHBOARD -->
   <section id="dashboard" class="section active">
-    <div class="flex-between"><h1 class="page-title">📊 Dashboard</h1><button class="btn btn-sm" onclick="refreshAllData()">🔄 รีเฟรช</button></div>
+    <div class="flex-between"><h1 class="page-title">Service ERP Dashboard</h1><button class="btn btn-sm" onclick="refreshAllData()">🔄 รีเฟรช</button></div>
+    <div class="erp-hero">
+      <div class="erp-panel">
+        <h2>Professional Service Management + Accounting</h2>
+        <p>ภาพรวมงานซ่อม รายรับ ต้นทุนอะไหล่ กำไรขั้นต้น และสถานะใบแจ้งหนี้ในหน้าจอเดียว</p>
+        <div class="mini-grid" style="margin-top:14px">
+          <div class="mini-tile"><span>Daily Revenue</span><b id="dash-daily-revenue">฿0</b></div>
+          <div class="mini-tile"><span>Gross Margin</span><b id="dash-gross-margin">0%</b></div>
+          <div class="mini-tile"><span>Pending Invoices</span><b id="dash-pending-invoices">0</b></div>
+        </div>
+      </div>
+      <div class="erp-panel">
+        <h2>Inventory Alerts</h2>
+        <p>รายการอะไหล่ต่ำกว่าจุดสั่งซื้อและมูลค่าสต็อกปัจจุบัน</p>
+        <div class="mini-grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
+          <div class="mini-tile"><span>Low Stock</span><b id="dash-low-stock">0</b></div>
+          <div class="mini-tile"><span>Inventory Value</span><b id="dash-inv-value">฿0</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="finance-grid">
+      <div class="finance-card"><div class="finance-label">Labor Income</div><div class="finance-value money-blue" id="dash-labor-income">฿0</div><div class="finance-sub">จากค่าแรงซ่อม</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Revenue</div><div class="finance-value money-pos" id="dash-parts-revenue">฿0</div><div class="finance-sub">ยอดขายอะไหล่</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Cost</div><div class="finance-value money-warn" id="dash-parts-cost">฿0</div><div class="finance-sub">ราคาขาย / 1.30</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Gross Profit</div><div class="finance-value money-pos" id="dash-parts-profit">฿0</div><div class="finance-sub">กำไรจาก markup 30%</div></div>
+      <div class="finance-card"><div class="finance-label">Net Service Income</div><div class="finance-value money-blue" id="dash-net-service">฿0</div><div class="finance-sub">ค่าแรง + กำไรอะไหล่</div></div>
+    </div>
     <div class="metric-grid">
       <div class="metric-card"><div class="metric-label">งานวันนี้</div><div class="metric-value" id="m-today">—</div></div>
       <div class="metric-card"><div class="metric-label">กำลังซ่อม</div><div class="metric-value" id="m-progress">—</div></div>
@@ -500,6 +570,10 @@ tr:hover td{background:#F4F7FB}
       <div class="metric-card"><div class="metric-label">รายได้วันนี้</div><div class="metric-value" style="font-size:20px" id="m-revenue">—</div></div>
     </div>
     <div class="card"><div class="card-title">🔄 สรุปสถานะงาน</div><div id="pipeline-summary" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card"><div class="card-title">Top Selling Spare Parts</div><div id="dash-top-parts"><div class="empty-state" style="padding:16px">รอข้อมูลจากใบงาน</div></div></div>
+      <div class="card"><div class="card-title">Technician Performance</div><div id="dash-tech-performance"><div class="empty-state" style="padding:16px">รอข้อมูลช่าง</div></div></div>
+    </div>
     <div class="card"><div class="card-title">📋 งานล่าสุด</div>
       <div class="table-wrap"><table><thead><tr><th>Job ID</th><th>ลูกค้า</th><th>รถ</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>วันที่</th><th></th></tr></thead>
       <tbody id="recent-jobs-body"><tr><td colspan="8" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
@@ -591,9 +665,20 @@ tr:hover td{background:#F4F7FB}
 
   <!-- INVENTORY -->
   <section id="inventory" class="section">
-    <div class="flex-between"><h1 class="page-title">📦 คลังอะไหล่</h1></div>
-    <div class="table-wrap"><table><thead><tr><th>รหัส</th><th>ชื่ออะไหล่</th><th>หมวดหมู่</th><th>คงเหลือ</th><th>ขั้นต่ำ</th><th>ราคา/ชิ้น</th><th>อัปเดต</th><th></th></tr></thead>
-    <tbody id="inventory-body"><tr><td colspan="8" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
+    <div class="flex-between"><h1 class="page-title">Spare Parts Warehouse</h1></div>
+    <div class="card toolbar-card">
+      <input type="text" id="inventory-search" placeholder="ค้นหา Part Number / Part Name / หมวดหมู่..." style="flex:1;min-width:240px" oninput="filterInventory()">
+      <span class="badge s-diag">Unit Cost + Unit Selling Price</span>
+      <span class="badge s-waitpart" id="inventory-low-badge">Low stock 0</span>
+    </div>
+    <div class="finance-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="finance-card"><div class="finance-label">Total SKU</div><div class="finance-value" id="inv-kpi-sku">0</div></div>
+      <div class="finance-card"><div class="finance-label">Total Stock</div><div class="finance-value" id="inv-kpi-stock">0</div></div>
+      <div class="finance-card"><div class="finance-label">Inventory Value</div><div class="finance-value money-blue" id="inv-kpi-value">฿0</div></div>
+      <div class="finance-card"><div class="finance-label">Low Stock</div><div class="finance-value money-red" id="inv-kpi-low">0</div></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Part Number</th><th>Part Name</th><th>หมวดหมู่</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Unit Selling Price</th><th style="text-align:center">Current Stock</th><th style="text-align:center">Minimum Stock</th><th style="text-align:right">Total Inventory Value</th><th>อัปเดต</th><th></th></tr></thead>
+    <tbody id="inventory-body"><tr><td colspan="10" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
   </section>
 
   <!-- QC -->
@@ -776,6 +861,19 @@ tr:hover td{background:#F4F7FB}
         <div class="acc-sub" id="acc-margin-pct">อัตรากำไร —%</div>
       </div>
     </div>
+    <div class="finance-grid">
+      <div class="finance-card"><div class="finance-label">Labor Revenue</div><div class="finance-value money-blue" id="acc-auto-labor">฿0</div><div class="finance-sub">อัตโนมัติจากค่าแรง</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Revenue</div><div class="finance-value money-pos" id="acc-auto-parts-revenue">฿0</div><div class="finance-sub">อัตโนมัติจากค่าอะไหล่</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Cost</div><div class="finance-value money-warn" id="acc-auto-parts-cost">฿0</div><div class="finance-sub">Selling Price / 1.30</div></div>
+      <div class="finance-card"><div class="finance-label">Parts Gross Profit</div><div class="finance-value money-pos" id="acc-auto-parts-profit">฿0</div><div class="finance-sub">Revenue - Cost</div></div>
+      <div class="finance-card"><div class="finance-label">Net Service Income</div><div class="finance-value money-blue" id="acc-auto-net-service">฿0</div><div class="finance-sub">Labor + Parts Profit</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Accounting Automation Summary</div>
+      <div id="acc-auto-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:12px">
+        <div class="empty-state" style="grid-column:1/-1;padding:16px">ระบบจะสร้างรายการบัญชีอัตโนมัติเมื่อบันทึกใบเสนอราคา / ใบแจ้งหนี้</div>
+      </div>
+    </div>
 
     <!-- Charts row -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
@@ -802,6 +900,7 @@ tr:hover td{background:#F4F7FB}
       <button class="sub-tab" onclick="switchAccTab('income',this)">💚 รายรับ</button>
       <button class="sub-tab" onclick="switchAccTab('expense',this)">❤️ รายจ่าย</button>
       <button class="sub-tab" onclick="switchAccTab('cost',this)">🟡 ต้นทุน</button>
+      <button class="sub-tab" onclick="switchAccTab('profit',this)">💙 กำไร</button>
     </div>
 
     <div class="card" style="border-top-left-radius:0;border-top-right-radius:0;border-top:none;margin-top:0">
@@ -819,6 +918,9 @@ tr:hover td{background:#F4F7FB}
           <optgroup label="🟡 ต้นทุน">
             <option>ต้นทุนอะไหล่</option><option>ต้นทุนน้ำมัน/สารหล่อลื่น</option>
             <option>ต้นทุนอุปกรณ์/เครื่องมือ</option><option>ต้นทุนอื่นๆ</option>
+          </optgroup>
+          <optgroup label="💙 กำไร">
+            <option>กำไรขั้นต้นอะไหล่</option><option>กำไรค่าแรง</option><option>กำไรบริการสุทธิ</option>
           </optgroup>
         </select>
         <button class="btn btn-sm" onclick="exportAccCSV()">📥 CSV</button>
@@ -1078,7 +1180,9 @@ tr:hover td{background:#F4F7FB}
       <div id="quot-saved-summary" style="display:none;background:var(--g3);border:1px solid var(--g1);border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:13px"></div>
       <div class="form-grid">
         <div class="form-group"><label>ค่าแรง (฿)</label><input type="number" id="jd-labor" placeholder="0" min="0" oninput="calcTotal()"></div>
-        <div class="form-group"><label>ค่าอะไหล่ (฿)</label><input type="number" id="jd-parts-cost" placeholder="0" min="0" oninput="calcTotal()"></div>
+        <div class="form-group"><label>ค่าอะไหล่ขาย (฿)</label><input type="number" id="jd-parts-cost" placeholder="0" min="0" oninput="calcTotal()"></div>
+        <div class="form-group"><label>ต้นทุนอะไหล่อัตโนมัติ (ขาย / 1.30)</label><input type="text" id="jd-parts-actual-cost" readonly></div>
+        <div class="form-group"><label>กำไรขั้นต้นอะไหล่</label><input type="text" id="jd-parts-gross-profit" readonly></div>
         <div class="form-group"><label>ส่วนลด (฿)</label><input type="number" id="jd-discount" placeholder="0" min="0" oninput="calcTotal()"></div>
         <div class="form-group"><label>ราคารวม (฿)</label><input type="number" id="jd-total" readonly style="font-weight:700;font-size:16px;color:var(--g1)"></div>
         <div class="form-group span2"><label>หมายเหตุ / เงื่อนไข</label><textarea id="jd-quot-note" rows="2"></textarea></div>
@@ -1370,6 +1474,7 @@ tr:hover td{background:#F4F7FB}
           <option value="income">💚 รายรับ</option>
           <option value="expense">❤️ รายจ่าย</option>
           <option value="cost">🟡 ต้นทุน</option>
+          <option value="profit">💙 กำไร</option>
         </select>
       </div>
       <div class="form-group">
@@ -1498,6 +1603,51 @@ const DEFAULT_USERS=[
   {username:"manager",password:"mgr1234",role:"manager",displayName:"ผู้จัดการ"},
 ];
 let currentUser=null;
+const I18N={
+  th:{
+    "nav.dashboard":"แดชบอร์ด",
+    "nav.jobs":"งานซ่อม",
+    "nav.newjob":"รับงาน",
+    "nav.customers":"ลูกค้า",
+    "nav.inventory":"คลังอะไหล่",
+    "nav.qc":"QC",
+    "nav.appointments":"นัดหมาย",
+    "nav.slips":"สลิป",
+    "nav.reports":"รายงาน",
+    "nav.accounting":"บัญชี",
+    "nav.settings":"ตั้งค่า",
+    "brand.subtitle":"ศูนย์บริการ EV"
+  },
+  en:{
+    "nav.dashboard":"Dashboard",
+    "nav.jobs":"Work Orders",
+    "nav.newjob":"New Job",
+    "nav.customers":"Customers",
+    "nav.inventory":"Inventory",
+    "nav.qc":"QC",
+    "nav.appointments":"Appointments",
+    "nav.slips":"Payment Slips",
+    "nav.reports":"Reports",
+    "nav.accounting":"Accounting",
+    "nav.settings":"Settings",
+    "brand.subtitle":"EV Service Center"
+  }
+};
+let currentLang=localStorage.getItem("ev_lang")||"th";
+function setLanguage(lang){
+  currentLang=I18N[lang]?lang:"th";
+  localStorage.setItem("ev_lang",currentLang);
+  document.documentElement.lang=currentLang==="th"?"th":"en";
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key=el.dataset.i18n;
+    if(I18N[currentLang][key])el.textContent=I18N[currentLang][key];
+  });
+  const sub=document.querySelector(".logo-sub");
+  if(sub)sub.textContent=I18N[currentLang]["brand.subtitle"];
+  document.querySelectorAll(".lang-btn").forEach(btn=>btn.classList.remove("active"));
+  const active=document.getElementById("lang-"+currentLang);
+  if(active)active.classList.add("active");
+}
 function loadUsers(){const s=localStorage.getItem("ev_users");if(!s){localStorage.setItem("ev_users",JSON.stringify(DEFAULT_USERS));return DEFAULT_USERS;}try{const u=JSON.parse(s);if(!u.find(x=>x.username==="admin")){u.unshift(DEFAULT_USERS[0]);localStorage.setItem("ev_users",JSON.stringify(u));}return u;}catch{return DEFAULT_USERS;}}
 function saveUsers(u){localStorage.setItem("ev_users",JSON.stringify(u));}
 function isAdmin(){return currentUser?.role==="admin";}
@@ -1511,6 +1661,7 @@ function doLogin(){
   currentUser=u;localStorage.setItem("ev_session",JSON.stringify({username:u.username,ts:Date.now()}));
   document.getElementById("loginScreen").style.display="none";
   document.getElementById("topbar-user").style.display="flex";
+  setLanguage(currentLang);
   document.getElementById("topbar-username").textContent=u.displayName;
   document.getElementById("user-avatar-char").textContent=u.displayName.charAt(0);
   const rb=document.getElementById("topbar-role-badge");rb.textContent=u.role;rb.className="role-badge role-"+u.role;
@@ -1590,11 +1741,11 @@ async function loadDashboard(){
 }
 async function loadJobs(){
   const d=await gasGet({action:A.GET_JOBS});if(!d||d.status!=="ok")return;
-  allJobs=d.jobs||[];renderJobs(allJobs);populateTechFilter();
+  allJobs=d.jobs||[];renderJobs(allJobs);populateTechFilter();renderErpDashboard();
   document.getElementById("m-qc-wait").textContent=allJobs.filter(j=>j["สถานะ"]==="รอ QC").length;
 }
 async function loadCustomers(){const d=await gasGet({action:A.GET_CUSTOMERS});if(d?.status==="ok"){allCustomers=d.customers||[];renderCustomers(allCustomers);}}
-async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){allInventory=d.inventory||[];renderInventory(allInventory);}}
+async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){allInventory=d.inventory||[];renderInventory(allInventory);renderErpDashboard();}}
 async function loadSlips(){
   const[s1,s2]=await Promise.all([gasGet({action:A.GET_SLIPS}),gasGet({action:A.GET_DASHBOARD})]);
   if(s1?.status==="ok"){const sl=s1.slips||[];renderSlips(sl);document.getElementById("m-slip-total").textContent=sl.length;}
@@ -1629,6 +1780,57 @@ function renderStatusBreakdown(){
 }
 function filterByStatus(s){document.getElementById("job-filter-status").value=s;switchTab("jobs",document.querySelectorAll(".tab")[1]);filterJobs();}
 
+// ERP finance helpers
+function num(v){return Number(String(v??"").replace(/,/g,""))||0;}
+function money(n){return "฿"+Math.round(Number(n)||0).toLocaleString("th-TH");}
+function setText(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function jobLabor(j){return num(j["ค่าแรง"]||j["Labor"]||0);}
+function jobPartsSell(j){return num(j["ค่าอะไหล่"]||j["ค่าอะไหล่ (฿)"]||j["Parts Revenue"]||0);}
+function jobDiscount(j){return num(j["ส่วนลด"]||0);}
+function jobPartsCost(j){return jobPartsSell(j)/1.30;}
+function jobPartsProfit(j){return jobPartsSell(j)-jobPartsCost(j);}
+function jobNetService(j){return Math.max(0,jobLabor(j)-jobDiscount(j))+jobPartsProfit(j);}
+function getPartUnitSell(i){return num(i["ราคาขายต่อหน่วย"]||i["Unit Selling Price"]||i["ราคาต่อชิ้น (฿)"]||i["ราคา/ชิ้น"]||0);}
+function getPartUnitCost(i){return num(i["ราคาทุนต่อหน่วย"]||i["Unit Cost"]||i["ต้นทุนต่อหน่วย"]||i["ราคาทุน"]||(getPartUnitSell(i)?getPartUnitSell(i)/1.30:0));}
+function calcFinanceFromJobs(jobs=allJobs){
+  const today=new Date().toISOString().slice(0,10);
+  const closedOrBillable=jobs.filter(j=>["ผ่าน QC","รอชำระเงิน","ปิดงาน"].includes(j["สถานะ"])||num(j["ราคาประเมิน (฿)"])>0);
+  const labor=closedOrBillable.reduce((s,j)=>s+jobLabor(j),0);
+  const partsRevenue=closedOrBillable.reduce((s,j)=>s+jobPartsSell(j),0);
+  const partsCost=closedOrBillable.reduce((s,j)=>s+jobPartsCost(j),0);
+  const partsProfit=partsRevenue-partsCost;
+  const netService=closedOrBillable.reduce((s,j)=>s+jobNetService(j),0);
+  const daily=closedOrBillable.filter(j=>String(j["วันที่สร้าง"]||j["วันเสร็จ"]||"").slice(0,10)===today)
+    .reduce((s,j)=>s+jobLabor(j)+jobPartsSell(j)-jobDiscount(j),0);
+  const pending=jobs.filter(j=>["ผ่าน QC","รอชำระเงิน"].includes(j["สถานะ"])&&_payPaid(j)<_payTotal(j)).length;
+  const grossMargin=(labor+partsRevenue)>0?((labor+partsProfit)/(labor+partsRevenue))*100:0;
+  return {labor,partsRevenue,partsCost,partsProfit,netService,daily,pending,grossMargin};
+}
+function renderErpDashboard(){
+  const f=calcFinanceFromJobs(allJobs);
+  setText("dash-daily-revenue",money(f.daily));setText("dash-gross-margin",f.grossMargin.toFixed(1)+"%");
+  setText("dash-pending-invoices",String(f.pending));setText("dash-labor-income",money(f.labor));
+  setText("dash-parts-revenue",money(f.partsRevenue));setText("dash-parts-cost",money(f.partsCost));
+  setText("dash-parts-profit",money(f.partsProfit));setText("dash-net-service",money(f.netService));
+  const low=allInventory.filter(i=>num(i["จำนวนคงเหลือ"])<=num(i["จำนวนขั้นต่ำ"]||5)).length;
+  const invValue=allInventory.reduce((s,i)=>s+getPartUnitCost(i)*num(i["จำนวนคงเหลือ"]),0);
+  setText("dash-low-stock",String(low));setText("dash-inv-value",money(invValue));
+  renderTopPartsWidget();renderTechPerformanceWidget();
+}
+function renderTopPartsWidget(){
+  const el=document.getElementById("dash-top-parts");if(!el)return;
+  const rows=allJobs.filter(j=>jobPartsSell(j)>0).sort((a,b)=>jobPartsSell(b)-jobPartsSell(a)).slice(0,5);
+  if(!rows.length){el.innerHTML='<div class="empty-state" style="padding:16px">รอข้อมูลจากใบงาน</div>';return;}
+  el.innerHTML=rows.map(j=>`<div class="info-row"><span>${j["อะไหล่ที่ต้องใช้"]||j["Job ID"]||"Parts"}</span><strong>${money(jobPartsSell(j))}</strong></div>`).join("");
+}
+function renderTechPerformanceWidget(){
+  const el=document.getElementById("dash-tech-performance");if(!el)return;
+  const map={};allJobs.forEach(j=>{const t=j["ช่าง"]||"ไม่ระบุ";map[t]=map[t]||{jobs:0,net:0};map[t].jobs++;map[t].net+=jobNetService(j);});
+  const rows=Object.entries(map).sort((a,b)=>b[1].jobs-a[1].jobs).slice(0,5);
+  if(!rows.length){el.innerHTML='<div class="empty-state" style="padding:16px">รอข้อมูลช่าง</div>';return;}
+  el.innerHTML=rows.map(([t,v])=>`<div class="info-row"><span>${t}<br><small style="color:var(--muted)">${v.jobs} งาน</small></span><strong>${money(v.net)}</strong></div>`).join("");
+}
+
 // RENDER
 function renderJobs(jobs){
   const tbody=document.getElementById("jobs-body");
@@ -1642,8 +1844,31 @@ function renderCustomers(cs){
 }
 function renderInventory(inv){
   const tbody=document.getElementById("inventory-body");
-  if(!inv.length){tbody.innerHTML=`<tr><td colspan="8" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
-  tbody.innerHTML=inv.map(i=>{const q=Number(i["จำนวนคงเหลือ"]||0),mn=Number(i["จำนวนขั้นต่ำ"]||5),low=q<=mn;return`<tr><td><code style="font-size:11px">${i["รหัสอะไหล่"]||""}</code></td><td>${i["ชื่ออะไหล่"]||"—"}</td><td>${i["หมวดหมู่"]||"—"}</td><td style="color:${low?"var(--red)":"inherit"};font-weight:${low?700:400}">${q}${low?" ⚠️":""}</td><td>${mn}</td><td>฿${Number(i["ราคาต่อชิ้น (฿)"]||0).toLocaleString()}</td><td style="font-size:12px">${fd(i["อัปเดตล่าสุด"])}</td><td><button class="btn btn-xs btn-ghost" onclick="adjustStock('${i["รหัสอะไหล่"]}','${i["ชื่ออะไหล่"]}',${q})">ปรับ</button></td></tr>`;}).join("");
+  const sku=inv.length,totalStock=inv.reduce((s,i)=>s+(Number(i["จำนวนคงเหลือ"]||0)),0);
+  const invValue=inv.reduce((s,i)=>s+getPartUnitCost(i)*(Number(i["จำนวนคงเหลือ"]||0)),0);
+  const lowCount=inv.filter(i=>(Number(i["จำนวนคงเหลือ"]||0))<=(Number(i["จำนวนขั้นต่ำ"]||5))).length;
+  setText("inv-kpi-sku",sku.toLocaleString("th-TH"));setText("inv-kpi-stock",totalStock.toLocaleString("th-TH"));
+  setText("inv-kpi-value",money(invValue));setText("inv-kpi-low",lowCount.toLocaleString("th-TH"));setText("inventory-low-badge","Low stock "+lowCount);
+  if(!inv.length){tbody.innerHTML=`<tr><td colspan="10" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
+  tbody.innerHTML=inv.map(i=>{
+    const q=Number(i["จำนวนคงเหลือ"]||0),mn=Number(i["จำนวนขั้นต่ำ"]||5),low=q<=mn;
+    const sell=getPartUnitSell(i),cost=getPartUnitCost(i),value=cost*q;
+    return`<tr>
+      <td><code style="font-size:11px">${i["รหัสอะไหล่"]||i["Part Number"]||""}</code></td>
+      <td><strong>${i["ชื่ออะไหล่"]||i["Part Name"]||"—"}</strong></td>
+      <td>${i["หมวดหมู่"]||"—"}</td>
+      <td style="text-align:right;font-weight:700">${money(cost)}</td>
+      <td style="text-align:right;font-weight:700;color:var(--blue)">${money(sell)}</td>
+      <td style="text-align:center;color:${low?"var(--red)":"inherit"};font-weight:${low?800:600}">${q}${low?" ⚠️":""}</td>
+      <td style="text-align:center">${mn}</td>
+      <td style="text-align:right;font-weight:800">${money(value)}</td>
+      <td style="font-size:12px">${fd(i["อัปเดตล่าสุด"])}</td>
+      <td><button class="btn btn-xs btn-ghost" onclick="adjustStock('${i["รหัสอะไหล่"]}','${i["ชื่ออะไหล่"]}',${q})">ปรับ</button></td>
+    </tr>`;}).join("");
+}
+function filterInventory(){
+  const q=(document.getElementById("inventory-search")?.value||"").toLowerCase();
+  renderInventory(allInventory.filter(i=>!q||Object.values(i).some(v=>String(v).toLowerCase().includes(q))));
 }
 function renderSlips(slips){
   const tbody=document.getElementById("slips-body");
@@ -1772,7 +1997,7 @@ function prefillDiag(j){
   const dd=j["วันที่วินิจฉัย"];
   document.getElementById("jd-diag-date").value=dd?String(dd).slice(0,10):"";
 }
-function prefillQuot(j){document.getElementById("jd-labor").value=j["ค่าแรง"]||"";document.getElementById("jd-parts-cost").value=j["ค่าอะไหล่"]||"";document.getElementById("jd-discount").value=j["ส่วนลด"]||"";document.getElementById("jd-total").value=j["ราคาประเมิน (฿)"]||"";document.getElementById("jd-quot-note").value=j["เงื่อนไขใบเสนอราคา"]||"";}
+function prefillQuot(j){document.getElementById("jd-labor").value=j["ค่าแรง"]||"";document.getElementById("jd-parts-cost").value=j["ค่าอะไหล่"]||"";document.getElementById("jd-discount").value=j["ส่วนลด"]||"";document.getElementById("jd-total").value=j["ราคาประเมิน (฿)"]||"";document.getElementById("jd-quot-note").value=j["เงื่อนไขใบเสนอราคา"]||"";calcTotal();}
 function prefillRepair(j){
   document.getElementById("jd-repair-actions").value=j["ขั้นตอนการซ่อม"]||"";
   document.getElementById("jd-repair-tech").value=j["ช่าง"]||"";
@@ -2080,7 +2305,16 @@ function payRemoveSlip(){
   if(urlField){urlField.value="";urlField.dataset.base64="";}
   showToast("🗑️ ลบสลิปแล้ว");
 }
-function calcTotal(){const l=Number(document.getElementById("jd-labor").value)||0,p=Number(document.getElementById("jd-parts-cost").value)||0,d=Number(document.getElementById("jd-discount").value)||0;document.getElementById("jd-total").value=l+p-d;}
+function calcTotal(){
+  const l=Number(document.getElementById("jd-labor").value)||0,
+        p=Number(document.getElementById("jd-parts-cost").value)||0,
+        d=Number(document.getElementById("jd-discount").value)||0;
+  const cost=p/1.30,profit=p-cost;
+  document.getElementById("jd-total").value=l+p-d;
+  const costEl=document.getElementById("jd-parts-actual-cost"),profitEl=document.getElementById("jd-parts-gross-profit");
+  if(costEl)costEl.value=money(cost);
+  if(profitEl)profitEl.value=money(profit);
+}
 function populateTechSelects(){const us=loadUsers().filter(u=>u.role==="tech"||u.role==="admin");const op=`<option value="">— เลือกช่าง —</option>`+us.map(u=>`<option value="${u.displayName}">${u.displayName}</option>`).join("");document.getElementById("jd-diag-tech").innerHTML=op;document.getElementById("jd-repair-tech").innerHTML=op;}
 function populateTechFilter(){const us=loadUsers().filter(u=>u.role==="tech");const sel=document.getElementById("job-filter-tech");if(!sel)return;const v=sel.value;sel.innerHTML=`<option value="">ช่างทุกคน</option>`+us.map(u=>`<option>${u.displayName}</option>`).join("");sel.value=v;}
 function renderTimeline(j){
@@ -2168,7 +2402,7 @@ async function saveDiagnosis(andAdvance){
   showToast("⏳ กำลังบันทึก...");
   const r=await gasPost({action:A.UPDATE_JOB,jobId:currentJobDetail["Job ID"],fields});
   if(r?.status==="ok"){
-    _mergeJob(fields);_refreshDisplay();
+    _mergeJob(fields);upsertJobAccounting(currentJobDetail);_refreshDisplay();
     if(andAdvance){
       // advance เฉพาะสถานะที่อยู่ใน diag flow เท่านั้น
       const cur=currentJobDetail["สถานะ"];
@@ -2212,7 +2446,7 @@ async function saveQuotation(andAdvance){
     if(andAdvance){await _advanceAndStay("รออนุมัติราคา");}
     else{showToast("✅ บันทึกใบเสนอราคาแล้ว");await loadJobs();}
   } else {
-    if(_isUnknownAction(r)){_mergeJob(fields);_warnUnknownAction("saveQuotation");if(andAdvance)await _advanceAndStay("รออนุมัติราคา");}
+    if(_isUnknownAction(r)){_mergeJob(fields);upsertJobAccounting(currentJobDetail);_warnUnknownAction("saveQuotation");if(andAdvance)await _advanceAndStay("รออนุมัติราคา");}
     else showToast("❌ "+(r?.message||r?.error||"GAS: "+JSON.stringify(r)));
   }
 }
@@ -2310,6 +2544,7 @@ async function savePayment(andClose){
 
   if(r?.status==="ok"){
     _mergeJob(fields);
+    upsertJobAccounting(currentJobDetail);
     currentJobDetail["สถานะ"]="รอชำระเงิน";
     // Reset form
     document.getElementById("jd-pay-amount").value="";
@@ -2363,6 +2598,7 @@ async function closeJob(){
       currentJobDetail["สถานะ"]="ปิดงาน";
       currentJobDetail["วันเสร็จ"]=closedAt;
       _mergeJob({"วันเสร็จ":closedAt});
+      upsertJobAccounting(currentJobDetail);
       _refreshDisplay();
       renderTimeline(currentJobDetail);
       showToast("✅ ปิดงานสำเร็จ 🎉");
@@ -2807,17 +3043,75 @@ let accEditId = null;
 const ACC_CATS = {
   income:  ['ค่าแรงซ่อม','ค่าอะไหล่ (ขาย)','รายรับอื่นๆ'],
   expense: ['ค่าเช่าสถานที่','ค่าสาธารณูปโภค','ค่าจ้างพนักงาน','ค่าการตลาด','รายจ่ายอื่นๆ'],
-  cost:    ['ต้นทุนอะไหล่','ต้นทุนน้ำมัน/สารหล่อลื่น','ต้นทุนอุปกรณ์/เครื่องมือ','ต้นทุนอื่นๆ']
+  cost:    ['ต้นทุนอะไหล่','ต้นทุนน้ำมัน/สารหล่อลื่น','ต้นทุนอุปกรณ์/เครื่องมือ','ต้นทุนอื่นๆ'],
+  profit:  ['กำไรขั้นต้นอะไหล่','กำไรค่าแรง','กำไรบริการสุทธิ']
 };
-const ACC_LABEL = {income:'รายรับ', expense:'รายจ่าย', cost:'ต้นทุน'};
-const ACC_BADGE = {income:'ab-income', expense:'ab-expense', cost:'ab-cost'};
-const ACC_COLOR = {income:'#059669', expense:'#DC2626', cost:'#D97706'};
+const ACC_LABEL = {income:'รายรับ', expense:'รายจ่าย', cost:'ต้นทุน', profit:'กำไร'};
+const ACC_BADGE = {income:'ab-income', expense:'ab-expense', cost:'ab-cost', profit:'ab-profit'};
+const ACC_COLOR = {income:'#059669', expense:'#DC2626', cost:'#D97706', profit:'#2563EB'};
 const THAI_MON  = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MON_S = ['','ม.ค','ก.พ','มี.ค','เม.ย','พ.ค','มิ.ย','ก.ค','ส.ค','ก.ย','ต.ค','พ.ย','ธ.ค'];
 
 function accLoad(){ try{ accEntries = JSON.parse(localStorage.getItem('ev_acc')||'[]'); }catch{ accEntries=[]; } }
 function accSave(){ localStorage.setItem('ev_acc', JSON.stringify(accEntries)); }
 function accFmt(n){ return '฿' + Math.abs(n).toLocaleString('th-TH',{minimumFractionDigits:0}); }
+function auditLog(action, payload={}){
+  try{
+    const rows=JSON.parse(localStorage.getItem("ev_audit")||"[]");
+    rows.push({id:"AUD-"+Date.now()+"-"+Math.random().toString(16).slice(2),action,payload,by:currentUser?.username||"system",ts:new Date().toISOString()});
+    localStorage.setItem("ev_audit",JSON.stringify(rows.slice(-1000)));
+  }catch(_){}
+}
+function buildServiceAccountingEntries(j){
+  const jobId=j["Job ID"]||""; if(!jobId)return [];
+  const labor=jobLabor(j),partsRevenue=jobPartsSell(j),partsCost=jobPartsCost(j),partsProfit=jobPartsProfit(j);
+  if(labor<=0&&partsRevenue<=0)return [];
+  const date=String(j["วันเสร็จ"]||j["วันที่อนุมัติ"]||j["วันที่สร้าง"]||new Date().toISOString()).slice(0,10);
+  const base={source:"service_invoice",jobId,ref:jobId,by:"Accounting Automation",createdAt:new Date().toISOString(),locked:true};
+  const rows=[];
+  if(labor>0)rows.push({...base,id:`AUTO-${jobId}-LABOR`,type:"income",category:"ค่าแรงซ่อม",date,amount:labor,desc:`Auto split labor revenue: ${jobId}`});
+  if(partsRevenue>0){
+    rows.push({...base,id:`AUTO-${jobId}-PARTS-REV`,type:"income",category:"ค่าอะไหล่ (ขาย)",date,amount:partsRevenue,desc:`Auto split spare parts revenue: ${jobId}`});
+    rows.push({...base,id:`AUTO-${jobId}-PARTS-COST`,type:"cost",category:"ต้นทุนอะไหล่",date,amount:partsCost,desc:`Actual spare parts cost = selling price / 1.30`});
+    rows.push({...base,id:`AUTO-${jobId}-PARTS-PROFIT`,type:"profit",category:"กำไรขั้นต้นอะไหล่",date,amount:partsProfit,desc:`Spare parts gross profit = revenue - cost`});
+  }
+  return rows;
+}
+function syncServiceAccountingFromJobs(save=true){
+  if(!Array.isArray(allJobs)||!allJobs.length)return;
+  const manual=accEntries.filter(e=>e.source!=="service_invoice");
+  const auto=allJobs.flatMap(buildServiceAccountingEntries);
+  accEntries=[...manual,...auto];
+  if(save)accSave();
+}
+function upsertJobAccounting(j){
+  accLoad();
+  const jobId=j?.["Job ID"]; if(!jobId)return;
+  accEntries=accEntries.filter(e=>!(e.source==="service_invoice"&&e.jobId===jobId));
+  accEntries.push(...buildServiceAccountingEntries(j));
+  accSave();
+  auditLog("service_accounting_sync",{jobId,entries:buildServiceAccountingEntries(j).length});
+  renderErpDashboard();
+}
+function renderAccountingAutomation(entries){
+  const auto=entries.filter(e=>e.source==="service_invoice");
+  const labor=auto.filter(e=>e.category==="ค่าแรงซ่อม").reduce((s,e)=>s+e.amount,0);
+  const partsRevenue=auto.filter(e=>e.category==="ค่าอะไหล่ (ขาย)").reduce((s,e)=>s+e.amount,0);
+  const partsCost=auto.filter(e=>e.category==="ต้นทุนอะไหล่").reduce((s,e)=>s+e.amount,0);
+  const partsProfit=auto.filter(e=>e.category==="กำไรขั้นต้นอะไหล่").reduce((s,e)=>s+e.amount,0);
+  const netService=labor+partsProfit;
+  setText("acc-auto-labor",money(labor));setText("acc-auto-parts-revenue",money(partsRevenue));
+  setText("acc-auto-parts-cost",money(partsCost));setText("acc-auto-parts-profit",money(partsProfit));
+  setText("acc-auto-net-service",money(netService));
+  const el=document.getElementById("acc-auto-summary");if(!el)return;
+  if(!auto.length){el.innerHTML='<div class="empty-state" style="grid-column:1/-1;padding:16px">ยังไม่มีรายการบัญชีอัตโนมัติจากใบงาน</div>';return;}
+  el.innerHTML=[
+    ["Labor revenue","ค่าแรงซ่อม",labor],
+    ["Parts revenue","ค่าอะไหล่ขาย",partsRevenue],
+    ["Parts cost","ขาย / 1.30",partsCost],
+    ["Parts gross profit","รายได้อะไหล่ - ต้นทุน",partsProfit]
+  ].map(([a,b,c])=>`<div class="mini-tile"><span>${a}</span><b>${money(c)}</b><small style="color:var(--muted)">${b}</small></div>`).join("");
+}
 
 function accInitYears(){
   const sel = document.getElementById('acc-filter-year'); if(!sel) return;
@@ -2898,8 +3192,9 @@ function accGetFiltered(){
 }
 
 function renderAccounting(){
-  accLoad(); accInitYears();
+  accLoad(); syncServiceAccountingFromJobs(true); accInitYears();
   const entries = accGetFiltered();
+  renderAccountingAutomation(entries);
   let tI=0,tE=0,tC=0,cI=0,cE=0,cC=0;
   entries.forEach(e=>{
     if(e.type==='income'){tI+=e.amount;cI++;}
@@ -3008,6 +3303,7 @@ function exportAccCSV(){
 
 // INIT
 window.addEventListener("DOMContentLoaded",()=>{
+  setLanguage(currentLang);
   loadLINEConfig();
   document.getElementById("report-month").value=new Date().getMonth();
   applyShopInfo();
@@ -3016,6 +3312,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   if(checkSession()){
     document.getElementById("loginScreen").style.display="none";
     document.getElementById("topbar-user").style.display="flex";
+    setLanguage(currentLang);
     document.getElementById("topbar-username").textContent=currentUser.displayName;
     document.getElementById("user-avatar-char").textContent=currentUser.displayName.charAt(0);
     const rb=document.getElementById("topbar-role-badge");
