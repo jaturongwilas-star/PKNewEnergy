@@ -670,6 +670,10 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
       <input type="text" id="inventory-search" placeholder="ค้นหา Part Number / Part Name / หมวดหมู่..." style="flex:1;min-width:240px" oninput="filterInventory()">
       <span class="badge s-diag">Unit Cost + Unit Selling Price</span>
       <span class="badge s-waitpart" id="inventory-low-badge">Low stock 0</span>
+      <button class="btn btn-sm" onclick="copyInventoryHeaders()">คัดลอกหัวตาราง Sheet</button>
+    </div>
+    <div class="alert alert-warning">
+      Google Sheet ต้องมีคอลัมน์คลังอะไหล่ให้ตรงกับระบบใหม่: รหัสอะไหล่, ชื่ออะไหล่, หมวดหมู่, ราคาทุนต่อหน่วย, Margin %, ราคาขายต่อหน่วย, จำนวนคงเหลือ, จำนวนขั้นต่ำ, อัปเดตล่าสุด
     </div>
     <div class="finance-grid" style="grid-template-columns:repeat(4,1fr)">
       <div class="finance-card"><div class="finance-label">Total SKU</div><div class="finance-value" id="inv-kpi-sku">0</div></div>
@@ -677,8 +681,8 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
       <div class="finance-card"><div class="finance-label">Inventory Value</div><div class="finance-value money-blue" id="inv-kpi-value">฿0</div></div>
       <div class="finance-card"><div class="finance-label">Low Stock</div><div class="finance-value money-red" id="inv-kpi-low">0</div></div>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>Part Number</th><th>Part Name</th><th>หมวดหมู่</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Unit Selling Price</th><th style="text-align:center">Current Stock</th><th style="text-align:center">Minimum Stock</th><th style="text-align:right">Total Inventory Value</th><th>อัปเดต</th><th></th></tr></thead>
-    <tbody id="inventory-body"><tr><td colspan="10" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>Part Number</th><th>Part Name</th><th>หมวดหมู่</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Margin %</th><th style="text-align:right">Unit Selling Price</th><th style="text-align:center">Current Stock</th><th style="text-align:center">Minimum Stock</th><th style="text-align:right">Total Inventory Value</th><th>อัปเดต</th><th></th></tr></thead>
+    <tbody id="inventory-body"><tr><td colspan="11" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
   </section>
 
   <!-- QC -->
@@ -1393,6 +1397,45 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
   </div>
 </div>
 
+<!-- INVENTORY PRICING MODAL -->
+<div class="modal-overlay" id="inventoryPriceModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">ปรับราคาทุน / Margin อะไหล่</div>
+    <input type="hidden" id="inv-edit-code">
+    <div class="form-grid">
+      <div class="form-group span2">
+        <label>รายการอะไหล่</label>
+        <input type="text" id="inv-edit-name" readonly>
+      </div>
+      <div class="form-group">
+        <label>ราคาทุนต่อหน่วย</label>
+        <input type="number" id="inv-edit-cost" min="0" step="0.01" oninput="calcInventorySellFromMargin()">
+      </div>
+      <div class="form-group">
+        <label>Margin %</label>
+        <input type="number" id="inv-edit-margin" min="0" step="0.01" oninput="calcInventorySellFromMargin()">
+      </div>
+      <div class="form-group">
+        <label>ราคาขายต่อหน่วย</label>
+        <input type="number" id="inv-edit-sell" min="0" step="0.01" oninput="calcInventoryMarginFromSell()">
+      </div>
+      <div class="form-group">
+        <label>จำนวนขั้นต่ำ</label>
+        <input type="number" id="inv-edit-min" min="0" step="1">
+      </div>
+      <div class="form-group span2">
+        <label>หมายเหตุ</label>
+        <textarea id="inv-edit-note" rows="2" placeholder="เช่น ปรับ margin ตาม supplier / batch ใหม่"></textarea>
+      </div>
+    </div>
+    <div id="inv-edit-preview" class="alert alert-warning" style="margin-top:12px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveInventoryPricing()">บันทึกไป Google Sheet</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('inventoryPriceModal').classList.remove('open')">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT USER MODAL -->
 <div class="modal-overlay" id="editUserModal">
   <div class="modal" style="max-width:400px">
@@ -1745,7 +1788,7 @@ async function loadJobs(){
   document.getElementById("m-qc-wait").textContent=allJobs.filter(j=>j["สถานะ"]==="รอ QC").length;
 }
 async function loadCustomers(){const d=await gasGet({action:A.GET_CUSTOMERS});if(d?.status==="ok"){allCustomers=d.customers||[];renderCustomers(allCustomers);}}
-async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){allInventory=d.inventory||[];renderInventory(allInventory);renderErpDashboard();}}
+async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){allInventory=mergeInventoryOverrides(d.inventory||[]);renderInventory(allInventory);renderErpDashboard();}}
 async function loadSlips(){
   const[s1,s2]=await Promise.all([gasGet({action:A.GET_SLIPS}),gasGet({action:A.GET_DASHBOARD})]);
   if(s1?.status==="ok"){const sl=s1.slips||[];renderSlips(sl);document.getElementById("m-slip-total").textContent=sl.length;}
@@ -1792,6 +1835,20 @@ function jobPartsProfit(j){return jobPartsSell(j)-jobPartsCost(j);}
 function jobNetService(j){return Math.max(0,jobLabor(j)-jobDiscount(j))+jobPartsProfit(j);}
 function getPartUnitSell(i){return num(i["ราคาขายต่อหน่วย"]||i["Unit Selling Price"]||i["ราคาต่อชิ้น (฿)"]||i["ราคา/ชิ้น"]||0);}
 function getPartUnitCost(i){return num(i["ราคาทุนต่อหน่วย"]||i["Unit Cost"]||i["ต้นทุนต่อหน่วย"]||i["ราคาทุน"]||(getPartUnitSell(i)?getPartUnitSell(i)/1.30:0));}
+function getPartMargin(i){
+  const saved=num(i["Margin %"]||i["margin_percent"]||i["มาร์จิ้น (%)"]);
+  if(saved>0)return saved;
+  const cost=getPartUnitCost(i),sell=getPartUnitSell(i);
+  return cost>0&&sell>0?((sell/cost)-1)*100:30;
+}
+function getPartCode(i){return i["รหัสอะไหล่"]||i["Part Number"]||i["partCode"]||"";}
+function getPartName(i){return i["ชื่ออะไหล่"]||i["Part Name"]||i["partName"]||"—";}
+function invOverrideLoad(){try{return JSON.parse(localStorage.getItem("ev_inv_overrides")||"{}");}catch{return {};}}
+function invOverrideSave(o){localStorage.setItem("ev_inv_overrides",JSON.stringify(o));}
+function mergeInventoryOverrides(items){
+  const o=invOverrideLoad();
+  return items.map(i=>{const code=getPartCode(i);return code&&o[code]?{...i,...o[code]}:i;});
+}
 function calcFinanceFromJobs(jobs=allJobs){
   const today=new Date().toISOString().slice(0,10);
   const closedOrBillable=jobs.filter(j=>["ผ่าน QC","รอชำระเงิน","ปิดงาน"].includes(j["สถานะ"])||num(j["ราคาประเมิน (฿)"])>0);
@@ -1849,26 +1906,100 @@ function renderInventory(inv){
   const lowCount=inv.filter(i=>(Number(i["จำนวนคงเหลือ"]||0))<=(Number(i["จำนวนขั้นต่ำ"]||5))).length;
   setText("inv-kpi-sku",sku.toLocaleString("th-TH"));setText("inv-kpi-stock",totalStock.toLocaleString("th-TH"));
   setText("inv-kpi-value",money(invValue));setText("inv-kpi-low",lowCount.toLocaleString("th-TH"));setText("inventory-low-badge","Low stock "+lowCount);
-  if(!inv.length){tbody.innerHTML=`<tr><td colspan="10" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
+  if(!inv.length){tbody.innerHTML=`<tr><td colspan="11" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
   tbody.innerHTML=inv.map(i=>{
     const q=Number(i["จำนวนคงเหลือ"]||0),mn=Number(i["จำนวนขั้นต่ำ"]||5),low=q<=mn;
-    const sell=getPartUnitSell(i),cost=getPartUnitCost(i),value=cost*q;
+    const sell=getPartUnitSell(i),cost=getPartUnitCost(i),margin=getPartMargin(i),value=cost*q;
+    const code=getPartCode(i),name=getPartName(i);
     return`<tr>
-      <td><code style="font-size:11px">${i["รหัสอะไหล่"]||i["Part Number"]||""}</code></td>
-      <td><strong>${i["ชื่ออะไหล่"]||i["Part Name"]||"—"}</strong></td>
+      <td><code style="font-size:11px">${code}</code></td>
+      <td><strong>${name}</strong></td>
       <td>${i["หมวดหมู่"]||"—"}</td>
       <td style="text-align:right;font-weight:700">${money(cost)}</td>
+      <td style="text-align:right;font-weight:800;color:var(--purple)">${margin.toFixed(1)}%</td>
       <td style="text-align:right;font-weight:700;color:var(--blue)">${money(sell)}</td>
       <td style="text-align:center;color:${low?"var(--red)":"inherit"};font-weight:${low?800:600}">${q}${low?" ⚠️":""}</td>
       <td style="text-align:center">${mn}</td>
       <td style="text-align:right;font-weight:800">${money(value)}</td>
       <td style="font-size:12px">${fd(i["อัปเดตล่าสุด"])}</td>
-      <td><button class="btn btn-xs btn-ghost" onclick="adjustStock('${i["รหัสอะไหล่"]}','${i["ชื่ออะไหล่"]}',${q})">ปรับ</button></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-xs btn-ghost" onclick='openInventoryPricing(${JSON.stringify(code).replace(/'/g,"&#39;")})'>ราคา</button>
+        <button class="btn btn-xs btn-ghost" onclick="adjustStock('${code}','${name}',${q})">สต็อก</button>
+      </td>
     </tr>`;}).join("");
 }
 function filterInventory(){
   const q=(document.getElementById("inventory-search")?.value||"").toLowerCase();
   renderInventory(allInventory.filter(i=>!q||Object.values(i).some(v=>String(v).toLowerCase().includes(q))));
+}
+function copyInventoryHeaders(){
+  const headers=["รหัสอะไหล่","ชื่ออะไหล่","หมวดหมู่","ราคาทุนต่อหน่วย","Margin %","ราคาขายต่อหน่วย","จำนวนคงเหลือ","จำนวนขั้นต่ำ","อัปเดตล่าสุด"];
+  navigator.clipboard?.writeText(headers.join("\t"));
+  showToast("คัดลอกหัวตารางคลังอะไหล่แล้ว");
+}
+function openInventoryPricing(code){
+  const item=allInventory.find(i=>getPartCode(i)===code);
+  if(!item){showToast("ไม่พบอะไหล่");return;}
+  document.getElementById("inv-edit-code").value=code;
+  document.getElementById("inv-edit-name").value=code+" — "+getPartName(item);
+  document.getElementById("inv-edit-cost").value=getPartUnitCost(item).toFixed(2);
+  document.getElementById("inv-edit-margin").value=getPartMargin(item).toFixed(2);
+  document.getElementById("inv-edit-sell").value=getPartUnitSell(item).toFixed(2);
+  document.getElementById("inv-edit-min").value=Number(item["จำนวนขั้นต่ำ"]||5);
+  document.getElementById("inv-edit-note").value="";
+  calcInventorySellFromMargin();
+  document.getElementById("inventoryPriceModal").classList.add("open");
+}
+function calcInventorySellFromMargin(){
+  const cost=num(document.getElementById("inv-edit-cost").value);
+  const margin=num(document.getElementById("inv-edit-margin").value);
+  const sell=cost*(1+margin/100);
+  document.getElementById("inv-edit-sell").value=sell?Number(sell.toFixed(2)):"";
+  renderInventoryPricingPreview();
+}
+function calcInventoryMarginFromSell(){
+  const cost=num(document.getElementById("inv-edit-cost").value);
+  const sell=num(document.getElementById("inv-edit-sell").value);
+  const margin=cost>0?((sell/cost)-1)*100:0;
+  document.getElementById("inv-edit-margin").value=Number(margin.toFixed(2));
+  renderInventoryPricingPreview();
+}
+function renderInventoryPricingPreview(){
+  const cost=num(document.getElementById("inv-edit-cost")?.value);
+  const sell=num(document.getElementById("inv-edit-sell")?.value);
+  const profit=sell-cost,margin=cost>0?(profit/cost)*100:0;
+  const el=document.getElementById("inv-edit-preview");
+  if(el)el.innerHTML=`ราคาทุน ${money(cost)} → ราคาขาย ${money(sell)} | กำไร/ชิ้น ${money(profit)} | Margin ${margin.toFixed(2)}%`;
+}
+async function saveInventoryPricing(){
+  const code=document.getElementById("inv-edit-code").value;
+  const cost=num(document.getElementById("inv-edit-cost").value);
+  const margin=num(document.getElementById("inv-edit-margin").value);
+  const sell=num(document.getElementById("inv-edit-sell").value);
+  const minStock=num(document.getElementById("inv-edit-min").value);
+  const note=document.getElementById("inv-edit-note").value.trim();
+  if(!code||cost<0||sell<0){showToast("กรุณาตรวจสอบราคา");return;}
+  const fields={
+    "ราคาทุนต่อหน่วย":cost,
+    "Margin %":margin,
+    "ราคาขายต่อหน่วย":sell,
+    "จำนวนขั้นต่ำ":minStock,
+    "หมายเหตุราคา":note,
+    "อัปเดตล่าสุด":new Date().toISOString()
+  };
+  const btn=document.querySelector("#inventoryPriceModal .btn-primary");
+  if(btn){btn.disabled=true;btn.textContent="กำลังบันทึก...";}
+  const payload={action:A.UPDATE_INVENTORY,updateType:"pricing",partCode:code,qtyChange:0,fields,unitCost:cost,marginPercent:margin,unitSellingPrice:sell,minStock,note};
+  const r=await gasPost(payload,{retry:1,silent:true});
+  if(btn){btn.disabled=false;btn.textContent="บันทึกไป Google Sheet";}
+  const overrides=invOverrideLoad();
+  overrides[code]=fields;
+  invOverrideSave(overrides);
+  allInventory=mergeInventoryOverrides(allInventory.map(i=>getPartCode(i)===code?{...i,...fields}:i));
+  renderInventory(allInventory);renderErpDashboard();
+  document.getElementById("inventoryPriceModal").classList.remove("open");
+  if(r?.status==="ok")showToast("บันทึก Margin ไป Google Sheet แล้ว");
+  else showToast("บันทึกในหน้าเว็บแล้ว แต่ GAS ต้องรองรับ fields เพื่อเขียนกลับ Sheet");
 }
 function renderSlips(slips){
   const tbody=document.getElementById("slips-body");
