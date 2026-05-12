@@ -486,6 +486,39 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
 /* drag over slip zone */
 #pay-slip-upload-zone.drag-over{border-color:var(--g1);background:var(--g3)}
 
+/* EV QC enhancement */
+.theme-toggle{border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:5px 9px;cursor:pointer;font-size:12px}
+.qc-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.qc-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.qc-kpi{border:1px solid var(--border);border-radius:8px;background:var(--surface2);padding:10px}
+.qc-kpi span{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.qc-kpi b{font-size:20px}
+.qc-category{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;background:var(--surface)}
+.qc-category-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;background:var(--surface2);font-weight:800}
+.qc-category-body{padding:8px}
+.qc-check{align-items:flex-start}
+.qc-check.pending{border-color:#FDE047;background:#FEFCE8}
+.qc-check.fail{border-color:#FCA5A5;background:#FEF2F2}
+.qc-check.na{opacity:.72}
+.qc-row-main{flex:1;min-width:0}
+.qc-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.qc-status-btn{min-height:30px;padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:700}
+.qc-status-btn.pass.active{background:#16A34A;border-color:#16A34A;color:#fff}
+.qc-status-btn.pending.active{background:#FACC15;border-color:#FACC15;color:#713F12}
+.qc-status-btn.fail.active{background:#DC2626;border-color:#DC2626;color:#fff}
+.qc-status-btn.na.active{background:#64748B;border-color:#64748B;color:#fff}
+.qc-remark{margin-top:8px;display:none}
+.qc-check.fail .qc-remark,.qc-check.pending .qc-remark{display:block}
+.qc-meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.qc-report-box{display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);font-size:12px;white-space:pre-wrap}
+body.dark-mode{--bg:#0B1220;--surface:#111827;--surface2:#1F2937;--border:#334155;--text:#E5E7EB;--muted:#94A3B8;--shadow:0 1px 4px rgba(0,0,0,.35)}
+body.dark-mode tr:hover td{background:#172033}
+body.dark-mode .qc-check.pass{background:#052E1A}
+body.dark-mode .qc-check.pending{background:#3B3105}
+body.dark-mode .qc-check.fail{background:#3A1010}
+@media(max-width:900px){.qc-kpi-grid{grid-template-columns:repeat(2,1fr)}.qc-meta-grid{grid-template-columns:1fr}.modal{max-width:96vw}.modal-footer{flex-wrap:wrap}.modal-footer .btn{flex:1;justify-content:center}.qc-toolbar .btn,.qc-toolbar select{flex:1;min-width:140px}}
+@media(max-width:640px){.main{padding:10px}.topbar{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 10px}.tab-bar{order:3;width:100%;flex-basis:100%}.qc-kpi-grid{grid-template-columns:1fr 1fr}.qc-actions{display:grid;grid-template-columns:repeat(2,1fr)}.qc-status-btn{width:100%}.qc-category-head{align-items:flex-start;flex-direction:column}.table-wrap{font-size:12px}}
+
 </style>
 </head><body>
 <div id="loginScreen">
@@ -493,8 +526,8 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
     <div style="text-align:center;margin-bottom:20px"><div style="font-size:40px">⚡</div></div>
     <div style="font-size:20px;font-weight:700;text-align:center;margin-bottom:4px">EV Garage Management</div>
     <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px">P&K New Energy — ระบบจัดการศูนย์บริการ EV</div>
-    <div class="form-group"><label>Username</label><input type="text" id="login-user" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
-    <div class="form-group" style="margin-top:10px"><label>Password</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group"><label>ชื่อผู้ใช้</label><input type="text" id="login-user" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
+    <div class="form-group" style="margin-top:10px"><label>รหัสผ่าน</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:11px;font-size:15px;font-weight:700" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="login-error"></div>
     <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">ติดต่อผู้ดูแลระบบหากลืมรหัสผ่าน</div>
@@ -524,6 +557,7 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
         <button type="button" class="lang-btn active" id="lang-th" onclick="setLanguage('th')">TH</button>
         <button type="button" class="lang-btn" id="lang-en" onclick="setLanguage('en')">EN</button>
       </div>
+      <button type="button" class="theme-toggle" id="theme-toggle" onclick="toggleDarkMode()">โหมดมืด</button>
       <div class="user-chip" onclick="doLogout()">
         <div class="user-av" id="user-avatar-char">A</div>
         <span class="user-name" id="topbar-username">—</span>
@@ -535,32 +569,32 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
 
   <!-- DASHBOARD -->
   <section id="dashboard" class="section active">
-    <div class="flex-between"><h1 class="page-title">Service ERP Dashboard</h1><button class="btn btn-sm" onclick="refreshAllData()">🔄 รีเฟรช</button></div>
+    <div class="flex-between"><h1 class="page-title">แดชบอร์ดระบบศูนย์บริการ</h1><button class="btn btn-sm" onclick="refreshAllData()">🔄 รีเฟรช</button></div>
     <div class="erp-hero">
       <div class="erp-panel">
-        <h2>Professional Service Management + Accounting</h2>
+        <h2>ระบบบริหารงานบริการและบัญชี</h2>
         <p>ภาพรวมงานซ่อม รายรับ ต้นทุนอะไหล่ กำไรขั้นต้น และสถานะใบแจ้งหนี้ในหน้าจอเดียว</p>
         <div class="mini-grid" style="margin-top:14px">
-          <div class="mini-tile"><span>Daily Revenue</span><b id="dash-daily-revenue">฿0</b></div>
-          <div class="mini-tile"><span>Gross Margin</span><b id="dash-gross-margin">0%</b></div>
-          <div class="mini-tile"><span>Pending Invoices</span><b id="dash-pending-invoices">0</b></div>
+          <div class="mini-tile"><span>รายรับวันนี้</span><b id="dash-daily-revenue">฿0</b></div>
+          <div class="mini-tile"><span>กำไรขั้นต้น</span><b id="dash-gross-margin">0%</b></div>
+          <div class="mini-tile"><span>ใบแจ้งหนี้ค้างชำระ</span><b id="dash-pending-invoices">0</b></div>
         </div>
       </div>
       <div class="erp-panel">
-        <h2>Inventory Alerts</h2>
+        <h2>แจ้งเตือนคลังอะไหล่</h2>
         <p>รายการอะไหล่ต่ำกว่าจุดสั่งซื้อและมูลค่าสต็อกปัจจุบัน</p>
         <div class="mini-grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
-          <div class="mini-tile"><span>Low Stock</span><b id="dash-low-stock">0</b></div>
-          <div class="mini-tile"><span>Inventory Value</span><b id="dash-inv-value">฿0</b></div>
+          <div class="mini-tile"><span>สต็อกต่ำ</span><b id="dash-low-stock">0</b></div>
+          <div class="mini-tile"><span>มูลค่าสต็อก</span><b id="dash-inv-value">฿0</b></div>
         </div>
       </div>
     </div>
     <div class="finance-grid">
-      <div class="finance-card"><div class="finance-label">Labor Income</div><div class="finance-value money-blue" id="dash-labor-income">฿0</div><div class="finance-sub">จากค่าแรงซ่อม</div></div>
-      <div class="finance-card"><div class="finance-label">Parts Revenue</div><div class="finance-value money-pos" id="dash-parts-revenue">฿0</div><div class="finance-sub">ยอดขายอะไหล่</div></div>
-      <div class="finance-card"><div class="finance-label">Parts Cost</div><div class="finance-value money-warn" id="dash-parts-cost">฿0</div><div class="finance-sub">ราคาขาย / 1.30</div></div>
-      <div class="finance-card"><div class="finance-label">Parts Gross Profit</div><div class="finance-value money-pos" id="dash-parts-profit">฿0</div><div class="finance-sub">กำไรจาก markup 30%</div></div>
-      <div class="finance-card"><div class="finance-label">Net Service Income</div><div class="finance-value money-blue" id="dash-net-service">฿0</div><div class="finance-sub">ค่าแรง + กำไรอะไหล่</div></div>
+      <div class="finance-card"><div class="finance-label">รายได้ค่าแรง</div><div class="finance-value money-blue" id="dash-labor-income">฿0</div><div class="finance-sub">จากค่าแรงซ่อม</div></div>
+      <div class="finance-card"><div class="finance-label">รายได้อะไหล่</div><div class="finance-value money-pos" id="dash-parts-revenue">฿0</div><div class="finance-sub">ยอดขายอะไหล่</div></div>
+      <div class="finance-card"><div class="finance-label">ต้นทุนอะไหล่</div><div class="finance-value money-warn" id="dash-parts-cost">฿0</div><div class="finance-sub">ราคาขาย / 1.30</div></div>
+      <div class="finance-card"><div class="finance-label">กำไรขั้นต้นอะไหล่</div><div class="finance-value money-pos" id="dash-parts-profit">฿0</div><div class="finance-sub">กำไรจาก markup 30%</div></div>
+      <div class="finance-card"><div class="finance-label">รายได้สุทธิจากงานบริการ</div><div class="finance-value money-blue" id="dash-net-service">฿0</div><div class="finance-sub">ค่าแรง + กำไรอะไหล่</div></div>
     </div>
     <div class="metric-grid">
       <div class="metric-card"><div class="metric-label">งานวันนี้</div><div class="metric-value" id="m-today">—</div></div>
@@ -571,8 +605,8 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
     </div>
     <div class="card"><div class="card-title">🔄 สรุปสถานะงาน</div><div id="pipeline-summary" style="display:flex;gap:8px;flex-wrap:wrap"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      <div class="card"><div class="card-title">Top Selling Spare Parts</div><div id="dash-top-parts"><div class="empty-state" style="padding:16px">รอข้อมูลจากใบงาน</div></div></div>
-      <div class="card"><div class="card-title">Technician Performance</div><div id="dash-tech-performance"><div class="empty-state" style="padding:16px">รอข้อมูลช่าง</div></div></div>
+      <div class="card"><div class="card-title">อะไหล่ขายดี</div><div id="dash-top-parts"><div class="empty-state" style="padding:16px">รอข้อมูลจากใบงาน</div></div></div>
+      <div class="card"><div class="card-title">ผลงานช่าง</div><div id="dash-tech-performance"><div class="empty-state" style="padding:16px">รอข้อมูลช่าง</div></div></div>
     </div>
     <div class="card"><div class="card-title">📋 งานล่าสุด</div>
       <div class="table-wrap"><table><thead><tr><th>Job ID</th><th>ลูกค้า</th><th>รถ</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>วันที่</th><th></th></tr></thead>
@@ -665,21 +699,21 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
 
   <!-- INVENTORY -->
   <section id="inventory" class="section">
-    <div class="flex-between"><h1 class="page-title">Spare Parts Warehouse</h1></div>
+    <div class="flex-between"><h1 class="page-title">คลังอะไหล่</h1></div>
     <div class="card toolbar-card">
       <input type="text" id="inventory-search" placeholder="ค้นหา Part Number / Part Name / หมวดหมู่..." style="flex:1;min-width:240px" oninput="filterInventory()">
-      <span class="badge s-diag">Unit Cost + Unit Selling Price</span>
-      <span class="badge s-waitpart" id="inventory-low-badge">Low stock 0</span>
+      <span class="badge s-diag">ราคาทุน + ราคาขายต่อหน่วย</span>
+      <span class="badge s-waitpart" id="inventory-low-badge">สต็อกต่ำ 0</span>
       <button class="btn btn-sm" onclick="copyInventoryHeaders()">คัดลอกหัวตาราง Sheet</button>
     </div>
     <div class="alert alert-warning">
       Google Sheet ต้องมีคอลัมน์คลังอะไหล่ให้ตรงกับระบบใหม่: รหัสอะไหล่, ชื่ออะไหล่, หมวดหมู่, ราคาทุนต่อหน่วย, Margin %, ราคาขายต่อหน่วย, จำนวนคงเหลือ, จำนวนขั้นต่ำ, อัปเดตล่าสุด
     </div>
     <div class="finance-grid" style="grid-template-columns:repeat(4,1fr)">
-      <div class="finance-card"><div class="finance-label">Total SKU</div><div class="finance-value" id="inv-kpi-sku">0</div></div>
-      <div class="finance-card"><div class="finance-label">Total Stock</div><div class="finance-value" id="inv-kpi-stock">0</div></div>
-      <div class="finance-card"><div class="finance-label">Inventory Value</div><div class="finance-value money-blue" id="inv-kpi-value">฿0</div></div>
-      <div class="finance-card"><div class="finance-label">Low Stock</div><div class="finance-value money-red" id="inv-kpi-low">0</div></div>
+      <div class="finance-card"><div class="finance-label">จำนวน SKU</div><div class="finance-value" id="inv-kpi-sku">0</div></div>
+      <div class="finance-card"><div class="finance-label">จำนวนสต็อกรวม</div><div class="finance-value" id="inv-kpi-stock">0</div></div>
+      <div class="finance-card"><div class="finance-label">มูลค่าสต็อก</div><div class="finance-value money-blue" id="inv-kpi-value">฿0</div></div>
+      <div class="finance-card"><div class="finance-label">สต็อกต่ำ</div><div class="finance-value money-red" id="inv-kpi-low">0</div></div>
     </div>
     <div class="table-wrap"><table><thead><tr><th>Part Number</th><th>Part Name</th><th>หมวดหมู่</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Margin %</th><th style="text-align:right">Unit Selling Price</th><th style="text-align:center">Current Stock</th><th style="text-align:center">Minimum Stock</th><th style="text-align:right">Total Inventory Value</th><th>อัปเดต</th><th></th></tr></thead>
     <tbody id="inventory-body"><tr><td colspan="11" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
@@ -687,7 +721,7 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
 
   <!-- QC -->
   <section id="qc" class="section">
-    <div class="flex-between"><h1 class="page-title">✅ QC — Quality Control</h1>
+    <div class="flex-between"><h1 class="page-title">✅ QC — ควบคุมคุณภาพ</h1>
       <div id="qc-role-warn" class="alert alert-warning" style="display:none;padding:6px 12px;margin-bottom:0">⚠️ เฉพาะ QC Inspector เท่านั้น</div>
     </div>
     <div class="card"><div class="card-title">🕐 งานรอ QC</div>
@@ -1061,13 +1095,13 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
     </div>
     <div class="card"><div class="card-title">👤 จัดการผู้ใช้งาน</div>
       <div id="user-admin-warning" class="alert alert-warning" style="display:none">⚠️ เฉพาะ Admin เท่านั้นที่จัดการผู้ใช้ได้</div>
-      <div class="table-wrap" style="margin-bottom:14px"><table><thead><tr><th>Username</th><th>ชื่อ</th><th>บทบาท</th><th></th><th>จัดการ</th></tr></thead>
+      <div class="table-wrap" style="margin-bottom:14px"><table><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อ</th><th>บทบาท</th><th></th><th>จัดการ</th></tr></thead>
       <tbody id="users-body"></tbody></table></div>
       <div id="add-user-section" style="display:none;border-top:1px solid var(--border);padding-top:14px">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px">➕ เพิ่มผู้ใช้ใหม่</div>
         <div class="form-grid">
-          <div class="form-group"><label>Username</label><input type="text" id="new-username" placeholder="a-z, 0-9, _"></div>
-          <div class="form-group"><label>Password</label><input type="password" id="new-password" placeholder="≥6 ตัวอักษร"></div>
+          <div class="form-group"><label>ชื่อผู้ใช้</label><input type="text" id="new-username" placeholder="a-z, 0-9, _"></div>
+          <div class="form-group"><label>รหัสผ่าน</label><input type="password" id="new-password" placeholder="≥6 ตัวอักษร"></div>
           <div class="form-group"><label>ชื่อที่แสดง</label><input type="text" id="new-displayname"></div>
           <div class="form-group"><label>บทบาท</label>
             <select id="new-role"><option value="tech">ช่างเทคนิค</option><option value="qc">QC Inspector</option><option value="manager">ผู้จัดการ</option><option value="admin">Admin</option></select>
@@ -1350,21 +1384,40 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
 
 <!-- QC MODAL -->
 <div class="modal-overlay" id="qcModal">
-  <div class="modal">
-    <div class="modal-title">✅ QC Checklist — <span id="qc-job-id-display"></span></div>
-    <div id="qc-checklist">
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-air"><label class="qc-label" for="qc-air">ระบบแอร์ทำงานปกติ (อุณหภูมิในเกณฑ์)</label></div>
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-leak"><label class="qc-label" for="qc-leak">ไม่พบรอยรั่วซึม</label></div>
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-pressure"><label class="qc-label" for="qc-pressure">ความดันอยู่ในเกณฑ์ที่กำหนด</label></div>
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-elec"><label class="qc-label" for="qc-elec">ระบบไฟฟ้าปกติ ไม่มี Error Code</label></div>
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-clean"><label class="qc-label" for="qc-clean">ความสะอาดและการจัดเก็บเรียบร้อย</label></div>
-      <div class="qc-check" onclick="toggleQC(this)"><input type="checkbox" id="qc-charge"><label class="qc-label" for="qc-charge">ระบบชาร์จและแบตเตอรี่ปกติ</label></div>
+  <div class="modal modal-lg">
+    <div class="modal-title">✅ ตรวจสอบคุณภาพรถ EV — <span id="qc-job-id-display"></span></div>
+    <div class="qc-toolbar">
+      <span class="badge s-qcpass">เขียว = ผ่าน</span>
+      <span class="badge s-repair">เหลือง = รอดำเนินการ</span>
+      <span class="badge s-qcfail">แดง = NG / ไม่ผ่าน</span>
+      <select id="qc-approval-step">
+        <option value="technician">ขั้นที่ 1 ช่างตรวจสอบ</option>
+        <option value="qc">ขั้นที่ 2 QC ตรวจซ้ำ</option>
+        <option value="manager">ขั้นที่ 3 อนุมัติส่งมอบ</option>
+      </select>
     </div>
-    <div class="form-group" style="margin-top:14px"><label>หมายเหตุ QC</label><textarea id="qc-notes-input" rows="3" placeholder="บันทึกผล QC / สิ่งที่ต้องแก้ไข..."></textarea></div>
+    <div class="qc-kpi-grid">
+      <div class="qc-kpi"><span>ผ่าน</span><b id="qc-count-pass">0</b></div>
+      <div class="qc-kpi"><span>รอดำเนินการ</span><b id="qc-count-pending">0</b></div>
+      <div class="qc-kpi"><span>NG / ไม่ผ่าน</span><b id="qc-count-fail">0</b></div>
+      <div class="qc-kpi"><span>ความคืบหน้า</span><b id="qc-count-rate">0%</b></div>
+    </div>
+    <div id="qc-checklist"></div>
+    <div class="qc-meta-grid">
+      <div class="form-group"><label>ระดับความรุนแรง</label><select id="qc-severity"><option value="low">ต่ำ</option><option value="medium">กลาง</option><option value="high">สูง</option><option value="critical">วิกฤต / ห้ามส่งมอบ</option></select></div>
+      <div class="form-group"><label>สถานะตรวจซ้ำ</label><select id="qc-retest-status"><option value="not_required">ไม่ต้องตรวจซ้ำ</option><option value="required">ต้องตรวจซ้ำ</option><option value="passed">ตรวจซ้ำผ่านแล้ว</option></select></div>
+      <div class="form-group"><label>ลายเซ็นช่าง / QC</label><input type="text" id="qc-signature" placeholder="พิมพ์ชื่อผู้ตรวจ"></div>
+      <div class="form-group"><label>แนบรูปภาพ</label><input type="file" id="qc-photo-input" accept="image/*" multiple onchange="handleQCPhotos(this)"><div id="qc-photo-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div></div>
+      <div class="form-group span2"><label>ยืนยันการซ่อมก่อนส่งมอบ</label><textarea id="qc-repair-verification" rows="2" placeholder="ระบุการแก้ไข การตรวจซ้ำ หรือข้อจำกัดก่อนส่งมอบ"></textarea></div>
+    </div>
+    <div class="form-group" style="margin-top:14px"><label>หมายเหตุ QC</label><textarea id="qc-notes-input" rows="3" placeholder="บันทึกผล QC / สิ่งที่ต้องแก้ไข / NG with Remark..."></textarea></div>
     <div id="qc-pass-rate" style="font-size:13px;color:var(--muted);margin-top:10px"></div>
+    <div id="qc-report-preview" class="qc-report-box"></div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="submitQC('pass')">✅ PASS — ส่งรอชำระเงิน</button>
-      <button class="btn btn-red" onclick="submitQC('fail')">❌ FAIL — ส่งซ่อมใหม่</button>
+      <button class="btn" onclick="generateQCReport()">สร้างรายงาน QC</button>
+      <button class="btn btn-blue" onclick="exportQCReportPDF()">Export PDF</button>
+      <button class="btn btn-primary" onclick="submitQC('pass')">✅ ผ่าน QC — ส่งรอชำระเงิน</button>
+      <button class="btn btn-red" onclick="submitQC('fail')">❌ NG / ไม่ผ่าน — ส่งซ่อมใหม่</button>
       <button class="btn btn-ghost" onclick="document.getElementById('qcModal').classList.remove('open')">ยกเลิก</button>
     </div>
   </div>
@@ -1441,7 +1494,7 @@ input,select,textarea{border-radius:10px;border-color:#CBD5E1;background:#fff}in
   <div class="modal" style="max-width:400px">
     <div class="modal-title">✏️ แก้ไขผู้ใช้</div>
     <input type="hidden" id="edit-user-index">
-    <div class="form-group" style="margin-bottom:10px"><label>Username</label><input type="text" id="edit-user-username" readonly></div>
+    <div class="form-group" style="margin-bottom:10px"><label>ชื่อผู้ใช้</label><input type="text" id="edit-user-username" readonly></div>
     <div class="form-group" style="margin-bottom:10px"><label>ชื่อที่แสดง</label><input type="text" id="edit-user-displayname"></div>
     <div class="form-group" style="margin-bottom:10px"><label>บทบาท</label><select id="edit-user-role"><option value="tech">tech</option><option value="qc">qc</option><option value="manager">manager</option><option value="admin">admin</option></select></div>
     <div class="form-group" style="margin-bottom:18px"><label>รหัสผ่านใหม่ (เว้นว่าง=ไม่เปลี่ยน)</label><input type="password" id="edit-user-password"></div>
@@ -1677,6 +1730,82 @@ const I18N={
   }
 };
 let currentLang=localStorage.getItem("ev_lang")||"th";
+const UI_TEXT_TH={
+  "Service ERP Dashboard":"แดชบอร์ดระบบศูนย์บริการ",
+  "Professional Service Management + Accounting":"ระบบบริหารงานบริการและบัญชี",
+  "Inventory Alerts":"แจ้งเตือนคลังอะไหล่",
+  "Daily Revenue":"รายรับวันนี้",
+  "Gross Margin":"กำไรขั้นต้น",
+  "Pending Invoices":"ใบแจ้งหนี้ค้างชำระ",
+  "Low Stock":"สต็อกต่ำ",
+  "Inventory Value":"มูลค่าสต็อก",
+  "Labor Income":"รายได้ค่าแรง",
+  "Parts Revenue":"รายได้อะไหล่",
+  "Parts Cost":"ต้นทุนอะไหล่",
+  "Parts Gross Profit":"กำไรอะไหล่",
+  "Net Service Income":"รายได้สุทธิจากงานบริการ",
+  "Top Selling Spare Parts":"อะไหล่ขายดี",
+  "Technician Performance":"ผลงานช่าง",
+  "Spare Parts Warehouse":"คลังอะไหล่",
+  "Unit Cost + Unit Selling Price":"ราคาทุน + ราคาขายต่อหน่วย",
+  "Low stock":"สต็อกต่ำ",
+  "Total SKU":"จำนวน SKU",
+  "Total Stock":"จำนวนสต็อกรวม",
+  "Part Number":"รหัสอะไหล่",
+  "Part Name":"ชื่ออะไหล่",
+  "Unit Cost":"ราคาทุนต่อหน่วย",
+  "Unit Selling Price":"ราคาขายต่อหน่วย",
+  "Current Stock":"จำนวนคงเหลือ",
+  "Minimum Stock":"จำนวนขั้นต่ำ",
+  "Total Inventory Value":"มูลค่าสต็อกรวม",
+  "Quality Control":"ควบคุมคุณภาพ",
+  "Username":"ชื่อผู้ใช้",
+  "Password":"รหัสผ่าน",
+  "QC Inspector":"ผู้ตรวจ QC",
+  "Dashboard":"แดชบอร์ด",
+  "Manual":"กรอกเอง",
+  "PASS":"ผ่าน",
+  "FAIL":"ไม่ผ่าน",
+  "Export CSV สำเร็จ":"Export CSV สำเร็จ"
+};
+const UI_TEXT_EN=Object.fromEntries(Object.entries(UI_TEXT_TH).map(([en,th])=>[th,en]));
+const TECH_TERMS=new Set(["EV","QC","HV","OBC","DC/DC","CAN Bus","DTC","Firmware","OTA","ABS","EPB","CP / CC","DC Bus","Pre-charge","Google Sheet","GAS","LINE","PDF","CSV","SKU","Job ID"]);
+const UI_TEXT_NODE_ORIGINAL=new WeakMap();
+function translatePlainText(text,lang=currentLang){
+  if(!text||!text.trim())return text;
+  const dict=lang==="th"?UI_TEXT_TH:UI_TEXT_EN;
+  let out=text;
+  Object.entries(dict).sort((a,b)=>b[0].length-a[0].length).forEach(([from,to])=>{
+    const safe=from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    out=out.replace(new RegExp(safe,"g"),to);
+  });
+  return out;
+}
+function applyDynamicLanguage(root=document.body){
+  if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){
+    const p=node.parentElement;
+    if(!p||["SCRIPT","STYLE","TEXTAREA","OPTION"].includes(p.tagName))return NodeFilter.FILTER_REJECT;
+    if(!node.nodeValue.trim())return NodeFilter.FILTER_REJECT;
+    return NodeFilter.FILTER_ACCEPT;
+  }});
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(node=>{
+    if(!UI_TEXT_NODE_ORIGINAL.has(node))UI_TEXT_NODE_ORIGINAL.set(node,node.nodeValue);
+    const original=UI_TEXT_NODE_ORIGINAL.get(node);
+    node.nodeValue=currentLang==="th"?translatePlainText(original,"th"):original;
+  });
+  document.querySelectorAll("input[placeholder],textarea[placeholder],select[title],button[title]").forEach(el=>{
+    ["placeholder","title"].forEach(attr=>{
+      if(!el.hasAttribute(attr))return;
+      const key="orig"+attr;
+      if(!el.dataset[key])el.dataset[key]=el.getAttribute(attr);
+      el.setAttribute(attr,currentLang==="th"?translatePlainText(el.dataset[key],"th"):el.dataset[key]);
+    });
+  });
+  const themeBtn=document.getElementById("theme-toggle");
+  if(themeBtn)themeBtn.textContent=document.body.classList.contains("dark-mode")?"โหมดสว่าง":"โหมดมืด";
+}
 function setLanguage(lang){
   currentLang=I18N[lang]?lang:"th";
   localStorage.setItem("ev_lang",currentLang);
@@ -1690,6 +1819,13 @@ function setLanguage(lang){
   document.querySelectorAll(".lang-btn").forEach(btn=>btn.classList.remove("active"));
   const active=document.getElementById("lang-"+currentLang);
   if(active)active.classList.add("active");
+  applyDynamicLanguage();
+  if(document.getElementById("qc").classList.contains("active"))loadQCPanel();
+}
+function toggleDarkMode(){
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("ev_dark_mode",document.body.classList.contains("dark-mode")?"1":"0");
+  applyDynamicLanguage();
 }
 function loadUsers(){const s=localStorage.getItem("ev_users");if(!s){localStorage.setItem("ev_users",JSON.stringify(DEFAULT_USERS));return DEFAULT_USERS;}try{const u=JSON.parse(s);if(!u.find(x=>x.username==="admin")){u.unshift(DEFAULT_USERS[0]);localStorage.setItem("ev_users",JSON.stringify(u));}return u;}catch{return DEFAULT_USERS;}}
 function saveUsers(u){localStorage.setItem("ev_users",JSON.stringify(u));}
@@ -1764,6 +1900,7 @@ function switchTab(id,el){
   if(id==="settings"){renderUsersTable();loadSettingsForm();}
   if(id==="reports")loadRevenue();if(id==="slips")loadSlips();
   if(id==="accounting"){accLoad();accInitYears();renderAccounting();}
+  setTimeout(applyDynamicLanguage,0);
 }
 
 // DATA
@@ -1771,6 +1908,7 @@ async function refreshAllData(){
   // Bug7 fix: load jobs first, then dashboard, so allJobs is populated for qc-wait count
   await loadJobs();
   await Promise.all([loadDashboard(),loadCustomers(),loadInventory()]);
+  applyDynamicLanguage();
 }
 async function loadDashboard(){
   const d=await gasGet({action:A.GET_DASHBOARD});if(!d||d.status!=="ok")return;
@@ -1905,7 +2043,7 @@ function renderInventory(inv){
   const invValue=inv.reduce((s,i)=>s+getPartUnitCost(i)*(Number(i["จำนวนคงเหลือ"]||0)),0);
   const lowCount=inv.filter(i=>(Number(i["จำนวนคงเหลือ"]||0))<=(Number(i["จำนวนขั้นต่ำ"]||5))).length;
   setText("inv-kpi-sku",sku.toLocaleString("th-TH"));setText("inv-kpi-stock",totalStock.toLocaleString("th-TH"));
-  setText("inv-kpi-value",money(invValue));setText("inv-kpi-low",lowCount.toLocaleString("th-TH"));setText("inventory-low-badge","Low stock "+lowCount);
+  setText("inv-kpi-value",money(invValue));setText("inv-kpi-low",lowCount.toLocaleString("th-TH"));setText("inventory-low-badge",(currentLang==="th"?"สต็อกต่ำ ":"Low stock ")+lowCount);
   if(!inv.length){tbody.innerHTML=`<tr><td colspan="11" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
   tbody.innerHTML=inv.map(i=>{
     const q=Number(i["จำนวนคงเหลือ"]||0),mn=Number(i["จำนวนขั้นต่ำ"]||5),low=q<=mn;
@@ -2797,26 +2935,184 @@ async function deleteSlip(refId){if(!confirm("ยืนยันลบสลิ�
 
 // QC
 let currentQCJobId=null;
+let currentQCPhotos=[];
+const QC_CATEGORIES=[
+  {key:"hv",title:"A. ระบบไฟฟ้าแรงดันสูง",items:["ตรวจสอบแบตเตอรี่แรงดันสูง","ตรวจสอบ HV Interlock","ทดสอบค่าความต้านทานฉนวน","ตรวจสอบตัวล็อกขั้วต่อแรงดันสูง","ตรวจระบบระบายความร้อนแบตเตอรี่","ตรวจรีเลย์ / คอนแทคเตอร์แรงดันสูง","ตรวจระบบ Pre-charge","ยืนยันแรงดัน DC Bus"]},
+  {key:"charge",title:"B. ระบบชาร์จ",items:["ทดสอบการชาร์จ AC","ทดสอบการชาร์จเร็ว DC","ตรวจช่องชาร์จ","ตรวจสัญญาณ CP / CC","ทดสอบการทำงาน OBC","ทดสอบ DC/DC Converter"]},
+  {key:"thermal",title:"C. ระบบจัดการความร้อน",items:["ตรวจระดับน้ำหล่อเย็น","ตรวจรอยรั่วน้ำหล่อเย็น","ทดสอบปั๊มน้ำ","ทดสอบพัดลมหม้อน้ำ","ทดสอบ Chiller","ทดสอบคอมเพรสเซอร์","ตรวจสอบเซนเซอร์อุณหภูมิ"]},
+  {key:"drive",title:"D. ระบบขับเคลื่อน",items:["ทดสอบการทำงานมอเตอร์","ตรวจเสียงเกียร์","ตรวจเพลาขับ","ทดสอบระบบเบรกชาร์จกลับ","ตรวจสถานะอินเวอร์เตอร์"]},
+  {key:"brake",title:"E. ระบบเบรกและความปลอดภัย",items:["ทดสอบ ABS","ทดสอบ EPB","ตรวจน้ำมันเบรก","วัดความหนาผ้าเบรก","ตรวจระบบตัดไฟฉุกเฉิน"]},
+  {key:"lv",title:"F. ระบบไฟต่ำ",items:["ตรวจแรงดันแบตเตอรี่ 12V","ตรวจแรงดันชาร์จ","ตรวจฟิวส์","ตรวจกราวด์"]},
+  {key:"software",title:"G. ซอฟต์แวร์และการสื่อสาร",items:["ตรวจการสื่อสาร ECU","ตรวจสถานะ CAN Bus","สแกน DTC","ตรวจเวอร์ชัน Firmware","ตรวจสถานะ OTA"]},
+  {key:"final",title:"H. ตรวจส่งมอบรถขั้นสุดท้าย",items:["ทดลองขับ","ทดสอบอัตราเร่ง","ตรวจเสียง / แรงสั่นสะเทือน","ทดสอบประสิทธิภาพแอร์","ตรวจไฟเตือนบนหน้าปัด","ยืนยันการชาร์จ","ตรวจความปลอดภัยขั้นสุดท้าย"]}
+];
+const QC_STATUS_LABEL={pass:"ผ่าน",pending:"รอดำเนินการ",fail:"NG / ไม่ผ่าน",na:"ไม่เกี่ยวข้อง"};
+const QC_MANDATORY_BEFORE_DELIVERY=["hv-1","hv-2","hv-3","charge-1","brake-5","software-3","final-1","final-5","final-6","final-7"];
+function qcDraftKey(jobId=currentQCJobId){return"ev_qc_draft_"+jobId;}
+function qcHistoryLoad(){try{return JSON.parse(localStorage.getItem("ev_qc_history")||"[]");}catch{return[];}}
+function qcHistorySave(rows){localStorage.setItem("ev_qc_history",JSON.stringify(rows.slice(-300)));}
+function renderQCPhotoPreview(){
+  const el=document.getElementById("qc-photo-preview");if(!el)return;
+  el.innerHTML=!currentQCPhotos.length?`<span style="font-size:12px;color:var(--muted)">ยังไม่มีรูปแนบ</span>`:currentQCPhotos.map((p,i)=>`<div style="position:relative"><img src="${p.data}" alt="${p.name||"QC photo"}" style="width:58px;height:58px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"><button type="button" class="btn btn-xs btn-red" style="position:absolute;right:-5px;top:-5px;min-height:20px;padding:0 5px" onclick="removeQCPhoto(${i})">×</button></div>`).join("");
+}
+function removeQCPhoto(i){currentQCPhotos.splice(i,1);renderQCPhotoPreview();saveQCDraft();}
+async function handleQCPhotos(input){
+  const files=[...(input.files||[])].slice(0,8);
+  const readers=files.map(file=>new Promise(resolve=>{
+    const fr=new FileReader();
+    fr.onload=()=>resolve({name:file.name,type:file.type,size:file.size,data:fr.result});
+    fr.onerror=()=>resolve(null);
+    fr.readAsDataURL(file);
+  }));
+  currentQCPhotos=[...currentQCPhotos,...(await Promise.all(readers)).filter(Boolean)].slice(0,8);
+  renderQCPhotoPreview();
+  saveQCDraft();
+  input.value="";
+}
+function qcGetState(){
+  const state={};
+  document.querySelectorAll("#qc-checklist .qc-check").forEach(row=>{
+    state[row.dataset.id]={status:row.dataset.status||"pending",remark:row.querySelector(".qc-remark")?.value||"",label:row.dataset.label||""};
+  });
+  return state;
+}
+function qcSetRowStatus(row,status){
+  row.dataset.status=status;
+  row.classList.remove("pass","pending","fail","na");
+  row.classList.add(status);
+  row.querySelectorAll(".qc-status-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.status===status));
+}
+function renderQCChecklist(saved={}){
+  const wrap=document.getElementById("qc-checklist");
+  wrap.innerHTML=QC_CATEGORIES.map(cat=>{
+    const rows=cat.items.map((label,i)=>{
+      const id=`${cat.key}-${i+1}`, item=saved[id]||{}, status=item.status||"pending", required=QC_MANDATORY_BEFORE_DELIVERY.includes(id);
+      return `<div class="qc-check ${status}" data-id="${id}" data-label="${label}" data-status="${status}">
+        <div class="qc-row-main">
+          <div class="qc-label">${label}${required?` <span class="badge s-qcfail">บังคับก่อนส่งมอบ</span>`:""}</div>
+          <div class="qc-actions">
+            <button type="button" class="qc-status-btn pass ${status==="pass"?"active":""}" data-status="pass" onclick="setQCItemStatus(this)">ผ่าน</button>
+            <button type="button" class="qc-status-btn pending ${status==="pending"?"active":""}" data-status="pending" onclick="setQCItemStatus(this)">รอ</button>
+            <button type="button" class="qc-status-btn fail ${status==="fail"?"active":""}" data-status="fail" onclick="setQCItemStatus(this)">NG</button>
+            <button type="button" class="qc-status-btn na ${status==="na"?"active":""}" data-status="na" onclick="setQCItemStatus(this)">N/A</button>
+          </div>
+          <textarea class="qc-remark" rows="2" placeholder="ระบุ Remark / วิธีแก้ / หลักฐานการตรวจซ้ำ" oninput="saveQCDraft()">${item.remark||""}</textarea>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="qc-category"><div class="qc-category-head"><span>${cat.title}</span><span class="badge s-qcwait">${cat.items.length} รายการ</span></div><div class="qc-category-body">${rows}</div></div>`;
+  }).join("");
+  updateQCProgress();
+}
+function setQCItemStatus(btn){
+  const row=btn.closest(".qc-check");
+  qcSetRowStatus(row,btn.dataset.status);
+  updateQCProgress();
+  saveQCDraft();
+}
+function toggleQC(w){
+  const next=(w.dataset.status==="pass")?"pending":"pass";
+  qcSetRowStatus(w,next);
+  updateQCProgress();
+  saveQCDraft();
+}
+function updateQCProgress(){
+  const rows=[...document.querySelectorAll("#qc-checklist .qc-check")];
+  const counts={pass:0,pending:0,fail:0,na:0};
+  rows.forEach(r=>counts[r.dataset.status||"pending"]++);
+  const active=rows.length-counts.na, done=counts.pass+counts.fail;
+  const rate=active?Math.round(done/active*100):0;
+  setText("qc-count-pass",counts.pass);setText("qc-count-pending",counts.pending);setText("qc-count-fail",counts.fail);setText("qc-count-rate",rate+"%");
+  const passRate=document.getElementById("qc-pass-rate");
+  if(passRate)passRate.textContent=`ผ่าน ${counts.pass}/${active} รายการ | รอดำเนินการ ${counts.pending} | NG ${counts.fail}`;
+}
+function saveQCDraft(){
+  if(!currentQCJobId)return;
+  const draft={jobId:currentQCJobId,items:qcGetState(),notes:document.getElementById("qc-notes-input")?.value||"",severity:document.getElementById("qc-severity")?.value||"low",approvalStep:document.getElementById("qc-approval-step")?.value||"technician",signature:document.getElementById("qc-signature")?.value||"",repairVerification:document.getElementById("qc-repair-verification")?.value||"",retestStatus:document.getElementById("qc-retest-status")?.value||"not_required",photoCount:currentQCPhotos.length,photos:currentQCPhotos,updatedAt:new Date().toISOString()};
+  localStorage.setItem(qcDraftKey(),JSON.stringify(draft));
+}
+function loadQCDraft(jobId){
+  try{return JSON.parse(localStorage.getItem(qcDraftKey(jobId))||"{}");}catch{return{};}
+}
+function generateQCReport(){
+  const draft={items:qcGetState(),notes:document.getElementById("qc-notes-input")?.value||"",severity:document.getElementById("qc-severity")?.value||"",approvalStep:document.getElementById("qc-approval-step")?.value||"",signature:document.getElementById("qc-signature")?.value||"",repairVerification:document.getElementById("qc-repair-verification")?.value||"",retestStatus:document.getElementById("qc-retest-status")?.value||"",photoCount:currentQCPhotos.length};
+  const lines=[`รายงาน QC รถ EV`, `Job ID: ${currentQCJobId||"-"}`, `เวลา: ${new Date().toLocaleString("th-TH")}`, `ผู้ตรวจ: ${draft.signature||currentUser?.displayName||"-"}`, `ขั้นอนุมัติ: ${draft.approvalStep}`, `ระดับความรุนแรง: ${draft.severity}`, `สถานะตรวจซ้ำ: ${draft.retestStatus}`, `จำนวนรูปแนบ: ${draft.photoCount}`, ""];
+  QC_CATEGORIES.forEach(cat=>{
+    lines.push(cat.title);
+    cat.items.forEach((label,i)=>{
+      const id=`${cat.key}-${i+1}`, item=draft.items[id]||{};
+      lines.push(`- ${label}: ${QC_STATUS_LABEL[item.status]||"รอดำเนินการ"}${item.remark?` | หมายเหตุ: ${item.remark}`:""}`);
+    });
+    lines.push("");
+  });
+  lines.push(`ยืนยันการซ่อม: ${draft.repairVerification||"-"}`, `หมายเหตุรวม: ${draft.notes||"-"}`);
+  const box=document.getElementById("qc-report-preview");
+  if(box){box.style.display="block";box.textContent=lines.join("\n");}
+  saveQCDraft();
+  return lines.join("\n");
+}
+function exportQCReportPDF(){
+  const report=generateQCReport();
+  openPrint(`<style>body{font-family:'IBM Plex Sans Thai',sans-serif;padding:24px;color:#0F172A;white-space:pre-wrap;font-size:12px}h1{font-size:18px;color:#0D7A5F}</style><h1>รายงาน QC รถ EV</h1>${String(report).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))}`);
+}
 function loadQCPanel(){
   const isQC=currentUser?.role==="qc"||currentUser?.role==="admin";
   document.getElementById("qc-role-warn").style.display=isQC?"none":"flex";
   const wait=allJobs.filter(j=>j["สถานะ"]==="รอ QC");const tb1=document.getElementById("qc-waiting-body");
-  tb1.innerHTML=!wait.length?`<tr><td colspan="6" class="empty-state">ไม่มีงานรอ QC ✅</td></tr>`:wait.map(j=>`<tr><td><code>${j["Job ID"]||""}</code></td><td>${j["ชื่อลูกค้า"]||"—"}</td><td>${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}</td><td>${j["ช่าง"]||"—"}</td><td>${fd(j["วันที่สร้าง"])}</td><td>${isQC?`<button class="btn btn-sm btn-primary" onclick="openQCModal('${j["Job ID"]}')">🔬 ทำ QC</button>`:`<span style="color:var(--muted);font-size:12px">ไม่มีสิทธิ์</span>`}</td></tr>`).join("");
+  tb1.innerHTML=!wait.length?`<tr><td colspan="6" class="empty-state">ไม่มีงานรอ QC ✅</td></tr>`:wait.map(j=>`<tr><td><code>${j["Job ID"]||""}</code></td><td>${j["ชื่อลูกค้า"]||"—"}</td><td>${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}</td><td>${j["ช่าง"]||"—"}</td><td>${fd(j["วันที่สร้าง"])}</td><td>${isQC?`<button class="btn btn-sm btn-primary" onclick="openQCModal('${j["Job ID"]}')">ตรวจ QC รถ EV</button>`:`<span style="color:var(--muted);font-size:12px">ไม่มีสิทธิ์</span>`}</td></tr>`).join("");
   const done=allJobs.filter(j=>["ผ่าน QC","รอชำระเงิน","ปิดงาน"].includes(j["สถานะ"])&&j["ผล QC"]);const tb2=document.getElementById("qc-done-body");
-  tb2.innerHTML=!done.length?`<tr><td colspan="6" class="empty-state">ยังไม่มีประวัติ</td></tr>`:done.map(j=>`<tr><td><code>${j["Job ID"]||""}</code></td><td>${j["ชื่อลูกค้า"]||"—"}</td><td>${j["ผล QC"]==="pass"?'<span class="badge s-done">✅ PASS</span>':'<span class="badge s-qcfail">❌ FAIL</span>'}</td><td>${j["QC โดย"]||"—"}</td><td>${fd(j["วันที่ QC"])}</td><td style="font-size:12px">${j["หมายเหตุ QC"]||"—"}</td></tr>`).join("");
+  const localHist=qcHistoryLoad();
+  const rows=[...done.map(j=>({jobId:j["Job ID"]||"",customer:j["ชื่อลูกค้า"]||"—",result:j["ผล QC"],by:j["QC โดย"]||"—",date:j["วันที่ QC"],note:j["หมายเหตุ QC"]||"—"})),...localHist.filter(h=>!done.some(j=>j["Job ID"]===h.jobId))];
+  tb2.innerHTML=!rows.length?`<tr><td colspan="6" class="empty-state">ยังไม่มีประวัติ</td></tr>`:rows.slice(-80).reverse().map(j=>`<tr><td><code>${j.jobId||""}</code></td><td>${j.customer||"—"}</td><td>${j.result==="pass"?'<span class="badge s-done">ผ่าน QC</span>':'<span class="badge s-qcfail">NG / ไม่ผ่าน</span>'}</td><td>${j.by||"—"}</td><td>${fd(j.date)}</td><td style="font-size:12px">${j.note||"—"}</td></tr>`).join("");
 }
-function openQCModal(jobId){if(currentUser?.role!=="qc"&&currentUser?.role!=="admin"){showToast("⛔ เฉพาะ QC Inspector");return;}currentQCJobId=jobId;document.getElementById("qc-job-id-display").textContent=jobId;["qc-air","qc-leak","qc-pressure","qc-elec","qc-clean","qc-charge"].forEach(id=>{const el=document.getElementById(id);el.checked=false;el.closest(".qc-check").className="qc-check";});document.getElementById("qc-notes-input").value="";document.getElementById("qc-pass-rate").textContent="";document.getElementById("qcModal").classList.add("open");}
-function toggleQC(w){const cb=w.querySelector("input[type=checkbox]");cb.checked=!cb.checked;w.className="qc-check"+(cb.checked?" pass":"");const cs=document.querySelectorAll("#qc-checklist input[type=checkbox]");document.getElementById("qc-pass-rate").textContent=`ผ่าน ${[...cs].filter(c=>c.checked).length}/${cs.length} รายการ`;}
+function openQCModal(jobId){
+  if(currentUser?.role!=="qc"&&currentUser?.role!=="admin"){showToast("⛔ เฉพาะ QC Inspector");return;}
+  currentQCJobId=jobId;
+  const draft=loadQCDraft(jobId);
+  document.getElementById("qc-job-id-display").textContent=jobId;
+  renderQCChecklist(draft.items||{});
+  document.getElementById("qc-notes-input").value=draft.notes||"";
+  document.getElementById("qc-severity").value=draft.severity||"low";
+  document.getElementById("qc-approval-step").value=draft.approvalStep||"technician";
+  document.getElementById("qc-signature").value=draft.signature||currentUser?.displayName||"";
+  document.getElementById("qc-repair-verification").value=draft.repairVerification||"";
+  document.getElementById("qc-retest-status").value=draft.retestStatus||"not_required";
+  currentQCPhotos=Array.isArray(draft.photos)?draft.photos:[];
+  renderQCPhotoPreview();
+  document.getElementById("qc-photo-input").value="";
+  const box=document.getElementById("qc-report-preview");if(box){box.style.display="none";box.textContent="";}
+  ["qc-notes-input","qc-severity","qc-approval-step","qc-signature","qc-repair-verification","qc-retest-status"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.oninput=saveQCDraft;el.onchange=saveQCDraft;}
+  });
+  document.getElementById("qcModal").classList.add("open");
+  updateQCProgress();
+}
 async function submitQC(result){
   if(!currentQCJobId)return;
-  const checks=["qc-air","qc-leak","qc-pressure","qc-elec","qc-clean","qc-charge"];
-  const cr={};checks.forEach(id=>{cr[id]=document.getElementById(id).checked;});
-  if(result==="pass"&&!checks.every(id=>cr[id])){if(!confirm("มีรายการยังไม่ผ่าน ยืนยัน PASS?"))return;}
+  const cr=qcGetState();
+  const rows=Object.entries(cr);
+  const hasFail=rows.some(([,v])=>v.status==="fail");
+  const hasPending=rows.some(([,v])=>v.status==="pending");
+  const missingMandatory=QC_MANDATORY_BEFORE_DELIVERY.filter(id=>cr[id]?.status!=="pass");
+  if(result==="pass"&&(hasFail||hasPending||missingMandatory.length)){
+    showToast("⚠️ ยังมีรายการ NG/รอดำเนินการ หรือ checklist บังคับก่อนส่งมอบไม่ผ่าน");
+    if(!confirm("Checklist ยังไม่สมบูรณ์ ยืนยันบันทึกเป็นผ่าน QC หรือไม่?"))return;
+  }
+  if(result==="fail"&&!rows.some(([,v])=>v.remark)){showToast("⚠️ กรุณาระบุ Remark อย่างน้อย 1 รายการเมื่อ NG / ไม่ผ่าน");return;}
+  const report=generateQCReport();
   const ns=result==="pass"?"ผ่าน QC":"กำลังซ่อม";const chk=canTrans("รอ QC",ns,currentUser?.role||"qc");
   if(!chk.ok){showToast("🔒 "+chk.reason);return;}
-  const r=await gasPost({action:A.UPDATE_JOB_STATUS,jobId:currentQCJobId,status:ns,qcResult:result,qcNotes:document.getElementById("qc-notes-input").value,qcBy:currentUser?.displayName,qcChecklist:JSON.stringify(cr),updatedBy:currentUser?.username});
+  const meta={severity:document.getElementById("qc-severity").value,approvalStep:document.getElementById("qc-approval-step").value,signature:document.getElementById("qc-signature").value,retestStatus:document.getElementById("qc-retest-status").value,repairVerification:document.getElementById("qc-repair-verification").value,photoCount:currentQCPhotos.length,photos:currentQCPhotos.map(p=>({name:p.name,type:p.type,size:p.size})),timestamp:new Date().toISOString(),mandatoryBeforeDelivery:QC_MANDATORY_BEFORE_DELIVERY};
+  const r=await gasPost({action:A.UPDATE_JOB_STATUS,jobId:currentQCJobId,status:ns,qcResult:result,qcNotes:document.getElementById("qc-notes-input").value,qcBy:currentUser?.displayName,qcChecklist:JSON.stringify(cr),qcMeta:JSON.stringify(meta),qcReport:report,updatedBy:currentUser?.username});
   document.getElementById("qcModal").classList.remove("open");
-  if(r?.status==="ok"){showToast(result==="pass"?"✅ QC PASS — ส่งรอชำระเงิน":"❌ QC FAIL — ส่งซ่อมใหม่");await loadJobs();loadQCPanel();}
+  if(r?.status==="ok"){
+    const job=allJobs.find(j=>j["Job ID"]===currentQCJobId)||{};
+    const hist=qcHistoryLoad();hist.push({jobId:currentQCJobId,customer:job["ชื่อลูกค้า"]||"",result,by:currentUser?.displayName,date:new Date().toISOString(),note:document.getElementById("qc-notes-input").value||meta.severity});
+    qcHistorySave(hist);localStorage.removeItem(qcDraftKey());
+    showToast(result==="pass"?"✅ ผ่าน QC — ส่งรอชำระเงิน":"❌ NG / ไม่ผ่าน — ส่งซ่อมใหม่");
+    await loadJobs();loadQCPanel();
+  }
   else showToast("❌ บันทึก QC ล้มเหลว");
 }
 
@@ -3111,7 +3407,7 @@ async function verifyLineWebhook(){
 // UTILS
 function fd(v){if(!v)return"—";try{const d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return d.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});}catch{return String(v).slice(0,10);}}
 let toastTimer;
-function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
+function showToast(msg){const t=document.getElementById("toast");t.textContent=currentLang==="th"?translatePlainText(msg,"th"):msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
 
 // WIZARD
 function wizardSaveUrl(){
@@ -3434,6 +3730,7 @@ function exportAccCSV(){
 
 // INIT
 window.addEventListener("DOMContentLoaded",()=>{
+  if(localStorage.getItem("ev_dark_mode")==="1")document.body.classList.add("dark-mode");
   setLanguage(currentLang);
   loadLINEConfig();
   document.getElementById("report-month").value=new Date().getMonth();
