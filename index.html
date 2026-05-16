@@ -550,7 +550,7 @@ body.dark-mode .qc-check.fail{background:#3A1010}
       <button class="tab" data-i18n="nav.slips" onclick="switchTab('slips',this)">สลิป</button>
       <button class="tab" data-i18n="nav.reports" onclick="switchTab('reports',this)">รายงาน</button>
       <button class="tab" data-i18n="nav.accounting" id="tab-accounting" onclick="switchTab('accounting',this)">บัญชี</button>
-      <button class="tab" data-i18n="nav.settings" onclick="switchTab('settings',this)">ตั้งค่า</button>
+      <button class="tab" data-i18n="nav.settings" id="tab-settings" onclick="switchTab('settings',this)">ตั้งค่า</button>
     </nav>
     <div class="topbar-right" id="topbar-user" style="display:none">
       <div class="lang-switch" aria-label="Language selector">
@@ -1827,15 +1827,30 @@ function toggleDarkMode(){
   localStorage.setItem("ev_dark_mode",document.body.classList.contains("dark-mode")?"1":"0");
   applyDynamicLanguage();
 }
-function loadUsers(){const s=localStorage.getItem("ev_users");if(!s){localStorage.setItem("ev_users",JSON.stringify(DEFAULT_USERS));return DEFAULT_USERS;}try{const u=JSON.parse(s);if(!u.find(x=>x.username==="admin")){u.unshift(DEFAULT_USERS[0]);localStorage.setItem("ev_users",JSON.stringify(u));}return u;}catch{return DEFAULT_USERS;}}
+function loadUsers(){const s=localStorage.getItem("ev_users");if(!s){localStorage.setItem("ev_users",JSON.stringify(DEFAULT_USERS));return JSON.parse(JSON.stringify(DEFAULT_USERS));}try{const u=JSON.parse(s);// Ensure all DEFAULT_USERS still exist (สำหรับเครื่องใหม่ที่ไม่มี users)
+DEFAULT_USERS.forEach(du=>{if(!u.find(x=>x.username===du.username))u.push(du);});// Ensure admin always present
+if(!u.find(x=>x.username==="admin")){u.unshift(DEFAULT_USERS[0]);}localStorage.setItem("ev_users",JSON.stringify(u));return u;}catch{return JSON.parse(JSON.stringify(DEFAULT_USERS));}}
 function saveUsers(u){localStorage.setItem("ev_users",JSON.stringify(u));}
 function isAdmin(){return currentUser?.role==="admin";}
 function isMgr(){return currentUser?.role==="admin"||currentUser?.role==="manager";}
 
+function applyRoleTabVisibility(role){
+  // QC — ทุก role เห็นได้หมด (admin, manager, tech, qc)
+  document.getElementById("tab-qc").style.display="";
+  // Settings — เฉพาะ Admin เท่านั้น
+  document.getElementById("tab-settings").style.display=(role==="admin")?"":"none";
+  // บัญชี — Admin และ Manager เท่านั้น (Tech มองไม่เห็น)
+  document.getElementById("tab-accounting").style.display=(role==="tech")?"":"";
+  // ซ่อน tab-accounting สำหรับ tech
+  if(role==="tech") document.getElementById("tab-accounting").style.display="none";
+}
+
 function doLogin(){
   const un=document.getElementById("login-user").value.trim(),pw=document.getElementById("login-pass").value;
   const err=document.getElementById("login-error");
-  const u=loadUsers().find(x=>x.username===un&&x.password===pw);
+  // ค้นหาใน localStorage users ก่อน แล้ว fallback ไป DEFAULT_USERS (สำหรับเครื่องใหม่)
+  let u=loadUsers().find(x=>x.username===un&&x.password===pw);
+  if(!u)u=DEFAULT_USERS.find(x=>x.username===un&&x.password===pw);
   if(!u){err.textContent="❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";document.getElementById("login-pass").value="";return;}
   currentUser=u;localStorage.setItem("ev_session",JSON.stringify({username:u.username,ts:Date.now()}));
   document.getElementById("loginScreen").style.display="none";
@@ -1845,15 +1860,18 @@ function doLogin(){
   document.getElementById("user-avatar-char").textContent=u.displayName.charAt(0);
   const rb=document.getElementById("topbar-role-badge");rb.textContent=u.role;rb.className="role-badge role-"+u.role;
   err.textContent="";
-  if(u.role==="tech"||u.role==="manager")document.getElementById("tab-qc").style.display="none";
+  applyRoleTabVisibility(u.role);
   showToast("👋 ยินดีต้อนรับ "+u.displayName+" ["+u.role+"]");
   refreshAllData();
 }
 function doLogout(){currentUser=null;localStorage.removeItem("ev_session");location.reload();}
 function checkSession(){
   const s=localStorage.getItem("ev_session");if(!s)return false;
-  try{const ss=JSON.parse(s);if(Date.now()-ss.ts>8*60*60*1000){localStorage.removeItem("ev_session");return false;}
-  const u=loadUsers().find(x=>x.username===ss.username);if(!u)return false;currentUser=u;return true;}catch{return false;}
+  try{const ss=JSON.parse(s);if(Date.now()-ss.ts>24*60*60*1000){localStorage.removeItem("ev_session");return false;}
+  // ค้นหาใน localStorage users ก่อน แล้ว fallback ไป DEFAULT_USERS
+  let u=loadUsers().find(x=>x.username===ss.username);
+  if(!u)u=DEFAULT_USERS.find(x=>x.username===ss.username);
+  if(!u)return false;currentUser=u;return true;}catch{return false;}
 }
 
 // API
@@ -1893,6 +1911,10 @@ async function gasPost(b,{retry=1,silent=false}={}){
 
 // NAV
 function switchTab(id,el){
+  // Guard: settings เฉพาะ Admin
+  if(id==="settings"&&currentUser?.role!=="admin"){showToast("⛔ เฉพาะ Admin เข้าถึงหน้าตั้งค่าได้");return;}
+  // Guard: บัญชี — Tech ไม่มีสิทธิ์
+  if(id==="accounting"&&currentUser?.role==="tech"){showToast("⛔ Tech ไม่มีสิทธิ์เข้าถึงหน้าบัญชี");return;}
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");if(el)el.classList.add("active");
@@ -3745,8 +3767,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     document.getElementById("user-avatar-char").textContent=currentUser.displayName.charAt(0);
     const rb=document.getElementById("topbar-role-badge");
     rb.textContent=currentUser.role;rb.className="role-badge role-"+currentUser.role;
-    if(currentUser.role==="tech"||currentUser.role==="manager")
-      document.getElementById("tab-qc").style.display="none";
+    applyRoleTabVisibility(currentUser.role);
 
     // แสดง Setup Wizard ถ้ายังไม่เคยตั้งค่า GAS URL
     const setupDone = localStorage.getItem("ev_setup_done");
