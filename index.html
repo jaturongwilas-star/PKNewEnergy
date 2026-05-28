@@ -134,6 +134,42 @@ textarea{resize:vertical;min-height:80px}
 @media print{.topbar,.tab-bar,#loginScreen,.btn,.modal-overlay,#toast{display:none!important}.main{padding:0;max-width:100%}.section{display:block!important}}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}
+.price-hero{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;align-items:stretch;margin-bottom:14px}
+.price-hero-main{background:linear-gradient(135deg,#0F766E,#15803D);color:#fff;border-radius:8px;padding:18px;border:1px solid rgba(255,255,255,.18);box-shadow:var(--shadow)}
+.price-hero-main h1{font-size:22px;line-height:1.2;margin-bottom:6px}
+.price-hero-main p{font-size:13px;color:rgba(255,255,255,.82);max-width:720px}
+.price-hero-side{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.price-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;box-shadow:var(--shadow)}
+.price-stat span{display:block;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.price-stat b{font-size:24px;line-height:1;color:var(--text)}
+.price-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.price-controls input{flex:1;min-width:220px}
+.price-controls select{width:auto;min-width:160px}
+.price-model-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.price-model-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.price-model-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.price-model-head h3{font-size:16px;margin:0}
+.price-note{font-size:11px;color:var(--muted)}
+.price-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.price-kpi{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px}
+.price-kpi span{display:block;font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px}
+.price-kpi b{font-family:var(--mono);font-size:16px}
+.price-due-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 16px 14px}
+.price-due-item{border:1px solid var(--border);border-radius:6px;padding:9px 10px;background:var(--surface2);font-size:12px}
+.price-due-item strong{display:block;font-size:12.5px;margin-bottom:2px}
+.price-scroll{overflow-x:auto}
+.price-schedule-table th,.price-schedule-table td{text-align:right;white-space:nowrap}
+.price-schedule-table th:first-child,.price-schedule-table td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+.price-schedule-table th:first-child{background:var(--surface2)}
+.price-master-table td:nth-child(1){min-width:260px}
+.price-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:99px;background:var(--g3);color:var(--g1);font-size:11px;font-weight:700;white-space:nowrap}
+.price-hvac-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.price-hvac-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;box-shadow:var(--shadow)}
+.price-hvac-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.price-hvac-desc{font-size:12px;color:var(--muted);min-height:36px;margin-bottom:10px}
+.price-brand-list{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.price-brand-price{display:flex;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;background:var(--surface2)}
+.price-brand-price b{font-family:var(--mono)}
 
 /* ============================================================
    PRODUCTION UX PATCH — Garage Management
@@ -332,6 +368,11 @@ details:not([open]) summary::before{content:"▶";font-size:9px;color:var(--mute
   .modal-overlay{align-items:flex-end;padding:0}
   .modal-lg{max-width:100%}
   .sub-tab{padding:6px 8px;font-size:11px}
+  .price-hero,.price-model-grid{grid-template-columns:1fr}
+  .price-hero-side{grid-template-columns:1fr 1fr}
+  .price-controls input,.price-controls select,.price-controls .btn{width:100%;min-width:0}
+  .price-kpis,.price-due-list{grid-template-columns:1fr}
+  .price-brand-list{grid-template-columns:1fr 1fr}
   .topbar{height:48px}
   .page-title{font-size:15px}
   .pipeline-step{min-width:48px;font-size:8.5px}
@@ -545,6 +586,7 @@ body.dark-mode .qc-check.fail{background:#3A1010}
       <button class="tab" data-i18n="nav.newjob" id="tab-newjob" onclick="switchTab('newjob',this)">รับงาน</button>
       <button class="tab" data-i18n="nav.customers" onclick="switchTab('customers',this)">ลูกค้า</button>
       <button class="tab" data-i18n="nav.inventory" onclick="switchTab('inventory',this)">คลังอะไหล่</button>
+      <button class="tab" data-i18n="nav.pricelist" onclick="switchTab('pricelist',this)">Pricelist</button>
       <button class="tab" data-i18n="nav.qc" id="tab-qc" onclick="switchTab('qc',this)">QC</button>
       <button class="tab" data-i18n="nav.appointments" onclick="switchTab('appointments',this)">นัดหมาย</button>
       <button class="tab" data-i18n="nav.slips" onclick="switchTab('slips',this)">สลิป</button>
@@ -717,6 +759,31 @@ body.dark-mode .qc-check.fail{background:#3A1010}
     </div>
     <div class="table-wrap"><table><thead><tr><th>Part Number</th><th>Part Name</th><th>หมวดหมู่</th><th style="text-align:right">Unit Cost</th><th style="text-align:right">Margin %</th><th style="text-align:right">Unit Selling Price</th><th style="text-align:center">Current Stock</th><th style="text-align:center">Minimum Stock</th><th style="text-align:right">Total Inventory Value</th><th>อัปเดต</th><th></th></tr></thead>
     <tbody id="inventory-body"><tr><td colspan="11" class="empty-state">กำลังโหลด...</td></tr></tbody></table></div>
+  </section>
+
+  <!-- PRICELIST -->
+  <section id="pricelist" class="section">
+    <div class="price-hero">
+      <div class="price-hero-main">
+        <h1>Pricelist งานบริการ</h1>
+        <p>ตารางราคาจาก Preventive Maintenance และ HVAC Maintenance สำหรับทีมรับรถ เปิดใบเสนอราคา และอ้างอิงค่าแรง/อะไหล่หน้าศูนย์บริการ</p>
+      </div>
+      <div class="price-hero-side">
+        <div class="price-stat"><span>หมวดบริการ</span><b id="price-stat-cats">0</b></div>
+        <div class="price-stat"><span>รุ่น/แบรนด์</span><b id="price-stat-models">0</b></div>
+        <div class="price-stat"><span>PM สูงสุด</span><b>200k</b></div>
+        <div class="price-stat"><span>อัปเดต</span><b style="font-size:16px">28/05/2026</b></div>
+      </div>
+    </div>
+
+    <div class="sub-tab-bar" id="price-category-tabs"></div>
+    <div class="card price-controls">
+      <input type="text" id="price-search" placeholder="ค้นหารายการบริการ / อะไหล่ / รุ่นรถ..." oninput="renderPricelist()">
+      <select id="price-model-filter" onchange="renderPricelist()"></select>
+      <select id="price-interval-filter" onchange="renderPricelist()"></select>
+      <button class="btn btn-sm" onclick="exportPricelistCSV()">Export CSV</button>
+    </div>
+    <div id="pricebook-body"></div>
   </section>
 
   <!-- QC -->
@@ -1706,6 +1773,7 @@ const I18N={
     "nav.newjob":"รับงาน",
     "nav.customers":"ลูกค้า",
     "nav.inventory":"คลังอะไหล่",
+    "nav.pricelist":"Pricelist",
     "nav.qc":"QC",
     "nav.appointments":"นัดหมาย",
     "nav.slips":"สลิป",
@@ -1720,6 +1788,7 @@ const I18N={
     "nav.newjob":"New Job",
     "nav.customers":"Customers",
     "nav.inventory":"Inventory",
+    "nav.pricelist":"Pricelist",
     "nav.qc":"QC",
     "nav.appointments":"Appointments",
     "nav.slips":"Payment Slips",
@@ -1909,6 +1978,90 @@ async function gasPost(b,{retry=1,silent=false}={}){
   return null;
 }
 
+// PRICELIST
+const PRICEBOOK_DATA={
+  updatedAt:"2026-05-28",
+  categories:[
+    {id:"pm",label:"Preventive Maintenance",type:"pm",models:[
+      {id:"neta-v",name:"NETA V-II",subtitle:"การเช็คระยะ / ซ่อมบำรุงของ NETA V-II",intervals:Array.from({length:20},(_,i)=>({year:i+1,km:(i+1)*10000})),plans:[{id:"plan-a",name:"Plan A",desc:"น้ำมันเกียร์ NETA แท้ / ENEOS GEAR OIL GL-4",partsCost:[620,220,620,2420,620,220,620,2420,620,220,620,220,620,2420,620,220,620,2420,620,220],total:[920,320,920,2720,920,320,920,2720,920,320,920,320,920,2720,920,320,920,2720,920,320]},{id:"plan-b",name:"Plan B",desc:"น้ำมันเกียร์ MOTYLGEAR 75W-90",partsCost:[820,null,820,2420,820,null,820,2420,820,null,820,null,820,2420,820,null,820,2420,820,null],total:[1120,null,1120,2720,1120,null,1120,2720,1120,null,1120,null,1120,2720,1120,null,1120,2720,1120,null]}],labor:[300,100,300,300,300,100,300,300,300,100,300,100,300,300,300,100,300,300,300,100],items:[{name:"น้ำมันเกียร์ / Transmission oil NETA แท้ / ENEOS GEAR OIL GL-4",qty:1,unit:"ลิตร / Litre",unitPrice:400,plan:"Plan A",due:[1,3,5,7,9,11,13,15,17,19]},{name:"น้ำมันเกียร์ / Transmission oil MOTYLGEAR 75W-90",qty:1,unit:"ลิตร / Litre",unitPrice:600,plan:"Plan B",due:[1,3,5,7,9,11,13,15,17,19]},{name:"ไส้กรองอากาศ / Air Filter",qty:1,unit:"ชิ้น / Pcs",unitPrice:220,plan:"All",due:Array.from({length:20},(_,i)=>i+1)},{name:"น้ำมันเบรค / Brake fluid Ate SL DOT",qty:1,unit:"ลิตร / Litre",unitPrice:450,plan:"All",due:[4,8,14,18]},{name:"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง",qty:5,unit:"ลิตร / Litre",unitPrice:1750,plan:"All",due:[4,8,14,18]},{name:"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check",qty:null,unit:"Service QC checklist",unitPrice:null,plan:"All",due:Array.from({length:20},(_,i)=>i+1)}]},
+      {id:"neta-x",name:"NETA X",subtitle:"การเช็คระยะ / ซ่อมบำรุงของ NETA X",intervals:Array.from({length:20},(_,i)=>({year:i+1,km:(i+1)*10000})),plans:[{id:"plan-a",name:"Plan A",desc:"น้ำมันเกียร์ Castrol D1",partsCost:[240,760,240,3310,240,760,240,3310,240,760,240,760,240,3310,240,760,240,3310,240,760],total:[340,1160,340,3710,340,1160,340,3710,340,1160,340,1160,340,3710,340,1160,340,3710,340,1160]},{id:"plan-b",name:"Plan B",desc:"น้ำมันเกียร์ Ravenol EV Synto",partsCost:[240,1690,240,4240,240,1690,240,4240,240,1690,240,1690,240,4240,240,1690,240,4240,240,1690],total:[340,2090,340,4640,340,2090,340,4640,340,2090,340,2090,340,4640,340,2090,340,4640,340,2090]}],labor:[100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400],items:[{name:"น้ำมันเกียร์ / Transmission oil Castrol D1",qty:1,unit:"ลิตร / Litre",unitPrice:520,plan:"Plan A",due:[2,4,6,8,10,12,14,16,18,20]},{name:"น้ำมันเกียร์ / Transmission oil Ravenol EV Synto",qty:1,unit:"ลิตร / Litre",unitPrice:1450,plan:"Plan B",due:[2,4,6,8,10,12,14,16,18,20]},{name:"ไส้กรองอากาศ / Air Filter",qty:1,unit:"ชิ้น / Pcs",unitPrice:240,plan:"All",due:Array.from({length:20},(_,i)=>i+1)},{name:"น้ำมันเบรค / Brake fluid Ate SL DOT",qty:1,unit:"ลิตร / Litre",unitPrice:450,plan:"All",due:[4,8,14,18]},{name:"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง",qty:6,unit:"ลิตร / Litre",unitPrice:2100,plan:"All",due:[4,8,14,18]},{name:"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check",qty:null,unit:"Service QC checklist",unitPrice:null,plan:"All",due:Array.from({length:20},(_,i)=>i+1)}]}
+    ]},
+    {id:"hvac",label:"HVAC Maintenance",type:"service",brands:["NETA","MG","BYD","Changan","GAC","Tesla"],items:[
+      {name:"ตรวจเช็คระบบ A/C เบื้องต้น",desc:"ค่าแรง ตรวจแรงดันน้ำยา / Temp / Error Code",prices:{NETA:600,MG:660,BYD:720,Changan:720,GAC:720,Tesla:900}},
+      {name:"ล้างแอร์ EV แผง condensor",desc:"ค่าแรง ล้างแอร์ EV แผง condensor แบบถอดกันชน",prices:{NETA:800,MG:800,BYD:800,Changan:800,GAC:800,Tesla:1000}},
+      {name:"ล้างแอร์ EV แบบไม่ถอดตู้",desc:"ค่าแรงทำความสะอาด Evaporator + Filter",prices:{NETA:1500,MG:1650,BYD:1800,Changan:1800,GAC:1800,Tesla:2250}},
+      {name:"ล้างแอร์แบบถอดตู้",desc:"ค่าแรง ถอด Blower / Evaporator Cleaning",prices:{NETA:3500,MG:3850,BYD:4200,Changan:4200,GAC:4200,Tesla:5250}},
+      {name:"เปลี่ยน Cabin Filter",desc:"รวม Reset Maintenance รวมอะไหล่",prices:{NETA:340,MG:374,BYD:408,Changan:408,GAC:408,Tesla:510}},
+      {name:"Vacuum + Recharge Refrigerant",desc:"รวมดูด Vacuum + เติมน้ำยา",prices:{NETA:2500,MG:2750,BYD:3000,Changan:3000,GAC:3000,Tesla:3750}},
+      {name:"เปลี่ยน Electric Compressor",desc:"ค่าแรงถอดประกอบ",prices:{NETA:3000,MG:3300,BYD:3600,Changan:3600,GAC:3600,Tesla:4500}},
+      {name:"เปลี่ยน Condenser",desc:"ค่าแรงถอดประกอบ",prices:{NETA:2000,MG:2200,BYD:2400,Changan:2400,GAC:2400,Tesla:3000}},
+      {name:"เปลี่ยน Cooling Fan",desc:"ค่าแรง",prices:{NETA:800,MG:880,BYD:960,Changan:960,GAC:960,Tesla:1200}},
+      {name:"เปลี่ยน Expansion Valve+Vacuum + Recharge Refrigerant",desc:"ค่าแรง",prices:{NETA:2500,MG:2750,BYD:3000,Changan:3000,GAC:3000,Tesla:3750}},
+      {name:"Flush ระบบแอร์ EV + เปลี่ยนนำมัน compressor",desc:"รวม ล้างระบบ เปลี่ยนน้ำมัน",prices:{NETA:3000,MG:3300,BYD:3600,Changan:3600,GAC:3600,Tesla:4500}}
+    ]}
+  ]
+};
+let priceCurrentCategory="pm";
+function priceMoney(v){return v==null||v===""?"—":"฿"+Number(v||0).toLocaleString("th-TH");}
+function pricePlain(v){return v==null||v===""?"":Number(v||0);}
+function priceCat(){return PRICEBOOK_DATA.categories.find(c=>c.id===priceCurrentCategory)||PRICEBOOK_DATA.categories[0];}
+function setPriceCategory(id,el){priceCurrentCategory=id;document.querySelectorAll("#price-category-tabs .sub-tab").forEach(b=>b.classList.remove("active"));if(el)el.classList.add("active");renderPricelist(true);}
+function priceUpdateControls(reset=false){
+  const cat=priceCat(),modelSel=document.getElementById("price-model-filter"),intervalSel=document.getElementById("price-interval-filter");if(!modelSel||!intervalSel)return;
+  const currentModel=reset?"":modelSel.value,currentInterval=reset?"":intervalSel.value;
+  if(cat.type==="pm"){
+    modelSel.style.display="block";intervalSel.style.display="block";
+    modelSel.innerHTML='<option value="">ทุกรุ่น</option>'+cat.models.map(m=>`<option value="${m.id}">${m.name}</option>`).join("");
+    modelSel.value=[...modelSel.options].some(o=>o.value===currentModel)?currentModel:"";
+    const model=cat.models.find(m=>m.id===modelSel.value)||cat.models[0];
+    intervalSel.innerHTML='<option value="">ทุกระยะ</option>'+model.intervals.map((x,i)=>`<option value="${i}">${x.km.toLocaleString()} กม. / ปี ${x.year}</option>`).join("");
+    intervalSel.value=[...intervalSel.options].some(o=>o.value===currentInterval)?currentInterval:"";
+  }else{
+    modelSel.style.display="block";intervalSel.style.display="none";
+    modelSel.innerHTML='<option value="">ทุกแบรนด์</option>'+cat.brands.map(b=>`<option value="${b}">${b}</option>`).join("");
+    modelSel.value=[...modelSel.options].some(o=>o.value===currentModel)?currentModel:"";intervalSel.innerHTML="";
+  }
+}
+function renderPricelist(resetControls=false){
+  const body=document.getElementById("pricebook-body");if(!body)return;
+  const tabs=document.getElementById("price-category-tabs");
+  if(tabs)tabs.innerHTML=PRICEBOOK_DATA.categories.map(c=>`<button class="sub-tab ${c.id===priceCurrentCategory?"active":""}" onclick="setPriceCategory('${c.id}',this)">${c.label}</button>`).join("");
+  const modelCount=PRICEBOOK_DATA.categories.reduce((s,c)=>s+(c.models?.length||c.brands?.length||0),0);
+  setText("price-stat-cats",PRICEBOOK_DATA.categories.length);setText("price-stat-models",modelCount);
+  priceUpdateControls(resetControls);
+  const cat=priceCat();body.innerHTML=cat.type==="pm"?renderPricePM(cat):renderPriceService(cat);
+}
+function priceMatches(text){const q=(document.getElementById("price-search")?.value||"").trim().toLowerCase();return !q||String(text).toLowerCase().includes(q);}
+function renderPricePM(cat){
+  const modelId=document.getElementById("price-model-filter")?.value||"",idxRaw=document.getElementById("price-interval-filter")?.value||"";
+  const models=cat.models.filter(m=>(!modelId||m.id===modelId)&&priceMatches(m.name+" "+m.subtitle+" "+m.items.map(i=>i.name).join(" ")));
+  if(!models.length)return '<div class="empty-state">ไม่มีรายการที่ตรงกับการค้นหา</div>';
+  return `<div class="price-model-grid">${models.map(m=>renderPricePMModel(m,idxRaw)).join("")}</div>`;
+}
+function renderPricePMModel(m,idxRaw){
+  const selectedIdx=idxRaw===""?null:Number(idxRaw),visibleIntervals=selectedIdx==null?m.intervals:m.intervals.filter((_,i)=>i===selectedIdx);
+  const minTotal=Math.min(...m.plans.flatMap(p=>p.total.filter(v=>v!=null))),maxTotal=Math.max(...m.plans.flatMap(p=>p.total.filter(v=>v!=null)));
+  const head=`<div class="price-model-head"><div><h3>${m.name}</h3><div class="price-note">${m.subtitle}</div></div><span class="price-pill">${m.intervals.length} ระยะ</span></div><div class="price-kpis"><div class="price-kpi"><span>เริ่มต้น</span><b>${priceMoney(minTotal)}</b></div><div class="price-kpi"><span>สูงสุด</span><b>${priceMoney(maxTotal)}</b></div><div class="price-kpi"><span>ค่าแรง</span><b>${selectedIdx==null?"100-400":priceMoney(m.labor[selectedIdx])}</b></div></div>`;
+  const due=selectedIdx==null?"":`<div class="price-due-list">${m.items.filter(i=>i.due.includes(selectedIdx+1)&&priceMatches(i.name)).map(i=>`<div class="price-due-item"><strong>${i.name}</strong><span>${i.plan} · ${i.qty||"QC"} ${i.unit||""} ${i.unitPrice?`· ${priceMoney(i.unitPrice)}`:""}</span></div>`).join("")||'<div class="empty-state" style="grid-column:1/-1;padding:14px">ไม่มีรายการอะไหล่ในระยะนี้</div>'}</div>`;
+  const at=i=>selectedIdx==null?i:selectedIdx;
+  const scheduleRows=[["ระยะ กม.",...visibleIntervals.map(x=>x.km.toLocaleString())],["ปี",...visibleIntervals.map(x=>x.year)],...m.plans.flatMap(p=>[[`${p.name} ค่าอะไหล่`,...visibleIntervals.map((_,j)=>priceMoney(p.partsCost[at(j)]))],[`${p.name} รวม`,...visibleIntervals.map((_,j)=>priceMoney(p.total[at(j)]))]]),["ค่าแรง",...visibleIntervals.map((_,j)=>priceMoney(m.labor[at(j)]))]];
+  const schedule=`<div class="price-scroll"><table class="price-schedule-table"><tbody>${scheduleRows.map((r,i)=>`<tr>${r.map((c,j)=>i===0||j===0?`<th>${c}</th>`:`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  const master=`<div class="price-scroll"><table class="price-master-table"><thead><tr><th>รายการ</th><th>Plan</th><th>จำนวน</th><th>หน่วย</th><th style="text-align:right">ราคา/หน่วย</th><th>รอบที่เข้า</th></tr></thead><tbody>${m.items.filter(i=>priceMatches(i.name)).map(i=>`<tr><td>${i.name}</td><td>${i.plan}</td><td>${i.qty??"—"}</td><td>${i.unit||"—"}</td><td style="text-align:right;font-family:var(--mono)">${priceMoney(i.unitPrice)}</td><td>${i.due.length===20?"ทุกระยะ":i.due.join(", ")}</td></tr>`).join("")}</tbody></table></div>`;
+  return `<div class="price-model-card">${head}${due}${schedule}<div style="padding:14px 16px">${master}</div></div>`;
+}
+function renderPriceService(cat){
+  const brand=document.getElementById("price-model-filter")?.value||"",rows=cat.items.filter(i=>priceMatches(i.name+" "+i.desc));
+  if(!rows.length)return '<div class="empty-state">ไม่มีรายการที่ตรงกับการค้นหา</div>';
+  return `<div class="price-hvac-grid">${rows.map(i=>`<div class="price-hvac-card"><div class="price-hvac-title">${i.name}</div><div class="price-hvac-desc">${i.desc}</div><div class="price-brand-list">${cat.brands.filter(b=>!brand||b===brand).map(b=>`<div class="price-brand-price"><span>${b}</span><b>${priceMoney(i.prices[b])}</b></div>`).join("")}</div></div>`).join("")}</div>`;
+}
+function exportPricelistCSV(){
+  const cat=priceCat();let rows=[];
+  if(cat.type==="pm"){rows=[["Category","Model","Interval Km","Year","Plan","Parts Cost","Labor","Total"]];cat.models.forEach(m=>m.intervals.forEach((x,i)=>m.plans.forEach(p=>rows.push([cat.label,m.name,x.km,x.year,p.name,pricePlain(p.partsCost[i]),pricePlain(m.labor[i]),pricePlain(p.total[i])]))));}
+  else{rows=[["Category","Service","Description",...cat.brands]];cat.items.forEach(i=>rows.push([cat.label,i.name,i.desc,...cat.brands.map(b=>i.prices[b])]))}
+  const csv=rows.map(r=>r.map(c=>'"'+String(c??"").replace(/"/g,'""')+'"').join(",")).join("\n"),blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`pricelist_${cat.id}_${new Date().toISOString().slice(0,10)}.csv`;a.click();showToast("📥 Export Pricelist สำเร็จ");
+}
+
 // NAV
 function switchTab(id,el){
   // Guard: settings เฉพาะ Admin
@@ -1919,6 +2072,7 @@ function switchTab(id,el){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");if(el)el.classList.add("active");
   if(id==="qc")loadQCPanel();if(id==="appointments")renderAppointments();
+  if(id==="pricelist")renderPricelist();
   if(id==="settings"){renderUsersTable();loadSettingsForm();}
   if(id==="reports")loadRevenue();if(id==="slips")loadSlips();
   if(id==="accounting"){accLoad();accInitYears();renderAccounting();}
@@ -3758,6 +3912,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   document.getElementById("report-month").value=new Date().getMonth();
   applyShopInfo();
   loadSettingsForm();
+  renderPricelist(true);
 
   if(checkSession()){
     document.getElementById("loginScreen").style.display="none";
