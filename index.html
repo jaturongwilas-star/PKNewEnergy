@@ -1716,6 +1716,7 @@ const A = {
   CREATE_APPT:        "createAppointment",
   UPDATE_APPT:        "updateAppointment",
   DELETE_APPT:        "deleteAppointment",
+  OCR_SLIP:           "ocrSlip",          // server-side Claude OCR proxy (v3.2.2)
 };
 
 // ── SUBMIT GUARD — prevent duplicate submit ──
@@ -2612,40 +2613,12 @@ async function payOCRSlip(){
       if(errorEl){errorEl.textContent="⚠️ OCR ใช้ได้เฉพาะไฟล์ที่อัปโหลด ไม่ใช่ URL";errorEl.style.display="block";}
       return;
     }
-    const response=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:600,
-        system:`คุณคือระบบ OCR สำหรับสลิปโอนเงินธนาคารไทย
-ตอบเฉพาะ JSON เท่านั้น ไม่ต้องอธิบาย ไม่ต้องมีข้อความอื่น
-JSON format:
-{
-  "amount": 1500.00,
-  "ref": "เลขอ้างอิง/เลขรายการ",
-  "datetime": "YYYY-MM-DDTHH:MM",
-  "bank": "ชื่อธนาคาร",
-  "sender": "ชื่อผู้โอน",
-  "receiver": "ชื่อผู้รับ",
-  "confidence": "high|medium|low"
-}
-ถ้าอ่านค่าไม่ได้ให้ใส่ null`,
-        messages:[{
-          role:"user",
-          content:[
-            {type:"image",source:{type:"base64",media_type:mediaType,data:base64Data}},
-            {type:"text",text:"อ่านข้อมูลจากสลิปโอนเงินนี้ ตอบเฉพาะ JSON"}
-          ]
-        }]
-      })
-    });
-    const data=await response.json();
-    if(!response.ok)throw new Error(data?.error?.message||"API error "+response.status);
-    const text=data?.content?.[0]?.text||"";
-    // Parse JSON from response
-    const clean=text.replace(/```json|```/g,"").trim();
-    const parsed=JSON.parse(clean);
+    // v3.2.2: OCR proxied through GAS (Code.gs ocrSlipWithClaude) so the
+    // Anthropic API key stays server-side instead of being called (and
+    // exposed) directly from the browser without any auth header.
+    const r=await gasPost({action:A.OCR_SLIP,image:base64Data,mediaType});
+    if(!r||r.status!=="ok")throw new Error(r?.message||"OCR API error");
+    const parsed=r.data;
     _ocrData=parsed;
     _renderOCRResult(parsed);
   } catch(err){
@@ -2893,7 +2866,7 @@ async function approveQuotation(){
   const r=await gasPost({action:A.UPDATE_JOB,jobId:currentJobDetail["Job ID"],fields});
   // Always save locally; GAS may not have updateJob but we still advance
   _mergeJob(fields);
-  if(r&&!r.status==="ok"&&!_isUnknownAction(r)){
+  if(r&&r.status!=="ok"&&!_isUnknownAction(r)){
     showToast("❌ "+(r?.message||"อนุมัติไม่สำเร็จ"));return;
   }
   if(_isUnknownAction(r))_warnUnknownAction("approveQuotation");
