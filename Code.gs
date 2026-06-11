@@ -1188,6 +1188,20 @@ function callGeminiAPI(text, history) {
   return data;
 }
 
+// ── v3.3 TEMP: ทดสอบการเชื่อมต่อ Gemini API โดยตรง (ลบทิ้งได้หลังทดสอบเสร็จ) ──
+// วิธีใช้: เลือกฟังก์ชันนี้จาก dropdown ด้านบน > กด ▶ Run > ดูผลที่ "Execution log"
+function testGeminiConnection() {
+  var key = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  Logger.log("GEMINI_API_KEY length: " + (key ? key.length : 0));
+  Logger.log("GEMINI_API_KEY prefix: " + (key ? key.substring(0, 6) : "(none)"));
+  try {
+    var data = callGeminiAPI("สวัสดีครับ ทดสอบระบบ", []);
+    Logger.log("SUCCESS: " + JSON.stringify(data));
+  } catch (err) {
+    Logger.log("ERROR: " + err.message);
+  }
+}
+
 // ── จุดเริ่มต้น: ประมวลผลข้อความด้วย AI Intent Detection ──
 // คืนค่า true ถ้าตอบกลับ LINE สำเร็จแล้ว (ไม่ต้องประมวลผลด้วย regex parser ต่อ)
 function handleLineMessageAI(event, userId, text) {
