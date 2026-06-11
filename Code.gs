@@ -37,6 +37,15 @@ const REPLY_SLIP_DUPLICATE = "⚠️ สลิปนี้เคยส่งม�
 const REPLY_SLIP_FAILED    = "❌ ไม่สามารถอ่านสลิปได้ครับ\nกรุณาส่งรูปที่ชัดเจนขึ้น หรือตรวจสอบว่าเป็นสลิปโอนเงินจริง";
 const REPLY_NOT_IMAGE      = "📷 กรุณาส่งรูปภาพสลิปการโอนเงินครับ";
 
+// v3.5: ข้อมูลร้าน — แก้ไขให้ตรงกับร้านจริง
+const SHOP_NAME    = "P&K New Energy EV Garage";
+const SHOP_PHONE   = "0XX-XXX-XXXX";   // ← ใส่เบอร์โทรร้านจริง
+const SHOP_ADDRESS = "ที่อยู่ร้าน (แก้ไขให้ตรงจริง)";
+const SHOP_HOURS   = "เปิดบริการ จันทร์–เสาร์ 08:30–17:30 น.";
+
+// v3.5: ปุ่มลัดเมนูหลัก (Quick Reply) — สำรองกรณียังไม่ได้ตั้ง Rich Menu เป็นค่าเริ่มต้น
+const MAIN_MENU_QUICK_REPLY = ["📅 จองคิว","🔧 แจ้งซ่อม","🔍 เช็คสถานะ","💳 ส่งสลิป","👨‍🔧 ติดต่อแอดมิน","ℹ️ เกี่ยวกับเรา"];
+
 // ═══════════════════════════════════════════════════════════════
 //  DO GET
 // ═══════════════════════════════════════════════════════════════
@@ -374,6 +383,11 @@ function deleteAppointment(id) {
 function handleLineWebhook(events) {
   events.forEach(function(event) {
     try {
+      // ── v3.5: Welcome Message เมื่อลูกค้า Add Friend ──────────────
+      if (event.type === "follow") {
+        if (event.replyToken) replyLine(event.replyToken, getWelcomeMessage(), MAIN_MENU_QUICK_REPLY);
+        return;
+      }
       if (event.type !== "message") return;
       if (!event.message || !event.replyToken) return;
       var userId = event.source ? (event.source.userId || "") : "";
@@ -381,6 +395,23 @@ function handleLineWebhook(events) {
       if (event.message.type === "image") { processSlipImage(event, userId); return; }
       if (event.message.type !== "text") return;
       var text = event.message.text.trim();
+
+      // ── v3.5: Rich Menu button handlers (6 ปุ่ม) ──────────────────
+      try {
+        if (handleRichMenuAction(event, userId, text)) return;
+      } catch (menuErr) {
+        Logger.log("handleRichMenuAction error: " + menuErr.message);
+      }
+
+      // ── v3.4: Scripted Conversational Flow (ไม่ใช้ AI ภายนอก — ฟรี 100%) ──
+      // จำลองพฤติกรรม AI Service Advisor ด้วย keyword detection + multi-turn
+      // state (CacheService) — ถ้าไม่เข้าเงื่อนไขใดๆ จะ return false แล้ว
+      // fallback ไป Gemini (ถ้าตั้งค่าไว้)/regex parser เดิมด้านล่างตามปกติ
+      try {
+        if (handleLineMessageScripted(event, userId, text)) return;
+      } catch (scriptedErr) {
+        Logger.log("handleLineMessageScripted error: " + scriptedErr.message);
+      }
 
       // ── v3.3: AI Intent Detection (Gemini Function Calling) ──────────
       // เปิดใช้งานก็ต่อเมื่อมีการตั้งค่า GEMINI_API_KEY ใน Script Properties
@@ -493,17 +524,101 @@ function handleLineWebhook(events) {
         }
       }
 
-      // Help
+      // Help — v3.5: ชี้กลับไปที่ Rich Menu เป็นหลัก เพื่อลดความสับสน
       replyLine(event.replyToken,
-        "⚡ P&K New Energy EV Garage\n━━━━━━━━━━━━━━━\n" +
-        "📸 ส่งรูปสลิป → บันทึกรายได้อัตโนมัติ\n\n" +
-        "📌 จองนัดหมาย:\nนัด: ชื่อ: xxx | วัน: 15/05/2568 | เวลา: 10:00 | รถ: BYD Atto 3 | โทร: 08x | ทะเบียน: กข1234\n\n" +
-        "📌 สร้างงานซ่อม:\nชื่อ: xxx | รถ: xxx | ปัญหา: xxx | โทร: xxx\n\n" +
-        "📌 คำสั่ง:\nดูงาน | รายได้ | นัดวันนี้ | JOB-XXXXX"
+        "⚡ " + SHOP_NAME + "\n━━━━━━━━━━━━━━━\n" +
+        "ขออภัยครับ ระบบไม่เข้าใจข้อความนี้ 🙏\n\n" +
+        "👇 กดเมนูด้านล่างเพื่อใช้งานได้เลยครับ\n" +
+        "📅 จองคิว | 🔧 แจ้งซ่อม | 🔍 เช็คสถานะ\n💳 ส่งสลิป | 👨‍🔧 ติดต่อแอดมิน | ℹ️ เกี่ยวกับเรา\n\n" +
+        "หรือพิมพ์บอกความต้องการเป็นประโยคได้เลยครับ เช่น \"ขอนัดพรุ่งนี้เปลี่ยนยาง\"\n\n" +
+        "📌 คำสั่งสำหรับทีมงาน:\nดูงาน | รายได้ | นัดวันนี้ | JOB-XXXXX",
+        MAIN_MENU_QUICK_REPLY
       );
 
     } catch (eventErr) { Logger.log("Event error: " + eventErr.message); }
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  v3.5: WELCOME MESSAGE (Follow Event) + RICH MENU (6 ปุ่ม)
+// ═══════════════════════════════════════════════════════════════
+
+// ── ข้อความต้อนรับเมื่อลูกค้ากดเพิ่มเพื่อน (event.type === "follow") ──
+function getWelcomeMessage() {
+  return "🎉 ยินดีต้อนรับสู่ " + SHOP_NAME + " ครับ ⚡\n" +
+    "━━━━━━━━━━━━━━━\n" +
+    "เราพร้อมดูแลรถ EV ของคุณ ตั้งแต่ตรวจเช็ค ซ่อมบำรุง ไปจนถึงให้คำปรึกษาครับ 🚗🔋\n\n" +
+    "👇 กดเมนูด้านล่างเพื่อเริ่มใช้งานได้เลยครับ\n" +
+    "📅 จองคิว — นัดหมายเข้ารับบริการ\n" +
+    "🔧 แจ้งซ่อม — แจ้งอาการ/ปัญหารถ\n" +
+    "🔍 เช็คสถานะ — ตรวจสอบสถานะงานซ่อม\n" +
+    "💳 ส่งสลิป — ส่งสลิปโอนเงิน\n" +
+    "👨‍🔧 ติดต่อแอดมิน — พูดคุยกับเจ้าหน้าที่\n" +
+    "ℹ️ เกี่ยวกับเรา — ข้อมูลร้าน/ที่อยู่/เวลาเปิด-ปิด\n\n" +
+    "หรือพิมพ์ข้อความบอกความต้องการได้เลยครับ ระบบจะช่วยจัดการให้ทันที 🙏";
+}
+
+// ── ข้อความแนะนำร้าน (ปุ่ม "ℹ️ เกี่ยวกับเรา") ──
+function getAboutUsMessage() {
+  return "ℹ️ เกี่ยวกับ " + SHOP_NAME + "\n" +
+    "━━━━━━━━━━━━━━━\n" +
+    "📍 ที่อยู่: " + SHOP_ADDRESS + "\n" +
+    "🕒 " + SHOP_HOURS + "\n" +
+    "☎️ โทร: " + SHOP_PHONE + "\n\n" +
+    "เราเชี่ยวชาญด้านรถยนต์ไฟฟ้า (EV) ครบวงจร ทั้งตรวจเช็ค ซ่อมบำรุง ระบบแบตเตอรี่ และระบบชาร์จครับ ⚡";
+}
+
+// ── ตัวจัดการปุ่ม Rich Menu ทั้ง 6 ปุ่ม ──
+// ปุ่มแต่ละปุ่มตั้งค่าเป็น action "ส่งข้อความ" (Send message) ด้วยข้อความตรงตาม case ด้านล่าง
+// คืนค่า true ถ้าจัดการ/ตอบกลับแล้ว (ไม่ต้องประมวลผลต่อด้วย flow อื่น)
+function handleRichMenuAction(event, userId, text) {
+  switch (text.trim()) {
+
+    case "📅 จองคิว": {
+      var state = { flow: "appointment", data: {}, step: null, history: [] };
+      return scriptedAskNext(event, userId, state);
+    }
+
+    case "🔧 แจ้งซ่อม": {
+      var state = { flow: "job", data: {}, step: null, history: [] };
+      return scriptedAskNext(event, userId, state);
+    }
+
+    case "🔍 เช็คสถานะ": {
+      var stState = { flow: "status_check", data: {}, step: "query", history: [] };
+      saveConversationState(userId, stState);
+      replyLine(event.replyToken,
+        "🔍 เช็คสถานะงานซ่อม\n━━━━━━━━━━━━━━━\n" +
+        "พิมพ์เลข Job ID (เช่น JOB-12345) หรือเบอร์โทรศัพท์ที่ใช้ตอนแจ้งซ่อม เพื่อตรวจสอบสถานะครับ"
+      );
+      return true;
+    }
+
+    case "💳 ส่งสลิป":
+      clearConversationState(userId);
+      replyLine(event.replyToken,
+        "💳 ส่งสลิปโอนเงิน\n━━━━━━━━━━━━━━━\n" +
+        "กรุณาส่งรูปภาพสลิปการโอนเงินเข้ามาในแชทนี้ได้เลยครับ ระบบจะบันทึกข้อมูลให้อัตโนมัติ 📸"
+      );
+      return true;
+
+    case "👨‍🔧 ติดต่อแอดมิน":
+      clearConversationState(userId);
+      replyLine(event.replyToken,
+        "👨‍🔧 ติดต่อแอดมิน\n━━━━━━━━━━━━━━━\n" +
+        "ทีมงานได้รับแจ้งแล้ว แอดมินจะรีบติดต่อกลับโดยเร็วที่สุดครับ 🙏\n" +
+        "หรือโทรสอบถามได้ที่ ☎️ " + SHOP_PHONE
+      );
+      if (LINE_NOTIFY_TOKEN) {
+        try { notifyLine("👨‍🔧 ลูกค้าต้องการติดต่อแอดมิน\nLINE userId: " + userId); } catch (_) {}
+      }
+      return true;
+
+    case "ℹ️ เกี่ยวกับเรา":
+      replyLine(event.replyToken, getAboutUsMessage(), MAIN_MENU_QUICK_REPLY);
+      return true;
+  }
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -936,6 +1051,9 @@ function updateJobStatus(data) {
         sheet.getRange(row, getOrAddCol("อัปเดตโดย")).setValue(data.updatedBy);
         sheet.getRange(row, getOrAddCol("อัปเดตล่าสุด")).setValue(new Date());
       }
+      // v3.5: Handover Flow — แจ้งลูกค้าผ่าน LINE เมื่องานพร้อมส่งมอบ/ปิดงาน
+      // (ส่งเฉพาะกรณีงานนี้ถูกสร้างผ่าน LINE Bot จึงมี userId บันทึกไว้)
+      try { notifyCustomerJobStatus(rows[i], data); } catch (notifyErr) { Logger.log("notifyCustomerJobStatus error: " + notifyErr.message); }
       Logger.log("updateJobStatus: " + data.jobId + " → " + data.status);
       return true;
     }
@@ -944,6 +1062,33 @@ function updateJobStatus(data) {
   // instead of silently responding {status:"ok"}.
   Logger.log("updateJobStatus: jobId not found: " + data.jobId);
   return false;
+}
+
+// v3.5: Handover Flow — push แจ้งลูกค้าทาง LINE เมื่องานพร้อมรับรถ/ปิดงาน
+// jobRow = แถวข้อมูลเดิมก่อนอัปเดต ตามลำดับคอลัมน์ใน SHEET_JOBS:
+// [0]Job ID [1]วันที่สร้าง [2]userId [3]ชื่อลูกค้า [4]เบอร์โทร [5]ยี่ห้อรถ [6]รุ่นรถ ...
+function notifyCustomerJobStatus(jobRow, data) {
+  var custUserId = jobRow[2];
+  if (!custUserId) return; // งานไม่ได้สร้างผ่าน LINE Bot → ไม่มี userId ให้ push
+  var jobId  = data.jobId;
+  var car    = (jobRow[5] || "") + " " + (jobRow[6] || "");
+
+  if (data.status === "ผ่าน QC") {
+    pushLine(custUserId,
+      "🎉 รถของท่านซ่อมเสร็จเรียบร้อยแล้วครับ!\n━━━━━━━━━━━━━━━\n" +
+      "🔖 " + jobId + "\n" +
+      "🚗 " + car.trim() + "\n" +
+      (data.actualPrice ? "💰 ค่าบริการ: ฿" + Number(data.actualPrice).toLocaleString() + "\n" : "") +
+      "📍 สามารถเข้ามารับรถและชำระเงินได้ที่ร้านครับ 🙏\n" +
+      "☎️ " + SHOP_PHONE + "\n" + SHOP_HOURS
+    );
+  } else if (data.status === "ปิดงาน") {
+    pushLine(custUserId,
+      "✅ ขอบคุณที่ใช้บริการครับ 🙏\n━━━━━━━━━━━━━━━\n" +
+      "🔖 " + jobId + " ปิดงานเรียบร้อยแล้ว\n" +
+      "หากมีข้อสงสัยหรือพบปัญหาเพิ่มเติม สามารถพิมพ์ทักมาในแชทนี้ได้ตลอดครับ ⚡"
+    );
+  }
 }
 
 function updateJobRevenue(amount) {
@@ -1188,20 +1333,6 @@ function callGeminiAPI(text, history) {
   return data;
 }
 
-// ── v3.3 TEMP: ทดสอบการเชื่อมต่อ Gemini API โดยตรง (ลบทิ้งได้หลังทดสอบเสร็จ) ──
-// วิธีใช้: เลือกฟังก์ชันนี้จาก dropdown ด้านบน > กด ▶ Run > ดูผลที่ "Execution log"
-function testGeminiConnection() {
-  var key = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
-  Logger.log("GEMINI_API_KEY length: " + (key ? key.length : 0));
-  Logger.log("GEMINI_API_KEY prefix: " + (key ? key.substring(0, 6) : "(none)"));
-  try {
-    var data = callGeminiAPI("สวัสดีครับ ทดสอบระบบ", []);
-    Logger.log("SUCCESS: " + JSON.stringify(data));
-  } catch (err) {
-    Logger.log("ERROR: " + err.message);
-  }
-}
-
 // ── จุดเริ่มต้น: ประมวลผลข้อความด้วย AI Intent Detection ──
 // คืนค่า true ถ้าตอบกลับ LINE สำเร็จแล้ว (ไม่ต้องประมวลผลด้วย regex parser ต่อ)
 function handleLineMessageAI(event, userId, text) {
@@ -1326,15 +1457,252 @@ function parseLineText(text) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  v3.4: SCRIPTED CONVERSATIONAL FLOW — จำลองการตอบแบบ AI
+//  ไม่เรียก Gemini/AI ภายนอกใดๆ → ไม่มีค่าใช้จ่าย ทำงานได้ 100% ทันที
+//  ใช้ keyword detection + multi-turn state (CacheService เดิมจาก v3.3)
+//  เพื่อถาม-ตอบทีละข้อมูลตาม persona "AI Service Advisor"
+// ═══════════════════════════════════════════════════════════════
+
+var EV_BRANDS = ["BYD Atto3","BYD Atto 3","BYD Seal","BYD Dolphin","BYD","MG4","MG ZS EV","MG EP","MG",
+  "Tesla Model 3","Tesla Model Y","Tesla","ORA Good Cat","ORA","NETA V","NETA","GWM","Volvo",
+  "Nissan Leaf","Nissan","Hyundai Ioniq","Hyundai","Kia EV6","Kia","Aion Y","Aion","Wuling Air ev","Wuling",
+  "BMW","Mercedes","Mini"];
+
+// ── ดึงข้อมูลจากข้อความอิสระ (heuristic ง่ายๆ) ──
+function scriptedExtractCar(text) {
+  for (var i = 0; i < EV_BRANDS.length; i++) {
+    if (text.toUpperCase().indexOf(EV_BRANDS[i].toUpperCase()) !== -1) return EV_BRANDS[i];
+  }
+  return "";
+}
+function scriptedExtractPhone(text) {
+  var m = text.match(/0[689]\d{8}/);
+  return m ? m[0] : "";
+}
+function scriptedExtractDate(text) {
+  var tz = "Asia/Bangkok";
+  var now = new Date();
+  if (text.indexOf("มะรืน") !== -1) { var d=new Date(now); d.setDate(d.getDate()+2); return Utilities.formatDate(d,tz,"yyyy-MM-dd"); }
+  if (text.indexOf("พรุ่งนี้") !== -1) { var d=new Date(now); d.setDate(d.getDate()+1); return Utilities.formatDate(d,tz,"yyyy-MM-dd"); }
+  if (text.indexOf("วันนี้") !== -1) { return Utilities.formatDate(now,tz,"yyyy-MM-dd"); }
+  var m = text.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  if (m) {
+    var day = m[1], month = m[2], year = m[3];
+    if (!year) year = Utilities.formatDate(now, tz, "yyyy");
+    else if (year.length === 2) year = "20" + year;
+    else if (parseInt(year,10) > 2400) year = String(parseInt(year,10) - 543); // พ.ศ. → ค.ศ.
+    return year + "-" + ("0"+month).slice(-2) + "-" + ("0"+day).slice(-2);
+  }
+  return "";
+}
+function scriptedExtractTime(text) {
+  var m = text.match(/(\d{1,2})[:.](\d{2})\s*น?/);
+  if (m) return ("0"+m[1]).slice(-2) + ":" + m[2];
+  return "";
+}
+
+// ── ฐานความรู้ EV (FAQ) — ตอบตามตัวอย่างใน persona ──
+var EV_FAQ = [
+  { keywords: ["ชาร์จไม่เข้า","ชาร์จไม่ได้","ชาร์จไม่ติด","ชาร์จไฟไม่เข้า"],
+    answer: "เบื้องต้นอาจเกิดจากระบบชาร์จ แบตเตอรี่ หรือชุดควบคุมการชาร์จครับ 🔌\nลองตรวจสอบสายชาร์จ/ตู้ชาร์จ หรือลองสลับไปชาร์จที่จุดอื่นดูก่อนครับ\nต้องการนัดตรวจเช็กหรือไม่ครับ?" },
+  { keywords: ["แบตเสื่อม","วิ่งได้น้อยลง","ระยะทางลดลง","แบตหมดเร็ว","เปลี่ยนแบต"],
+    answer: "เบื้องต้นแนะนำให้นำรถเข้าตรวจเช็คสุขภาพแบตเตอรี่ (State of Health) ที่ศูนย์บริการครับ 🔋\nสะดวกเข้ารับบริการวันไหนครับ?" },
+  { keywords: ["ไฟเตือน","error","เออเรอร์","สัญญาณเตือน","เช็คเอนจิน"],
+    answer: "แนะนำให้นำรถเข้าตรวจเช็ค Error Code โดยเร็วที่สุดครับ ⚠️ เพื่อความปลอดภัยในการขับขี่\nต้องการนัดวันไหนดีครับ?" }
+];
+
+// ── ลำดับคำถามของแต่ละ flow (ถามเฉพาะข้อมูลที่ยังขาด) ──
+var SCRIPTED_FLOW_FIELDS = {
+  appointment: [
+    { key:"name",  q:"รบกวนแจ้งชื่อ-นามสกุลสำหรับจองคิวด้วยครับ 🙏" },
+    { key:"phone", q:"ขอเบอร์โทรติดต่อกลับด้วยครับ" },
+    { key:"car",   q:"รถยี่ห้อ/รุ่นอะไรครับ" },
+    { key:"date",  q:"สะดวกเข้ารับบริการวันไหนครับ (เช่น พรุ่งนี้, 15/06)" }
+  ],
+  job: [
+    { key:"customerName",  q:"รบกวนแจ้งชื่อ-นามสกุลด้วยครับ 🙏" },
+    { key:"customerPhone", q:"ขอเบอร์โทรติดต่อกลับด้วยครับ" },
+    { key:"carModel",      q:"รถยี่ห้อ/รุ่นอะไรครับ" },
+    { key:"repairType",    q:"แจ้งอาการ/ปัญหาที่พบด้วยครับ" }
+  ],
+  lead: [
+    { key:"phone", q:"รบกวนแจ้งเบอร์โทรติดต่อกลับครับ ทางทีมงานจะจัดทำข้อมูลและติดต่อกลับโดยเร็วที่สุดครับ" }
+  ]
+};
+
+// ── จุดเริ่มต้น: ประมวลผลข้อความด้วย Scripted Flow (ไม่ใช้ AI) ──
+// คืนค่า true ถ้าตอบกลับ LINE สำเร็จแล้ว (ไม่ต้องประมวลผลด้วย AI/regex parser ต่อ)
+function handleLineMessageScripted(event, userId, text) {
+  var state = getConversationState(userId);
+
+  // v3.5: รอผู้ใช้พิมพ์ Job ID หรือเบอร์โทรเพื่อเช็คสถานะ (จากปุ่ม Rich Menu)
+  if (state.flow === "status_check") return scriptedHandleStatusCheck(event, userId, text);
+
+  // กำลังอยู่ระหว่างเก็บข้อมูล (multi-turn) ของ flow เดิม
+  if (state.flow) return scriptedContinueFlow(event, userId, text, state);
+
+  // เช็คสถานะงานจาก JOB ID
+  var jobIdMatch = text.match(/JOB-\d+/);
+  if (jobIdMatch) {
+    replyLine(event.replyToken, executeAIFunction("check_job_status", { jobId: jobIdMatch[0] }, userId));
+    return true;
+  }
+
+  // คำถามทั่วไปเกี่ยวกับ EV → ตอบจาก Knowledge Base
+  for (var i = 0; i < EV_FAQ.length; i++) {
+    if (EV_FAQ[i].keywords.some(function(k){ return text.indexOf(k) !== -1; })) {
+      replyLine(event.replyToken, EV_FAQ[i].answer);
+      return true;
+    }
+  }
+
+  // รถอยู่ที่อู่แล้ว / ต้องการซ่อมด่วน → สร้างใบงานทันที
+  if (/อยู่ที่อู่|เข้าอู่แล้ว|มาถึงอู่|ซ่อมด่วน|มาส่งรถแล้ว/.test(text)) {
+    state.flow = "job";
+    state.data = { carModel: scriptedExtractCar(text), customerPhone: scriptedExtractPhone(text), repairType: "" };
+    return scriptedAskNext(event, userId, state);
+  }
+
+  // ต้องการนัดหมาย/จองคิว
+  if (/นัด|จอง|คิว/.test(text)) {
+    state.flow = "appointment";
+    state.data = {
+      car:   scriptedExtractCar(text),
+      date:  scriptedExtractDate(text),
+      time:  scriptedExtractTime(text),
+      phone: scriptedExtractPhone(text),
+      notes: text
+    };
+    return scriptedAskNext(event, userId, state);
+  }
+
+  // สนใจบริการแต่ยังไม่พร้อมนัด → เก็บเป็น Lead
+  if (/สนใจ|อยากทราบ|ขอราคา|ราคาประมาณ/.test(text)) {
+    state.flow = "lead";
+    state.data = { interest: text, phone: scriptedExtractPhone(text) };
+    return scriptedAskNext(event, userId, state);
+  }
+
+  return false; // ไม่เข้าเงื่อนไขใดๆ → fallback ไปข้อความ Help เดิม
+}
+
+// ── ถามข้อมูลที่ยังขาดทีละรายการ หรือสรุปงานถ้าครบแล้ว ──
+function scriptedAskNext(event, userId, state) {
+  var fields = SCRIPTED_FLOW_FIELDS[state.flow];
+  for (var i = 0; i < fields.length; i++) {
+    var f = fields[i];
+    if (!state.data[f.key]) {
+      state.step = f.key;
+      saveConversationState(userId, state);
+      replyLine(event.replyToken, f.q);
+      return true;
+    }
+  }
+  return scriptedFinalize(event, userId, state);
+}
+
+// ── รับคำตอบของคำถามก่อนหน้า แล้วถามต่อ/สรุปงาน ──
+function scriptedContinueFlow(event, userId, text, state) {
+  if (/^(ยกเลิก|เริ่มใหม่|cancel)$/i.test(text.trim())) {
+    clearConversationState(userId);
+    replyLine(event.replyToken, "ยกเลิกรายการแล้วครับ 🙏 หากต้องการเริ่มใหม่ พิมพ์มาได้เลยครับ");
+    return true;
+  }
+  var step = state.step;
+  if (step === "phone" || step === "customerPhone") {
+    state.data[step] = scriptedExtractPhone(text) || text.trim();
+  } else if (step === "date") {
+    state.data.date = scriptedExtractDate(text) || text.trim();
+    var t = scriptedExtractTime(text);
+    if (t) state.data.time = t;
+  } else {
+    state.data[step] = text.trim();
+  }
+  return scriptedAskNext(event, userId, state);
+}
+
+// ── ข้อมูลครบแล้ว → บันทึกลงระบบจริง (Sheets) ──
+function scriptedFinalize(event, userId, state) {
+  var data = state.data, replyText;
+  if (state.flow === "appointment") {
+    replyText = executeAIFunction("create_appointment", {
+      name: data.name, phone: data.phone, date: data.date, time: data.time || "",
+      car: data.car, type: "ตรวจเช็คทั่วไป", notes: data.notes || ""
+    }, userId);
+  } else if (state.flow === "job") {
+    replyText = executeAIFunction("create_job", {
+      customerName: data.customerName, customerPhone: data.customerPhone,
+      carModel: data.carModel, repairType: data.repairType
+    }, userId);
+  } else if (state.flow === "lead") {
+    replyText = executeAIFunction("create_lead", { interest: data.interest, phone: data.phone }, userId);
+  }
+  clearConversationState(userId);
+  replyLine(event.replyToken, replyText);
+  return true;
+}
+
+// v3.5: รับคำตอบจากปุ่ม "🔍 เช็คสถานะ" — รองรับทั้ง Job ID และเบอร์โทร
+function scriptedHandleStatusCheck(event, userId, text) {
+  clearConversationState(userId);
+  text = text.trim();
+
+  if (/^(ยกเลิก|เริ่มใหม่|cancel)$/i.test(text)) {
+    replyLine(event.replyToken, "ยกเลิกรายการแล้วครับ 🙏 หากต้องการเริ่มใหม่ พิมพ์มาได้เลยครับ");
+    return true;
+  }
+
+  // กรณีพิมพ์เลข Job ID
+  var jobIdMatch = text.match(/JOB-\d+/);
+  if (jobIdMatch) {
+    replyLine(event.replyToken, executeAIFunction("check_job_status", { jobId: jobIdMatch[0] }, userId));
+    return true;
+  }
+
+  // กรณีพิมพ์เบอร์โทร → ค้นหางานทั้งหมดที่ผูกกับเบอร์นี้
+  var phone = scriptedExtractPhone(text);
+  if (phone) {
+    var jobs = getSheetData(SHEET_JOBS).filter(function(j) {
+      return String(j["เบอร์โทร"] || "").replace(/[^0-9]/g, "") === phone;
+    });
+    if (!jobs.length) {
+      replyLine(event.replyToken, "❌ ไม่พบงานซ่อมที่ผูกกับเบอร์ " + phone + " ครับ\nลองตรวจสอบเบอร์อีกครั้ง หรือพิมพ์เลข Job ID แทนครับ");
+      return true;
+    }
+    var msg = "🔍 พบงานซ่อมทั้งหมด " + jobs.length + " รายการ\n━━━━━━━━━━━━━━━\n";
+    jobs.slice(0, 5).forEach(function(j) {
+      msg += "🔖 " + j["Job ID"] + "\n🚗 " + (j["ยี่ห้อรถ"] || "") + " " + (j["รุ่นรถ"] || "") + "\n📊 สถานะ: " + (j["สถานะ"] || "-") + "\n\n";
+    });
+    if (jobs.length > 5) msg += "...และอีก " + (jobs.length - 5) + " รายการ";
+    replyLine(event.replyToken, msg.trim());
+    return true;
+  }
+
+  // ไม่ตรงรูปแบบใดเลย → ถามใหม่
+  var newState = { flow: "status_check", data: {}, step: "query", history: [] };
+  saveConversationState(userId, newState);
+  replyLine(event.replyToken, "กรุณาพิมพ์เลข Job ID (เช่น JOB-12345) หรือเบอร์โทรศัพท์ที่ใช้ตอนแจ้งซ่อมครับ");
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  LINE MESSAGING UTILS
 // ═══════════════════════════════════════════════════════════════
-function replyLine(token, message) {
+// v3.5: เพิ่ม quickReplyLabels (optional) — แสดงปุ่มลัดใต้ข้อความ
+// ใช้สำหรับเมนูหลัก เผื่อกรณีลูกค้ายังไม่ได้ตั้ง Rich Menu เป็นค่าเริ่มต้น
+function replyLine(token, message, quickReplyLabels) {
   if (!token || !LINE_CHANNEL_TOKEN) return;
   try {
+    var msg = { type: "text", text: String(message).substring(0, 5000) };
+    if (quickReplyLabels && quickReplyLabels.length) {
+      msg.quickReply = { items: quickReplyLabels.slice(0, 13).map(function(label) {
+        return { type: "action", action: { type: "message", label: label.substring(0, 20), text: label } };
+      }) };
+    }
     UrlFetchApp.fetch("https://api.line.me/v2/bot/message/reply", {
       method:"post",
       headers:{"Authorization":"Bearer "+LINE_CHANNEL_TOKEN,"Content-Type":"application/json"},
-      payload:JSON.stringify({replyToken:token,messages:[{type:"text",text:String(message).substring(0,5000)}]}),
+      payload:JSON.stringify({replyToken:token,messages:[msg]}),
       muteHttpExceptions:true
     });
   } catch(e){ Logger.log("replyLine error: "+e.message); }
