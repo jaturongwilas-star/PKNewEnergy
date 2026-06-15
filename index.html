@@ -1904,7 +1904,7 @@ function toggleDarkMode(){
   applyDynamicLanguage();
 }
 function loadUsers(){const s=localStorage.getItem("ev_users");if(!s){localStorage.setItem("ev_users",JSON.stringify(DEFAULT_USERS));return JSON.parse(JSON.stringify(DEFAULT_USERS));}try{const u=JSON.parse(s);// Ensure all DEFAULT_USERS still exist (สำหรับเครื่องใหม่ที่ไม่มี users)
-DEFAULT_USERS.forEach(du=>{if(!u.find(x=>x.username===du.username))u.push(du);});// [FIX] ไม่ override admin ทั้งหมด — เฉพาะ ensure admin มีอยู่ในลิสต์เท่านั้น
+DEFAULT_USERS.forEach(du=>{if(!u.find(x=>x.username.toLowerCase()===du.username.toLowerCase()))u.push(du);});
 const adminIdx=u.findIndex(x=>x.username==="admin");if(adminIdx<0)u.unshift(DEFAULT_USERS[0]);localStorage.setItem("ev_users",JSON.stringify(u));return u;}catch{return JSON.parse(JSON.stringify(DEFAULT_USERS));}}
 function saveUsers(u){localStorage.setItem("ev_users",JSON.stringify(u));}
 function isAdmin(){return currentUser?.role==="admin";}
@@ -1924,7 +1924,7 @@ function applyRoleTabVisibility(role){
 function doLogin(){
   const un=document.getElementById("login-user").value.trim().toLowerCase(),pw=document.getElementById("login-pass").value.trim();
   const err=document.getElementById("login-error");
-  // [FIX] ค้นหา username แบบ case-insensitive
+  // ค้นหาใน localStorage users ก่อน แล้ว fallback ไป DEFAULT_USERS (สำหรับเครื่องใหม่)
   let u=loadUsers().find(x=>x.username.toLowerCase()===un&&x.password===pw);
   if(!u)u=DEFAULT_USERS.find(x=>x.username.toLowerCase()===un&&x.password===pw);
   if(!u){err.textContent="❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";document.getElementById("login-pass").value="";return;}
@@ -1950,7 +1950,7 @@ function doLogout(){currentUser=null;localStorage.removeItem("ev_session");locat
 function checkSession(){
   const s=localStorage.getItem("ev_session");if(!s)return false;
   try{const ss=JSON.parse(s);if(Date.now()-ss.ts>24*60*60*1000){localStorage.removeItem("ev_session");return false;}
-  // [FIX] ค้นหา username แบบ case-insensitive
+  // ค้นหาใน localStorage users ก่อน แล้ว fallback ไป DEFAULT_USERS
   let u=loadUsers().find(x=>x.username.toLowerCase()===ss.username.toLowerCase());
   if(!u)u=DEFAULT_USERS.find(x=>x.username.toLowerCase()===ss.username.toLowerCase());
   if(!u)return false;currentUser=u;return true;}catch{return false;}
@@ -3403,7 +3403,7 @@ function renderUsersTable(){
 }
 function openEditUser(i){if(!isAdmin())return;const u=loadUsers()[i];document.getElementById("edit-user-index").value=i;document.getElementById("edit-user-username").value=u.username;document.getElementById("edit-user-displayname").value=u.displayName;document.getElementById("edit-user-role").value=u.role;document.getElementById("edit-user-password").value="";document.getElementById("editUserModal").classList.add("open");}
 function saveEditUser(){if(!isAdmin())return;const i=parseInt(document.getElementById("edit-user-index").value),users=loadUsers();users[i].displayName=document.getElementById("edit-user-displayname").value.trim();users[i].role=document.getElementById("edit-user-role").value;const np=document.getElementById("edit-user-password").value;if(np&&np.length>=6)users[i].password=np;saveUsers(users);document.getElementById("editUserModal").classList.remove("open");renderUsersTable();showToast("✅ แก้ไขผู้ใช้สำเร็จ");}
-function addUser(){if(!isAdmin()){showToast("⛔ Admin เท่านั้น");return;}const un=document.getElementById("new-username").value.trim().toLowerCase(),pw=document.getElementById("new-password").value,dn=document.getElementById("new-displayname").value.trim(),role=document.getElementById("new-role").value;if(!un||!pw||!dn){showToast("⚠️ กรอกข้อมูลให้ครบ");return;}if(pw.length<6){showToast("⚠️ รหัสผ่าน ≥6 ตัวอักษร");return;}if(!/^[a-zA-Z0-9_]+$/.test(un)){showToast("⚠️ Username ใช้ได้เฉพาะ a-z, 0-9, _");return;}const users=loadUsers();if(users.find(u=>u.username===un)){showToast("⚠️ Username นี้มีอยู่แล้ว");return;}users.push({username:un,password:pw,role,displayName:dn});saveUsers(users);["new-username","new-password","new-displayname"].forEach(id=>{document.getElementById(id).value="";});renderUsersTable();showToast("✅ เพิ่มผู้ใช้ "+un+" สำเร็จ");}
+function addUser(){if(!isAdmin()){showToast("⛔ Admin เท่านั้น");return;}const un=document.getElementById("new-username").value.trim().toLowerCase(),pw=document.getElementById("new-password").value,dn=document.getElementById("new-displayname").value.trim(),role=document.getElementById("new-role").value;if(!un||!pw||!dn){showToast("⚠️ กรอกข้อมูลให้ครบ");return;}if(pw.length<6){showToast("⚠️ รหัสผ่าน ≥6 ตัวอักษร");return;}if(!/^[a-zA-Z0-9_]+$/.test(un)){showToast("⚠️ Username ใช้ได้เฉพาะ a-z, 0-9, _");return;}const users=loadUsers();if(users.find(u=>u.username.toLowerCase()===un)){showToast("⚠️ Username นี้มีอยู่แล้ว");return;}users.push({username:un,password:pw,role,displayName:dn});saveUsers(users);["new-username","new-password","new-displayname"].forEach(id=>{document.getElementById(id).value="";});renderUsersTable();showToast("✅ เพิ่มผู้ใช้ "+un+" สำเร็จ");}
 function deleteUser(i){if(!isAdmin())return;const users=loadUsers();if(users[i].username==="admin"||users[i].username===currentUser?.username)return;if(!confirm("ยืนยันลบผู้ใช้ "+users[i].username+"?"))return;users.splice(i,1);saveUsers(users);renderUsersTable();showToast("✅ ลบสำเร็จ");}
 
 // SETTINGS
