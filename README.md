@@ -1,22 +1,67 @@
 # EV Garage Management System — P&K New Energy
 
-> ระบบบริหารจัดการอู่ซ่อมรถยนต์ไฟฟ้าครบวงจร  
-> Version 3.0 | Google Apps Script + Google Sheets + LINE Bot + Vision API OCR
+> ระบบบริหารจัดการอู่ซ่อมรถยนต์ไฟฟ้าครบวงจร
+> Version 3.1 | HTML Dashboard + Google Apps Script + Google Sheets + LINE Booking + Slip OCR
 
-Full-stack EV repair shop management: LINE Bot + Slip OCR → Google Apps Script → Google Sheets → HTML Dashboard.
+Full-stack EV repair shop management for P&K New Energy: รับงานซ่อม, วินิจฉัย, เสนอราคา, ซ่อม/ทดสอบ, QC, ชำระเงิน, ใบเสร็จ PDF, บัญชี และนัดหมาย LINE ในหน้า Dashboard เดียว.
 
 ---
 
 ## System Overview
 
 ```
-LINE Customer ──► LINE Messaging API ──► GAS doPost()
-                                              │
-                                    Google Sheets (3 tabs)
-                                              │
-HTML Dashboard ◄──── GAS doGet() ────────────┘
-HTML Dashboard ────► GAS doPost() ──► Sheets
+Customer / LINE Booking ──► HTML Dashboard ──► GAS Web App
+                                      │              │
+                                      │              ▼
+                                      └──────► Google Sheets
+                                                     │
+Accounting / Receipt / QC ◄────────── Dashboard ◄────┘
 ```
+
+---
+
+## Main Workflow
+
+ระบบออกแบบเป็นขบวนการทำงานตามสถานะใบงาน เพื่อให้ทีมรับรถ ช่าง QC และบัญชีทำงานต่อเนื่องกันได้
+
+| ขั้นตอน | สถานะหลัก | สิ่งที่ทำในระบบ |
+|---|---|---|
+| 1. รับงาน | รอตรวจสอบ | กรอกข้อมูลลูกค้า รถ ทะเบียน อาการ ราคาประเมินเบื้องต้น และวันนัด |
+| 2. วินิจฉัย | รอวินิจฉัย / กำลังวินิจฉัย | บันทึกสาเหตุ อะไหล่ที่ต้องใช้ แผนการซ่อม และช่างผู้รับผิดชอบ |
+| 3. เสนอราคา | รออนุมัติราคา | แยกกรอก **ค่าแรง**, **ค่าอะไหล่**, ส่วนลด และเงื่อนไขใบเสนอราคา |
+| 4. อนุมัติราคา | รอซ่อม | Manager/Admin อนุมัติราคา แล้วส่งงานเข้าคิวซ่อม |
+| 5. ซ่อม/ทดสอบ | กำลังซ่อม / รอ QC | บันทึกขั้นตอนซ่อม ผลทดสอบ Before/After และข้อมูลเทคนิค |
+| 6. QC | ผ่าน QC / ส่งซ่อมใหม่ | QC Inspector ตรวจ checklist, pass/fail และสร้างรายงาน QC PDF |
+| 7. ชำระเงิน | รอชำระเงิน | บันทึกเงินสด/โอน/มัดจำ/ชำระบางส่วน แนบสลิป และตรวจ OCR ได้ |
+| 8. ปิดงาน | ปิดงาน | ปิดงานและออกใบเสร็จรับเงินสำหรับพิมพ์หรือ Save as PDF |
+| 9. บัญชี | service_invoice | ระบบแยกรายรับค่าแรง รายรับอะไหล่ ต้นทุนอะไหล่ และกำไรอัตโนมัติ |
+
+---
+
+## Receipt / PDF Process
+
+ใบเสร็จรับเงินใช้ปุ่ม **ใบเสร็จ** หรือ **ปิดงาน + ออกใบเสร็จ** แล้วใช้หน้าต่าง Print ของ browser เพื่อพิมพ์หรือ Save as PDF
+
+ใบเสร็จเวอร์ชันล่าสุดแยกรายการชัดเจนสำหรับงานบัญชี:
+
+| รายการในใบเสร็จ | แหล่งข้อมูล |
+|---|---|
+| ค่าแรง | ฟิลด์ `ค่าแรง` จาก tab เสนอราคา |
+| ค่าอะไหล่ | ฟิลด์ `ค่าอะไหล่` จาก tab เสนอราคา |
+| ส่วนลด | ฟิลด์ `ส่วนลด` จาก tab เสนอราคา |
+| ยอดสุทธิ | ค่าแรง + ค่าอะไหล่ - ส่วนลด |
+| รับชำระแล้ว | `paid_amount` หรือ `ราคาจริง (฿)` |
+| วิธีชำระเงิน | เงินสด, โอนเงิน, มัดจำ, หรือชำระบางส่วน |
+| เลขอ้างอิงโอน | ฟิลด์เลขอ้างอิงใน tab ชำระเงิน |
+
+ข้อควรทำก่อนออกใบเสร็จ:
+
+1. กรอกค่าแรงและค่าอะไหล่ใน tab **เสนอราคา** ให้ครบ
+2. ให้ Manager/Admin อนุมัติราคา
+3. ให้ QC ผ่านก่อนรับชำระเงิน
+4. บันทึกยอดชำระและวิธีชำระเงินใน tab **ชำระเงิน**
+5. กด **ปิดงาน + ออกใบเสร็จ** หรือเปิดงานที่ปิดแล้วแล้วกดปุ่มใบเสร็จ
+6. ในหน้าต่าง Print เลือก printer หรือเลือก **Save as PDF**
 
 ---
 
@@ -24,16 +69,17 @@ HTML Dashboard ────► GAS doPost() ──► Sheets
 
 | Module | Features |
 |---|---|
-| **Dashboard** | Live metrics: jobs today, in-progress, done, daily revenue |
-| **งานซ่อม** | Full CRUD table, search/filter, status update, receipt print |
+| **Dashboard** | Live metrics: งานวันนี้, งานกำลังซ่อม, งานรอ QC, รายได้ และสรุปการเงิน |
+| **งานซ่อม** | ค้นหา/กรองใบงาน, เปิดรายละเอียด, pipeline สถานะ, ใบงาน, ใบเสร็จ |
+| **เสนอราคา** | แยกค่าแรง, ค่าอะไหล่ขาย, ต้นทุนอะไหล่อัตโนมัติ, กำไรอะไหล่, ส่วนลด |
+| **ชำระเงิน** | บันทึกชำระเงินหลายครั้ง, โอน/เงินสด/มัดจำ/บางส่วน, แนบสลิป, OCR สลิป |
+| **ใบเสร็จ PDF** | พิมพ์หรือ Save as PDF โดยแยกค่าแรงและค่าอะไหล่ในตารางรายการ |
 | **ลูกค้า** | Auto-created from job form, searchable, visit count |
-| **คลังอะไหล่** | Low-stock warnings, LINE Notify alert, Excel import |
-| **QC** | Inspection form, pass/fail, QC-only role view |
+| **คลังอะไหล่** | Low-stock warnings, stock value, inventory update |
+| **QC** | EV checklist, pass/fail, QC report PDF, QC-only role view |
 | **นัดหมาย** | Calendar + list view, LINE booking integration |
-| **สลิปโอนเงิน** | OCR via Vision API, duplicate detection, auto revenue update |
-| **รายงาน** | Monthly revenue chart (Chart.js), per-day breakdown |
-| **LINE Bot** | Receive job via text, reply with Job ID, status lookup |
-| **LINE Notify** | New job alert, job complete alert, low-stock alert |
+| **บัญชี** | Auto split labor revenue, parts revenue, parts cost, parts gross profit, CSV export |
+| **ตั้งค่า** | GAS URL, shop info, LINE config, users and roles |
 
 ---
 
@@ -49,10 +95,13 @@ HTML Dashboard ────► GAS doPost() ──► Sheets
 ## Files
 
 ```
-Code.gs                   — Google Apps Script backend
-ev_service_system_v2.html — Frontend dashboard (standalone HTML)
-README.md
+index.html       — Frontend dashboard แบบ standalone HTML
+README.md        — ภาพรวมระบบและขบวนการใช้งาน
+USER_MANUAL.md   — คู่มือผู้ใช้
+CODE_GUIDE.md    — คู่มือนักพัฒนา / technical reference
 ```
+
+> หมายเหตุ: Backend Google Apps Script ใช้ผ่าน GAS Web App URL ที่ตั้งค่าในหน้า Dashboard
 
 ---
 
@@ -67,57 +116,57 @@ README.md
 ### Step 2 — Google Apps Script
 
 1. Open the Sheet → **Extensions → Apps Script**
-2. Delete any existing code → paste `Code.gs`
-3. Fill in the top config section:
-   ```js
-   const SPREADSHEET_ID     = "YOUR_SHEET_ID";
-   const LINE_CHANNEL_TOKEN = "YOUR_CHANNEL_ACCESS_TOKEN"; // from LINE Developers
-   const LINE_NOTIFY_TOKEN  = "YOUR_NOTIFY_TOKEN";         // optional
-   ```
+2. Paste or update backend Apps Script code
+3. Fill in required config such as Spreadsheet ID, LINE token, and shop settings
 4. Click **Deploy → New Deployment**
    - Type: **Web App**
    - Execute as: **Me**
-   - Who has access: **Anyone**
+   - Who has access: **Anyone** or according to shop policy
 5. Click **Deploy** → copy the **Web App URL**
 
-### Step 3 — LINE Bot Webhook
+### Step 3 — HTML Dashboard
 
-1. Go to [LINE Developers Console](https://developers.line.biz/)
-2. Select your Messaging API channel
-3. Set Webhook URL = your GAS Web App URL
+1. Open `index.html` in a browser
+2. Login with a configured user
+3. Go to **ตั้งค่า**
+4. Paste GAS Web App URL → click **บันทึก URL**
+5. Refresh data and start using the workflow
+
+### Step 4 — LINE / Booking Setup
+
+1. Go to LINE Developers Console
+2. Select Messaging API channel
+3. Set Webhook URL = GAS Web App URL
 4. Enable **Use webhook**
-5. Click **Verify** — should return 200 OK
-
-### Step 4 — HTML Dashboard
-
-1. Open `ev_service_system_v2.html` in any browser (no server needed)
-2. Go to **⚙ ตั้งค่า** tab
-3. Paste your GAS Web App URL → click **บันทึก URL**
-4. Data loads automatically
+5. Configure LINE OA / booking link in the Dashboard settings
 
 ---
 
 ## Google Sheets Structure
 
-Three sheets are auto-created on first use:
+Sheets are created or updated by backend actions. Main data groups include:
 
-**งานซ่อม** — Job ID, วันที่สร้าง, userId, ชื่อลูกค้า, เบอร์โทร, ยี่ห้อรถ, รุ่นรถ, ทะเบียน, รายการซ่อม, ราคาประเมิน, ชั่วโมงประเมิน, หมายเหตุ, วันนัดหมาย, สถานะ, ราคาจริง, วันเสร็จ
+**งานซ่อม** — Job ID, วันที่สร้าง, ชื่อลูกค้า, เบอร์โทร, ยี่ห้อรถ, รุ่นรถ, ทะเบียน, รายการซ่อม / ปัญหา, หมายเหตุ, สถานะ, ค่าแรง, ค่าอะไหล่, ส่วนลด, ราคาประเมิน (฿), ราคาจริง (฿), paid_amount, payment_history, วิธีชำระเงิน, เลขอ้างอิงโอน, URL สลิป, วันเสร็จ
 
-**ลูกค้า** — ชื่อลูกค้า, เบอร์โทร, ยี่ห้อรถ, รุ่นรถ, ทะเบียน, จำนวนครั้ง, ครั้งล่าสุด
+**ลูกค้า** — ชื่อลูกค้า, เบอร์โทร, ยี่ห้อรถ, รุ่นรถ, ทะเบียน, จำนวนครั้งที่ใช้บริการ, ครั้งล่าสุด
 
 **คลังอะไหล่** — รหัสอะไหล่, ชื่ออะไหล่, หมวดหมู่, จำนวนคงเหลือ, จำนวนขั้นต่ำ, ราคา/ชิ้น, อัปเดตล่าสุด
 
+**นัดหมาย** — วันที่, เวลา, ลูกค้า, เบอร์โทร, รถ, ทะเบียน, ประเภทงาน, แหล่งที่มา, สถานะ
+
+**บัญชี** — วันที่, ประเภท, หมวดหมู่, รายละเอียด, อ้างอิง, จำนวน, บันทึกโดย, source
+
 ---
 
-## LINE Bot Message Format
+## Roles
 
-Send to the bot in this format to create a job:
-
-```
-ชื่อ: สมชาย | รถ: Tesla Model 3 | ปัญหา: แบตเตอรี่อ่อน | โทร: 081-234-5678
-```
-
-Send `ดูงาน` to get the last 5 jobs.
+| Role | สิทธิ์หลัก |
+|---|---|
+| Admin | เข้าถึงทุกเมนู ตั้งค่า users และอนุมัติราคา |
+| Manager | อนุมัติราคา ดูบัญชี และติดตามงาน |
+| Tech | ทำงานซ่อม วินิจฉัย บันทึกผลซ่อม |
+| QC | ตรวจ QC และออกรายงาน QC |
+| Front Desk | รับงาน นัดหมาย และติดตามสถานะลูกค้า |
 
 ---
 
@@ -125,10 +174,25 @@ Send `ดูงาน` to get the last 5 jobs.
 
 | Method | Params | Description |
 |---|---|---|
-| GET | `?action=getJobs` | All jobs |
-| GET | `?action=getCustomers` | All customers |
-| GET | `?action=getInventory` | Inventory |
-| GET | `?action=getDashboard` | Today's summary |
+| GET | `?action=getJobs` | Load all jobs |
+| GET | `?action=getCustomers` | Load customers |
+| GET | `?action=getInventory` | Load inventory |
+| GET | `?action=getDashboard` | Load dashboard summary |
+| GET | `?action=getAppointments` | Load appointments |
 | POST | `{ action: "createJob", ...fields }` | Create job |
-| POST | `{ action: "updateJobStatus", jobId, status, actualPrice }` | Update status |
+| POST | `{ action: "updateJob", jobId, fields }` | Update job fields |
+| POST | `{ action: "updateJobStatus", jobId, status }` | Update job status |
 | POST | `{ action: "updateInventory", partCode, qtyChange }` | Adjust stock |
+| POST | `{ action: "createAppointment", ...fields }` | Create appointment |
+| POST | `{ action: "updateAppointment", ...fields }` | Update appointment |
+| POST | `{ action: "deleteAppointment", id }` | Delete appointment |
+
+---
+
+## Changelog
+
+### 2026-07-01
+
+- Updated receipt print/PDF layout to separate **ค่าแรง** and **ค่าอะไหล่** clearly
+- Added receipt totals: subtotal, discount, net total, paid amount, and balance
+- Documented end-to-end workflow from job intake to accounting automation
