@@ -3280,6 +3280,7 @@ function printReceiptForJob(j){
   const itemRows=rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td><strong>${esc(r.type)}</strong><br><span>${esc(r.item)}</span></td><td class="r">1</td><td class="r">${baht(r.amount)}</td><td class="r">${baht(r.amount)}</td></tr>`).join("");
   const methodLabel={cash:"เงินสด",transfer:"โอนเงิน",deposit:"มัดจำ",partial:"ชำระบางส่วน"};
   const method=methodLabel[j["วิธีชำระเงิน"]]||j["วิธีชำระเงิน"]||"—";
+  const repairPlan=String(j["แผนการซ่อม"]||"").trim();
   openPrint(`<style>
     @page{size:A4;margin:14mm}
     *{box-sizing:border-box}
@@ -3289,11 +3290,12 @@ function printReceiptForJob(j){
     .info{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:14px}.info div{border-bottom:1px dashed #CBD5E1;padding:5px 0}.info span{color:#64748B;display:inline-block;min-width:76px}
     table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;padding:8px;font-size:12px}td{border:1px solid #E2E8F0;padding:8px;vertical-align:top}td span{color:#64748B;font-size:12px}.c{text-align:center}.r{text-align:right;white-space:nowrap}
     .totals{width:320px;margin-left:auto;margin-top:12px}.totals .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #CBD5E1}.totals .grand{font-size:18px;font-weight:700;border-top:2px solid #0D7A5F;border-bottom:2px solid #0D7A5F;padding:10px 0;color:#065F46}
-    .pay{margin-top:12px;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#F8FAFC}.foot{text-align:center;margin-top:28px;font-size:12px;color:#64748B}
+    .note,.pay{margin-top:12px;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#F8FAFC}.note div{white-space:pre-wrap;margin-top:6px}.pay{background:#F8FAFC}.foot{text-align:center;margin-top:28px;font-size:12px;color:#64748B}
   </style><div class="hd"><div class="shop"><strong>${esc(s.name)}</strong><div class="muted">${esc(s.addr||"")}<br>${esc(s.phone||"")}</div></div><div class="title"><h1>ใบเสร็จรับเงิน</h1><b>${esc(j["Job ID"]||"—")}</b><div class="muted">วันที่ ${esc(fd(j["วันเสร็จ"]||j["วันที่สร้าง"]))}</div></div></div>
   <div class="info"><div><span>ลูกค้า</span>${esc(j["ชื่อลูกค้า"]||"—")}</div><div><span>เบอร์โทร</span>${esc(j["เบอร์โทร"]||"—")}</div><div><span>รถ</span>${esc((j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""))}</div><div><span>ทะเบียน</span>${esc(j["ทะเบียน"]||"—")}</div></div>
   <table><thead><tr><th style="width:44px">#</th><th>รายการ</th><th style="width:70px">จำนวน</th><th style="width:120px">ราคา/หน่วย</th><th style="width:120px">รวม</th></tr></thead><tbody>${itemRows}</tbody></table>
   <div class="totals"><div class="row"><span>รวมค่าแรง</span><strong>${baht(labor)}</strong></div><div class="row"><span>รวมค่าอะไหล่</span><strong>${baht(parts)}</strong></div><div class="row"><span>รวมก่อนส่วนลด</span><strong>${baht(subtotal)}</strong></div><div class="row"><span>ส่วนลด</span><strong>-${baht(discount)}</strong></div><div class="row grand"><span>ยอดสุทธิ</span><span>${baht(grandTotal)}</span></div><div class="row"><span>รับชำระแล้ว</span><strong>${baht(paid||grandTotal)}</strong></div>${balance>0?`<div class="row"><span>คงเหลือ</span><strong>${baht(balance)}</strong></div>`:""}</div>
+  ${repairPlan?`<div class="note"><strong>แผนการซ่อม</strong><div>${esc(repairPlan)}</div></div>`:""}
   <div class="pay"><strong>รายละเอียดการชำระเงิน</strong><div style="margin-top:6px">วิธีชำระ: ${esc(method)}${j["เลขอ้างอิงโอน"]?` · เลขอ้างอิง: ${esc(j["เลขอ้างอิงโอน"])}`:""}</div>${j["หมายเหตุชำระ"]?`<div class="muted">หมายเหตุ: ${esc(j["หมายเหตุชำระ"])}</div>`:""}</div>
   <div class="foot">ขอบคุณที่ใช้บริการ<br>${esc(s.name)}</div>`);
 }
