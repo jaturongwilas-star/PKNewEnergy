@@ -2516,25 +2516,60 @@ function _renderPayHistory(j){
   if(!wrap||!list)return;
   let hist=[];
   try{hist=JSON.parse(j["payment_history"]||"[]");}catch(_){}
+  const hasStoredHistory=hist.length>0;
   // Also include legacy single payment if no history
   if(!hist.length&&j["ราคาจริง (฿)"]&&j["วิธีชำระเงิน"]){
-    hist=[{ts:j["วันเสร็จ"]||"",amount:j["ราคาจริง (฿)"],method:j["วิธีชำระเงิน"],ref:j["เลขอ้างอิงโอน"]||"",slipUrl:j["URL สลิป"]||"",note:j["หมายเหตุชำระ"]||"",by:""}];
+    hist=[{ts:j["วันเสร็จ"]||"",amount:j["ราคาจริง (฿)"],method:j["วิธีชำระเงิน"],ref:j["เลขอ้างอิงโอน"]||"",slipUrl:j["URL สลิป"]||"",note:j["หมายเหตุชำระ"]||"",by:"",legacy:true}];
   }
   if(!hist.length){wrap.style.display="none";return;}
   wrap.style.display="block";
   const methodLabel={"cash":"💵 เงินสด","transfer":"📱 โอน","deposit":"🔐 มัดจำ","partial":"💳 บางส่วน"};
   list.innerHTML=hist.map((p,i)=>`
     <div style="display:flex;gap:8px;align-items:center;padding:7px 10px;${i<hist.length-1?"border-bottom:1px solid var(--border)":""}">
-      <div style="flex:1">
+      <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:12.5px">฿${Number(p.amount||0).toLocaleString()}</div>
         <div style="font-size:11px;color:var(--muted)">${methodLabel[p.method]||p.method||"—"} ${p.ref?"· "+p.ref:""} ${p.by?"· "+p.by:""}</div>
         ${p.note?`<div style="font-size:11px;color:var(--muted);font-style:italic">${p.note}</div>`:""}
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:10.5px;color:var(--muted)">${p.ts?new Date(p.ts).toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"2-digit"}):"—"}</div>
-        ${p.slipUrl?`<a href="${p.slipUrl}" target="_blank" class="btn btn-xs" style="margin-top:3px">🖼️ สลิป</a>`:""}
+      <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:wrap;flex-shrink:0">
+        <div style="font-size:10.5px;color:var(--muted);width:100%;text-align:right">${p.ts?new Date(p.ts).toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"2-digit"}):"—"}</div>
+        ${p.slipUrl?`<a href="${p.slipUrl}" target="_blank" class="btn btn-xs">🖼️ สลิป</a>`:""}
+        ${hasStoredHistory?`<button class="btn btn-xs btn-red" onclick="deletePaymentHistory(${i})" title="ลบรายการชำระนี้">ลบ</button>`:""}
       </div>
     </div>`).join("");
+}
+
+async function deletePaymentHistory(index){
+  if(!currentJobDetail)return;
+  let hist=[];
+  try{hist=JSON.parse(currentJobDetail["payment_history"]||"[]");}catch(_){}
+  if(index<0||index>=hist.length){showToast("⚠️ ไม่พบรายการชำระ");return;}
+  const item=hist[index];
+  const amount=Number(item.amount||0).toLocaleString();
+  if(!confirm("ยืนยันลบประวัติการชำระ ฿"+amount+"?"))return;
+  hist.splice(index,1);
+  const totalPaid=hist.reduce((s,p)=>s+Number(p.amount||0),0);
+  const last=hist[hist.length-1]||{};
+  const fields={
+    "ราคาจริง (฿)":totalPaid,
+    "วิธีชำระเงิน":last.method||"",
+    "เลขอ้างอิงโอน":last.ref||"",
+    "URL สลิป":last.slipUrl||"",
+    "หมายเหตุชำระ":last.note||"",
+    "payment_history":JSON.stringify(hist),
+    "paid_amount":totalPaid
+  };
+  const r=await gasPost({action:A.UPDATE_JOB,jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"||_isUnknownAction(r)){
+    _mergeJob(fields);
+    upsertJobAccounting(currentJobDetail);
+    prefillPay(currentJobDetail,currentJobDetail["สถานะ"]||"รอชำระเงิน");
+    _refreshDisplay();
+    await loadJobs();
+    showToast("✅ ลบประวัติการชำระแล้ว");
+  }else{
+    showToast("❌ "+(r?.message||r?.error||"ลบรายการชำระไม่สำเร็จ"));
+  }
 }
 
 function payCalcBalance(){
