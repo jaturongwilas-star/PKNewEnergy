@@ -681,8 +681,8 @@ body.dark-mode .qc-check.fail{background:#3A1010}
       </div>
     </div>
     <div class="table-wrap">
-      <table><thead><tr><th>Job ID</th><th>วันที่</th><th>ลูกค้า</th><th>รถ / ทะเบียน</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>ราคา</th><th>จัดการ</th></tr></thead>
-      <tbody id="jobs-body"><tr><td colspan="9" class="empty-state">กำลังโหลด...</td></tr></tbody></table>
+      <table><thead><tr><th>Job ID</th><th>วันที่</th><th>วันนัด</th><th>ลูกค้า</th><th>รถ / ทะเบียน</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>ราคา</th><th>จัดการ</th></tr></thead>
+      <tbody id="jobs-body"><tr><td colspan="10" class="empty-state">กำลังโหลด...</td></tr></tbody></table>
     </div>
   </section>
 
@@ -2197,8 +2197,8 @@ function renderTechPerformanceWidget(){
 // RENDER
 function renderJobs(jobs){
   const tbody=document.getElementById("jobs-body");
-  if(!jobs.length){tbody.innerHTML=`<tr><td colspan="9" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
-  tbody.innerHTML=jobs.map(j=>`<tr><td><code style="font-size:11px">${j["Job ID"]||""}</code></td><td style="font-size:12px">${fd(j["วันที่สร้าง"])}</td><td><strong>${j["ชื่อลูกค้า"]||"—"}</strong><br><span style="font-size:11px;color:var(--muted)">${j["เบอร์โทร"]||""}</span></td><td style="font-size:12px">${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}${j["ทะเบียน"]?`<br><code style="font-size:10px">${j["ทะเบียน"]}</code>`:""}</td><td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j["รายการซ่อม / ปัญหา"]||"—"}</td><td>${bh(j["สถานะ"])}</td><td style="font-size:12px">${j["ช่าง"]||"—"}</td><td style="font-size:12px">${j["ราคาประเมิน (฿)"]?"฿"+Number(j["ราคาประเมิน (฿)"]).toLocaleString():"—"}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick='openJobDetail(${JSON.stringify(j).replace(/'/g,"&#39;")})'>📂 เปิด</button>${j["สถานะ"]==="ปิดงาน"?`<button class="btn btn-sm" style="margin-left:4px;background:var(--g1);color:#fff;border-color:var(--g1)" onclick='printReceiptForJob(${JSON.stringify(j).replace(/'/g,"&#39;")})'>🧾</button>`:""}</td></tr>`).join("");
+  if(!jobs.length){tbody.innerHTML=`<tr><td colspan="10" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
+  tbody.innerHTML=jobs.map(j=>`<tr><td><code style="font-size:11px">${j["Job ID"]||""}</code></td><td style="font-size:12px">${fd(j["วันที่สร้าง"])}</td><td style="font-size:12px">${fd(j["วันนัด"])}</td><td><strong>${j["ชื่อลูกค้า"]||"—"}</strong><br><span style="font-size:11px;color:var(--muted)">${j["เบอร์โทร"]||""}</span></td><td style="font-size:12px">${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}${j["ทะเบียน"]?`<br><code style="font-size:10px">${j["ทะเบียน"]}</code>`:""}</td><td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j["รายการซ่อม / ปัญหา"]||"—"}</td><td>${bh(j["สถานะ"])}</td><td style="font-size:12px">${j["ช่าง"]||"—"}</td><td style="font-size:12px">${j["ราคาประเมิน (฿)"]?"฿"+Number(j["ราคาประเมิน (฿)"]).toLocaleString():"—"}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick='openJobDetail(${JSON.stringify(j).replace(/'/g,"&#39;")})'>📂 เปิด</button>${j["สถานะ"]==="ปิดงาน"?`<button class="btn btn-sm" style="margin-left:4px;background:var(--g1);color:#fff;border-color:var(--g1)" onclick='printReceiptForJob(${JSON.stringify(j).replace(/'/g,"&#39;")})'>🧾</button>`:""}</td></tr>`).join("");
 }
 function renderCustomers(cs){
   const tbody=document.getElementById("customers-body");
