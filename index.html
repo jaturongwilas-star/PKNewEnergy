@@ -1276,7 +1276,18 @@ body.dark-mode .qc-check.fail{background:#3A1010}
         <div class="form-group"><label>ช่างผู้วินิจฉัย</label><select id="jd-diag-tech"><option value="">— เลือกช่าง —</option></select></div>
         <div class="form-group"><label>วันที่วินิจฉัย</label><input type="date" id="jd-diag-date"></div>
         <div class="form-group span2"><label>สาเหตุที่พบ (Root Cause)</label><textarea id="jd-diag-cause" rows="3" placeholder="ระบุสาเหตุที่แท้จริง..."></textarea></div>
-        <div class="form-group span2"><label>อะไหล่ที่ต้องใช้</label><textarea id="jd-diag-parts" rows="2"></textarea></div>
+        <div class="form-group span2">
+          <label>อะไหล่ที่ต้องใช้</label>
+          <textarea id="jd-diag-parts" rows="2"></textarea>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;background:var(--g3, #f4faf7);border:1px dashed var(--g1,#0D7A5F);border-radius:6px;padding:8px">
+            <span style="font-size:12px;color:var(--muted)">ตัดสต็อก:</span>
+            <input type="text" id="jd-diag-part-code" list="parts-datalist" placeholder="รหัสอะไหล่" style="flex:1;min-width:120px;font-size:12px">
+            <datalist id="parts-datalist"></datalist>
+            <input type="number" id="jd-diag-part-qty" placeholder="จำนวน" min="1" value="1" style="width:70px;font-size:12px">
+            <button type="button" class="btn btn-sm" onclick="deductPartStock()">➖ ตัดสต็อก</button>
+            <span id="jd-diag-part-hint" style="font-size:11px;color:var(--muted);width:100%"></span>
+          </div>
+        </div>
         <div class="form-group span2"><label>แผนการซ่อม</label><textarea id="jd-diag-plan" rows="3"></textarea></div>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -2207,6 +2218,8 @@ function renderCustomers(cs){
 }
 function renderInventory(inv){
   const tbody=document.getElementById("inventory-body");
+  const dl=document.getElementById("parts-datalist");
+  if(dl)dl.innerHTML=allInventory.map(i=>`<option value="${getPartCode(i)}">${getPartName(i)} (คงเหลือ ${Number(i["จำนวนคงเหลือ"]||0)})</option>`).join("");
   const sku=inv.length,totalStock=inv.reduce((s,i)=>s+(Number(i["จำนวนคงเหลือ"]||0)),0);
   const invValue=inv.reduce((s,i)=>s+getPartUnitCost(i)*(Number(i["จำนวนคงเหลือ"]||0)),0);
   const lowCount=inv.filter(i=>(Number(i["จำนวนคงเหลือ"]||0))<=(Number(i["จำนวนขั้นต่ำ"]||5))).length;
@@ -3105,6 +3118,37 @@ return mq&&(!st||j["สถานะ"]===st)&&(!tc||(j["ช่าง"]===tc||Stri
 function filterCustomers(){const q=document.getElementById("cust-search").value.toLowerCase();renderCustomers(allCustomers.filter(c=>Object.values(c).some(v=>String(v).toLowerCase().includes(q))));}
 const CM={BYD:["Atto 3","Dolphin","Seal","Han","Tang"],Tesla:["Model 3","Model Y","Model S","Model X"],Neta:["V","V-II","U","X"],MG:["EP","4","ZS EV"],ORA:["Good Cat","Funky Cat"],Volvo:["XC40 Recharge","C40 Recharge","EX30"],BMW:["i3","i4","iX","iX1"],Nissan:["Leaf","Ariya"],Toyota:["bZ4X"]};
 function updateModels(){const b=document.getElementById("f-brand").value,sel=document.getElementById("f-model"),ms=CM[b]||[];sel.innerHTML=ms.length?`<option value="">— เลือกรุ่น —</option>`+ms.map(m=>`<option>${m}</option>`).join(""):`<option value="">— ระบุเองใน Notes —</option>`;}
+async function deductPartStock(){
+  const codeInput=document.getElementById("jd-diag-part-code");
+  const qtyInput=document.getElementById("jd-diag-part-qty");
+  const hint=document.getElementById("jd-diag-part-hint");
+  const code=codeInput.value.trim();
+  const qty=parseInt(qtyInput.value);
+  if(!code){showToast("⚠️ กรุณาใส่รหัสอะไหล่");return;}
+  if(isNaN(qty)||qty<=0){showToast("⚠️ ใส่จำนวนให้ถูกต้อง");return;}
+  const item=allInventory.find(i=>getPartCode(i)===code);
+  if(!item){showToast("❌ ไม่พบรหัสอะไหล่ \""+code+"\" ในคลังอะไหล่");if(hint)hint.textContent="ไม่พบรหัสนี้ในคลัง — ตรวจสอบรหัสอะไหล่อีกครั้ง";return;}
+  const name=getPartName(item);
+  const curStock=Number(item["จำนวนคงเหลือ"]||0);
+  if(curStock<qty&&!confirm(`⚠️ สต็อก "${name}" เหลือเพียง ${curStock} ชิ้น แต่ต้องการตัด ${qty} ชิ้น\nต้องการตัดสต็อกต่อไปหรือไม่? (สต็อกจะติดลบ)`)){
+    return;
+  }
+  showToast("⏳ กำลังตัดสต็อก...");
+  const r=await gasPost({action:A.UPDATE_INVENTORY,partCode:code,qtyChange:-qty});
+  if(r?.status==="ok"){
+    item["จำนวนคงเหลือ"]=curStock-qty;
+    renderInventory(allInventory);renderErpDashboard();
+    const ta=document.getElementById("jd-diag-parts");
+    const line=`${code} (${name}) x${qty}`;
+    ta.value=ta.value?ta.value.replace(/\s*$/,"")+"\n"+line:line;
+    if(hint)hint.textContent=`✅ ตัดสต็อก ${name} แล้ว ${qty} ชิ้น (คงเหลือ ${curStock-qty})`;
+    showToast("✅ ตัดสต็อกสำเร็จ");
+    codeInput.value="";qtyInput.value="1";
+  } else {
+    showToast("❌ ตัดสต็อกล้มเหลว: "+(r?.message||r?.error||"unknown"));
+    if(hint)hint.textContent="❌ ตัดสต็อกไม่สำเร็จ กรุณาลองใหม่";
+  }
+}
 async function adjustStock(code,name,cur){const ch=prompt(`ปรับสต็อก "${name}" (ปัจจุบัน: ${cur})\n+เพิ่ม หรือ -ลด เช่น +5`);if(!ch)return;const v=parseInt(ch);if(isNaN(v)){showToast("⚠️ ใส่ตัวเลข");return;}const r=await gasPost({action:A.UPDATE_INVENTORY,partCode:code,qtyChange:v});if(r?.status==="ok"){showToast("✅ ปรับสต็อกสำเร็จ");await loadInventory();}else showToast("❌ ล้มเหลว");}
 async function deleteSlip(refId){if(!confirm("ยืนยันลบสลิป?"))return;const r=await gasPost({action:A.DELETE_SLIP,refId});if(r?.status==="ok"){showToast("✅ ลบสำเร็จ");await loadSlips();};}
 
