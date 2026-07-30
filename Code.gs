@@ -8,9 +8,18 @@
 //  CONFIG
 // ═══════════════════════════════════════════════════════════════
 const SPREADSHEET_ID     = "1iGVAgzQbPSb62ra1syZVRhYqxdbJfGr1TJ8_FgB6VkY";
-const LINE_CHANNEL_TOKEN = "DXEiJgGqaXuEto6xQ8VSYf1Ez40SzuGqWEXXIxH7DVZWitGmIL3EnbwXaOetEmVABI4POaJR+7hUb+SsrPTdnXQff1dj8aG0JlniSyFjCXTrXSwyt6rz/NW61yAckU23PMYiDv63jfCZUAR6fCkFVQdB04t89/1O/w1cDnyilFU=";
+
+// ── Secrets — ห้ามฮาร์ดโค้ดในไฟล์นี้ ──────────────────────────
+// ไปตั้งค่าที่ Project Settings → Script Properties แล้วใส่ key ต่อไปนี้:
+//   LINE_CHANNEL_TOKEN  ← LINE Channel Access Token
+//   VISION_API_KEY      ← Google Cloud Vision API key (ใช้เป็น fallback เท่านั้น ไม่บังคับต้องตั้ง)
+//   GEMINI_API_KEY      ← (ตั้งไว้แล้ว) ใช้ทั้งแชท AI และ OCR สลิปฟรี
+//   ANTHROPIC_API_KEY   ← (ตั้งไว้แล้ว) ใช้เป็น fallback OCR เท่านั้น ไม่บังคับต้องตั้ง
+// ⚠️ ค่าที่เคยฮาร์ดโค้ดไว้ในไฟล์นี้ (LINE token, Vision key) ถือว่าหลุดแล้ว
+//    ควร revoke/ออกใหม่ทั้งคู่ก่อนตั้งค่าในนี้
+const LINE_CHANNEL_TOKEN = PropertiesService.getScriptProperties().getProperty("LINE_CHANNEL_TOKEN") || "";
 const LINE_NOTIFY_TOKEN  = "";   // ← ใส่ LINE Notify Token เพื่อรับแจ้งเตือน Admin
-const VISION_API_KEY     = "AIzaSyDKoucAFd6CVQV8k0_vZPF6S4kvntw6YTM";
+const VISION_API_KEY     = PropertiesService.getScriptProperties().getProperty("VISION_API_KEY") || "";
 
 // ── Admin LINE User ID สำหรับ push message แจ้ง Admin โดยตรง ──
 // ใส่ LINE userId ของ Admin (ดูได้จาก event.source.userId ที่ Admin แชท)
@@ -21,6 +30,13 @@ const ADMIN_LINE_USER_ID = "";   // ← เช่น "Uxxxxxxxxxxxxxxxxxxxxxxxxx
 //   Project Settings → Script Properties → "GEMINI_API_KEY"
 // ถ้าไม่ตั้งค่า ระบบจะ fallback ไปใช้ regex parser เดิมทั้งหมด (ไม่กระทบของเดิม)
 const GEMINI_MODEL = "gemini-2.0-flash";
+
+// ── v3.4: OCR สลิปโอนเงิน — เลือก provider หลักได้ที่นี่ ─────────
+// "gemini"  → ฟรี (ใช้ GEMINI_API_KEY เดียวกับแชท AI) [ค่าเริ่มต้น]
+// "drive"   → ฟรี 100% ไม่ต้องมี key (Google Drive OCR ในตัว แม่นน้อยกว่า Gemini)
+// "vision"  → ต้องมี VISION_API_KEY (ฟรี 1,000 ครั้ง/เดือน แล้วเก็บเงิน)
+// ไม่ว่าตั้งค่าอะไร ระบบจะไล่ fallback ให้อัตโนมัติ: gemini → drive → vision
+const OCR_PROVIDER = "gemini";
 
 // Sheet names
 const SHEET_JOBS         = "งานซ่อม";
@@ -123,8 +139,8 @@ function doPost(e) {
     if (action === "deleteAppointment")  { deleteAppointment(body.id); return json({ status: "ok" }); }
     if (action === "updateJob")          { updateJobFields(body); return json({ status: "ok" }); }
 
-    // ── v3.2.2: OCR Slip via Claude — server-side so API key stays secret ──
-    if (action === "ocrSlip")            { return json(ocrSlipWithClaude(body.image, body.mediaType)); }
+    // ── v3.4: OCR Slip — Gemini (ฟรี) ก่อน, fallback ไป Claude ถ้าตั้งค่าไว้ ──
+    if (action === "ocrSlip")            { return json(ocrSlipForDashboard(body.image, body.mediaType)); }
 
     // ── v3.2: สร้างใบงานจากนัดหมาย (Bug #4 fix) ──────────────
     if (action === "createJobFromAppt")  {
@@ -725,13 +741,10 @@ function processSlipImage(event, userId) {
     var imageBlob = downloadLineImage(messageId);
     if (!imageBlob) { replyLine(replyToken, REPLY_SLIP_FAILED); return; }
     var imageUrl  = saveImageToDrive(imageBlob, messageId);
-    var ocrText   = extractTextFromImage(imageBlob);
-    if (!ocrText) { replyLine(replyToken, REPLY_SLIP_FAILED); return; }
-    var slip          = parseSlipData(ocrText);
-    slip.imageUrl     = imageUrl;
-    slip.userId       = userId;
-    slip.messageId    = messageId;
-    slip.rawText      = ocrText;
+    var slip       = extractSlipData(imageBlob);   // v3.4: gemini → drive → vision fallback chain
+    slip.imageUrl  = imageUrl;
+    slip.userId    = userId;
+    slip.messageId = messageId;
     if (!slip.isSuccess) { replyLine(replyToken, REPLY_SLIP_FAILED); return; }
     if (isDuplicateSlip(slip.refId)) { replyLine(replyToken, REPLY_SLIP_DUPLICATE); return; }
     saveSlipToSheet(slip);
@@ -823,8 +836,60 @@ function ocrSlipWithClaude(base64Data, mediaType) {
   }
 }
 
+// ── v3.4: OCR สลิปสำหรับ Dashboard ผ่าน Gemini — ฟรี ──
+// รับ/คืนค่ารูปแบบเดียวกับ ocrSlipWithClaude() ทุกประการ เพื่อไม่ให้ frontend (payOCRSlip) ต้องแก้
+function ocrSlipWithGemini(base64Data, mediaType) {
+  var apiKey = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  if (!apiKey)    return { status: "error", message: "GEMINI_API_KEY not configured in Script Properties" };
+  if (!base64Data) return { status: "error", message: "image data required" };
+  try {
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + apiKey;
+    var payload = {
+      contents: [{
+        role: "user",
+        parts: [
+          { inline_data: { mime_type: mediaType || "image/jpeg", data: base64Data } },
+          { text: "คุณคือระบบ OCR สำหรับสลิปโอนเงินธนาคารไทย\nตอบเฉพาะ JSON เท่านั้น ไม่ต้องอธิบาย ไม่ต้องมีข้อความอื่น\nJSON format:\n{\n  \"amount\": 1500.00,\n  \"ref\": \"เลขอ้างอิง/เลขรายการ\",\n  \"datetime\": \"YYYY-MM-DDTHH:MM\",\n  \"bank\": \"ชื่อธนาคาร\",\n  \"sender\": \"ชื่อผู้โอน\",\n  \"receiver\": \"ชื่อผู้รับ\",\n  \"confidence\": \"high|medium|low\"\n}\nถ้าอ่านค่าไม่ได้ให้ใส่ null\n\nอ่านข้อมูลจากสลิปโอนเงินนี้ ตอบเฉพาะ JSON" }
+        ]
+      }],
+      generationConfig: { temperature: 0, maxOutputTokens: 600 }
+    };
+    var resp = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(payload), muteHttpExceptions: true });
+    var data = JSON.parse(resp.getContentText());
+    if (resp.getResponseCode() !== 200) {
+      return { status: "error", message: (data.error && data.error.message) || ("API error " + resp.getResponseCode()) };
+    }
+    var text = data.candidates && data.candidates[0] && data.candidates[0].content &&
+               data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+               data.candidates[0].content.parts[0].text;
+    if (!text) return { status: "error", message: "empty response from Gemini" };
+    var clean  = text.replace(/```json|```/g, "").trim();
+    var parsed = JSON.parse(clean);
+    return { status: "ok", data: parsed };
+  } catch (err) {
+    Logger.log("ocrSlipWithGemini error: " + err.message);
+    return { status: "error", message: err.message };
+  }
+}
+
+// ── v3.4: จุดเดียวที่ Dashboard เรียก — ลอง Gemini (ฟรี) ก่อน แล้วค่อย fallback ไป Claude ──
+function ocrSlipForDashboard(base64Data, mediaType) {
+  var geminiConfigured = !!PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  if (geminiConfigured) {
+    var result = ocrSlipWithGemini(base64Data, mediaType);
+    if (result.status === "ok") return result;
+    Logger.log("ocrSlipForDashboard: Gemini failed (" + result.message + "), falling back to Claude if configured");
+  }
+  var anthropicConfigured = !!PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  if (anthropicConfigured) return ocrSlipWithClaude(base64Data, mediaType);
+  return geminiConfigured
+    ? { status: "error", message: "Gemini อ่านสลิปไม่สำเร็จ และไม่ได้ตั้งค่า ANTHROPIC_API_KEY ไว้เป็น fallback" }
+    : { status: "error", message: "GEMINI_API_KEY not configured in Script Properties" };
+}
+
 function extractTextFromImage(blob) {
   try {
+    if (!VISION_API_KEY) return null;
     var base64Image = Utilities.base64Encode(blob.getBytes());
     var url         = "https://vision.googleapis.com/v1/images:annotate?key=" + VISION_API_KEY;
     var payload     = { requests: [{ image: { content: base64Image }, features: [{ type: "TEXT_DETECTION", maxResults: 1 }], imageContext: { languageHints: ["th","en"] } }] };
@@ -834,6 +899,102 @@ function extractTextFromImage(blob) {
     if (result.responses && result.responses[0] && result.responses[0].textAnnotations) return result.responses[0].textAnnotations[0].description;
     return null;
   } catch (err) { Logger.log("extractTextFromImage error: " + err.message); return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  v3.4: OCR สลิปโอนเงิน — ฟรี (Gemini + Drive OCR) พร้อม fallback
+// ═══════════════════════════════════════════════════════════════
+
+// ── ตัวควบคุมลำดับ: gemini → drive → vision ──
+// คืนค่าเป็น slip object รูปแบบเดียวกับ parseSlipData() เสมอ ไม่ว่า provider ไหนสำเร็จ
+function extractSlipData(blob) {
+  var order = [OCR_PROVIDER, "gemini", "drive", "vision"].filter(function(p, i, arr) { return arr.indexOf(p) === i; });
+  for (var i = 0; i < order.length; i++) {
+    try {
+      if (order[i] === "gemini") {
+        var slip = extractSlipWithGemini(blob);
+        if (slip && slip.isSuccess) return slip;
+      } else if (order[i] === "drive") {
+        var text = extractTextViaDriveOCR(blob);
+        if (text) { var parsed = parseSlipData(text); parsed.rawText = text; if (parsed.isSuccess) return parsed; }
+      } else if (order[i] === "vision") {
+        var visionText = extractTextFromImage(blob);
+        if (visionText) { var visionParsed = parseSlipData(visionText); visionParsed.rawText = visionText; if (visionParsed.isSuccess) return visionParsed; }
+      }
+    } catch (err) { Logger.log("extractSlipData [" + order[i] + "] error: " + err.message); }
+  }
+  return { amount: null, bank: null, date: null, time: null, sender: null, receiver: null, refId: null, isSuccess: false, timestamp: new Date(), rawText: "" };
+}
+
+// ── Gemini Vision OCR สำหรับสลิปโอนเงิน — ฟรี (ใช้ GEMINI_API_KEY เดียวกับแชท AI) ──
+function extractSlipWithGemini(blob) {
+  var apiKey = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  if (!apiKey) return null;
+  try {
+    var base64Image = Utilities.base64Encode(blob.getBytes());
+    var mimeType     = blob.getContentType() || "image/jpeg";
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + apiKey;
+    var payload = {
+      contents: [{
+        role: "user",
+        parts: [
+          { inline_data: { mime_type: mimeType, data: base64Image } },
+          { text: "อ่านข้อมูลจากสลิปโอนเงินธนาคารไทยนี้ ตอบเฉพาะ JSON เท่านั้น ไม่ต้องอธิบาย ไม่ต้องมี ```\n" +
+                   "รูปแบบ:\n" +
+                   "{\"amount\": 1500.00, \"ref\": \"เลขอ้างอิง\", \"date\": \"YYYY-MM-DD\", \"time\": \"HH:MM\", \"bank\": \"ชื่อธนาคาร\", \"sender\": \"ชื่อผู้โอน\", \"receiver\": \"ชื่อผู้รับ\"}\n" +
+                   "ถ้าอ่านค่าไหนไม่ได้ให้ใส่ null ถ้ารูปนี้ไม่ใช่สลิปโอนเงินหรือรายการไม่สำเร็จ ให้ตอบ {\"amount\": null}" }
+        ]
+      }],
+      generationConfig: { temperature: 0, maxOutputTokens: 500 }
+    };
+    var resp = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(payload), muteHttpExceptions: true });
+    var data = JSON.parse(resp.getContentText());
+    if (resp.getResponseCode() !== 200) { Logger.log("extractSlipWithGemini API error: " + (data.error && data.error.message)); return null; }
+    var text = data.candidates && data.candidates[0] && data.candidates[0].content &&
+               data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+               data.candidates[0].content.parts[0].text;
+    if (!text) return null;
+    var clean = text.replace(/```json|```/g, "").trim();
+    var parsed = JSON.parse(clean);
+
+    var slip = {
+      amount:   (typeof parsed.amount === "number" && parsed.amount > 0) ? parsed.amount : null,
+      bank:     parsed.bank || null,
+      date:     parsed.date || null,
+      time:     parsed.time || null,
+      sender:   parsed.sender || null,
+      receiver: parsed.receiver || null,
+      refId:    parsed.ref || null,
+      timestamp: new Date(),
+      rawText:  clean
+    };
+    slip.isSuccess = slip.amount > 0;
+    if (slip.isSuccess && !slip.refId) {
+      // เหมือน parseSlipData(): สร้าง fingerprint สำรองเมื่ออ่านเลขอ้างอิงไม่ได้ กันสลิปซ้ำหลุด
+      var fp = [slip.amount, slip.date, slip.time, slip.bank].join("_");
+      slip.refId = Utilities.base64Encode(fp).substring(0, 20).replace(/[\/+=]/g, "X");
+    }
+    return slip;
+  } catch (err) { Logger.log("extractSlipWithGemini error: " + err.message); return null; }
+}
+
+// ── Google Drive OCR ในตัว — ฟรี 100% ไม่ต้องมี API key ──
+// ต้องเปิด Advanced Google Services → Drive API ในหน้า Apps Script editor ก่อนใช้งาน
+function extractTextViaDriveOCR(blob) {
+  var tempFileId = null;
+  try {
+    var resource = { title: "ocr_temp_" + new Date().getTime(), mimeType: blob.getContentType() };
+    var docFile  = Drive.Files.insert(resource, blob, { ocr: true, ocrLanguage: "th" });
+    tempFileId   = docFile.id;
+    var doc      = DocumentApp.openById(tempFileId);
+    var text     = doc.getBody().getText();
+    return text || null;
+  } catch (err) {
+    Logger.log("extractTextViaDriveOCR error: " + err.message);
+    return null;
+  } finally {
+    if (tempFileId) { try { DriveApp.getFileById(tempFileId).setTrashed(true); } catch (_) {} }
+  }
 }
 
 function parseSlipData(text) {
