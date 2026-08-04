@@ -55,7 +55,7 @@ const REPLY_NOT_IMAGE      = "📷 กรุณาส่งรูปภาพส
 
 // v3.5: ข้อมูลร้าน — แก้ไขให้ตรงกับร้านจริง
 const SHOP_NAME    = "P&K New Energy EV Garage";
-const SHOP_PHONE   = "0XX-XXX-XXXX";   // ← ใส่เบอร์โทรร้านจริง
+const SHOP_PHONE   = "092-635-4954";   // ← ใส่เบอร์โทรร้านจริง
 const SHOP_ADDRESS = "ที่อยู่ร้าน (แก้ไขให้ตรงจริง)";
 const SHOP_HOURS   = "เปิดบริการ จันทร์–เสาร์ 08:30–17:30 น.";
 
@@ -188,18 +188,21 @@ function createJobFromAppointment(data) {
   }
 
   // สร้าง Job
+  // Bug fix (2026-08): เดิมไม่ได้ส่ง appointmentTime มาด้วย ทำให้เวลานัดหายไปตอนสร้างใบงาน
+  // และ carPlate ควรอ่านจาก appt.plate ก่อน data.carPlate เพื่อไม่ให้ทับข้อมูลนัดหมายจริง
   var jobData = {
-    customerName:   appt.name  || "",
-    customerPhone:  appt.phone || "",
-    carBrand:       carBrand,
-    carModel:       carModel || carStr,
-    carPlate:       appt.plate || data.carPlate || "",
-    repairType:     appt.type  || "ตรวจเช็คทั่วไป",
-    repairNotes:    (appt.notes ? appt.notes + "\n" : "") + "สร้างจากนัดหมาย: " + apptId + (appt.source === "line" ? " (LINE)" : ""),
+    customerName:    appt.name  || "",
+    customerPhone:   appt.phone || "",
+    carBrand:        carBrand,
+    carModel:        carModel || carStr,
+    carPlate:        appt.plate || data.carPlate || "",
+    repairType:      appt.type  || "ตรวจเช็คทั่วไป",
+    repairNotes:     (appt.notes ? appt.notes + "\n" : "") + "สร้างจากนัดหมาย: " + apptId + (appt.source === "line" ? " (LINE)" : ""),
     appointmentDate: appt.date || "",
-    estimatedPrice: data.estimatedPrice || 0,
-    createdBy:      data.createdBy || "system",
-    userId:         appt.createdBy || ""
+    appointmentTime: appt.time || "",
+    estimatedPrice:  data.estimatedPrice || 0,
+    createdBy:       data.createdBy || "system",
+    userId:          appt.createdBy || ""
   };
   var jobId = createJob(jobData);
 
@@ -232,8 +235,11 @@ function initSheets() {
 
   if (!ss.getSheetByName(SHEET_JOBS)) {
     var s = ss.insertSheet(SHEET_JOBS);
-    s.appendRow(["Job ID","วันที่สร้าง","userId","ชื่อลูกค้า","เบอร์โทร","ยี่ห้อรถ","รุ่นรถ","ทะเบียน","รายการซ่อม / ปัญหา","ราคาประเมิน (฿)","ชั่วโมงประเมิน","หมายเหตุ","วันนัดหมาย","สถานะ","ราคาจริง (฿)","วันเสร็จ"]);
-    s.getRange(1,1,1,16).setFontWeight("bold").setBackground("#1D9E75").setFontColor("#FFFFFF");
+    // Bug fix (2026-08): เปลี่ยน "วันนัดหมาย" → "วันนัด" และเพิ่มคอลัมน์ "เวลานัด"
+    // ให้ตรงกับคีย์ที่ frontend (index.html) ใช้อ่าน/แสดงผล — เดิมชื่อคอลัมน์ไม่ตรงกัน
+    // ทำให้วันที่ในหน้ารายละเอียดงานซ่อมไม่ตรงกับวันนัดจริงของลูกค้า
+    s.appendRow(["Job ID","วันที่สร้าง","userId","ชื่อลูกค้า","เบอร์โทร","ยี่ห้อรถ","รุ่นรถ","ทะเบียน","รายการซ่อม / ปัญหา","ราคาประเมิน (฿)","ชั่วโมงประเมิน","หมายเหตุ","วันนัด","เวลานัด","สถานะ","ราคาจริง (฿)","วันเสร็จ"]);
+    s.getRange(1,1,1,17).setFontWeight("bold").setBackground("#1D9E75").setFontColor("#FFFFFF");
     s.setFrozenRows(1);
   }
   if (!ss.getSheetByName(SHEET_CUSTOMERS)) {
@@ -276,6 +282,42 @@ function initSheets() {
     s7.getRange(1,1,1,8).setFontWeight("bold").setBackground("#9B59B6").setFontColor("#FFFFFF");
     s7.setFrozenRows(1);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Bug fix (2026-08): MIGRATION — แก้ชีต "งานซ่อม" ที่มีอยู่แล้วในโปรดักชัน
+//  ให้ชื่อคอลัมน์ตรงกับ frontend โดยไม่กระทบข้อมูลเดิม (แก้แค่ label แถวที่ 1
+//  และเพิ่มคอลัมน์ "เวลานัด" ถ้ายังไม่มี — ไม่ลบ/ไม่ย้ายคอลัมน์เดิม)
+//  วิธีใช้: เปิด Apps Script Editor → เลือกฟังก์ชันนี้ → กด ▶ Run ครั้งเดียว
+// ═══════════════════════════════════════════════════════════════
+function fixJobsSheetColumns_oneTime() {
+  var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_JOBS);
+  if (!sheet) { Logger.log("❌ ไม่พบชีต " + SHEET_JOBS); return; }
+  var lastCol = sheet.getLastColumn();
+  var headers = sheet.getRange(1,1,1,lastCol).getValues()[0];
+
+  // 1) เปลี่ยนชื่อคอลัมน์ "วันนัดหมาย" → "วันนัด" (label เท่านั้น ไม่กระทบข้อมูล/ตำแหน่งคอลัมน์)
+  var oldIdx = headers.indexOf("วันนัดหมาย");
+  if (oldIdx !== -1) {
+    sheet.getRange(1, oldIdx + 1).setValue("วันนัด");
+    Logger.log("✅ เปลี่ยนชื่อคอลัมน์ 'วันนัดหมาย' → 'วันนัด' (คอลัมน์ที่ " + (oldIdx + 1) + ")");
+  } else if (headers.indexOf("วันนัด") !== -1) {
+    Logger.log("ℹ️ คอลัมน์ 'วันนัด' มีอยู่แล้ว ไม่ต้องแก้ไข");
+  } else {
+    Logger.log("⚠️ ไม่พบคอลัมน์ 'วันนัดหมาย' หรือ 'วันนัด' — กรุณาตรวจสอบ header แถวแรกด้วยตนเอง");
+  }
+
+  // 2) เพิ่มคอลัมน์ "เวลานัด" ถ้ายังไม่มี (เพิ่มต่อท้าย ไม่แทรกกลาง เพื่อไม่ให้คอลัมน์อื่นเลื่อน)
+  headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0]; // อ่านใหม่หลังแก้ข้อ 1
+  if (headers.indexOf("เวลานัด") === -1) {
+    var newCol = headers.length + 1;
+    sheet.getRange(1, newCol).setValue("เวลานัด").setFontWeight("bold").setBackground("#1D9E75").setFontColor("#FFFFFF");
+    Logger.log("✅ เพิ่มคอลัมน์ 'เวลานัด' ใหม่ที่คอลัมน์ " + newCol);
+  } else {
+    Logger.log("ℹ️ คอลัมน์ 'เวลานัด' มีอยู่แล้ว ไม่ต้องเพิ่ม");
+  }
+
+  Logger.log("── เสร็จสิ้น — รันครั้งเดียวพอ ไม่ต้องรันซ้ำอีก ──");
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -573,14 +615,13 @@ function getWelcomeMessage() {
     "ℹ️ เกี่ยวกับเรา — ข้อมูลร้าน/ที่อยู่/เวลาเปิด-ปิด\n\n" +
     "หรือพิมพ์ข้อความบอกความต้องการได้เลยครับ ระบบจะช่วยจัดการให้ทันที 🙏";
 }
-
 // ── ข้อความแนะนำร้าน (ปุ่ม "ℹ️ เกี่ยวกับเรา") ──
 function getAboutUsMessage() {
-  return "ℹ️ เกี่ยวกับ " + SHOP_NAME + "\n" +
+  return "ℹ️ เกี่ยวกับ P&K New Energy Service\n" +
     "━━━━━━━━━━━━━━━\n" +
-    "📍 ที่อยู่: " + SHOP_ADDRESS + "\n" +
-    "🕒 " + SHOP_HOURS + "\n" +
-    "☎️ โทร: " + SHOP_PHONE + "\n\n" +
+    "📍 ที่อยู่: https://maps.app.goo.gl/CUf3AH8AmQTeDbwo7\n" +
+    "🕒 อังคาร-อาทิตย์ 9:00-18:00น หยุดทุกวันจันทร์\n" +
+    "☎️ โทร: 092-635-4954\n\n" +
     "เราเชี่ยวชาญด้านรถยนต์ไฟฟ้า (EV) ครบวงจร ทั้งตรวจเช็ค ซ่อมบำรุง ระบบแบตเตอรี่ และระบบชาร์จครับ ⚡";
 }
 
@@ -983,8 +1024,11 @@ function extractSlipWithGemini(blob) {
 function extractTextViaDriveOCR(blob) {
   var tempFileId = null;
   try {
-    var resource = { title: "ocr_temp_" + new Date().getTime(), mimeType: blob.getContentType() };
-    var docFile  = Drive.Files.insert(resource, blob, { ocr: true, ocrLanguage: "th" });
+    // Drive API v3: ใช้ Files.create() ไม่ใช่ Files.insert() (ชื่อ method ของ v2)
+    // resource.mimeType ต้องเป็น "เป้าหมาย" ที่จะแปลงเป็น (Google Docs) ไม่ใช่ mimeType ของรูปต้นฉบับ
+    // resource.name (v3) แทน resource.title (v2)
+    var resource = { name: "ocr_temp_" + new Date().getTime(), mimeType: MimeType.GOOGLE_DOCS };
+    var docFile  = Drive.Files.create(resource, blob, { ocr: true, ocrLanguage: "th" });
     tempFileId   = docFile.id;
     var doc      = DocumentApp.openById(tempFileId);
     var text     = doc.getBody().getText();
@@ -1159,7 +1203,25 @@ function createJob(data) {
   try {
     var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_JOBS);
     var jobId = "JOB-" + new Date().getTime();
+    // คอลัมน์ที่ 13 คือ "วันนัด" (เดิมชื่อ "วันนัดหมาย" — เปลี่ยน label แล้วใน
+    // initSheets()/fixJobsSheetColumns_oneTime() ตำแหน่งคอลัมน์เดิมไม่เปลี่ยน)
     sheet.appendRow([jobId,new Date(),data.userId||"",data.customerName||"",data.customerPhone||"",data.carBrand||"",data.carModel||"",data.carPlate||"",data.repairType||"",data.estimatedPrice||"",data.estimatedHours||"",data.repairNotes||"",data.appointmentDate||"","รอตรวจสอบ","",""]);
+    var lastRow = sheet.getLastRow();
+
+    // Bug fix (2026-08): เดิมเวลานัด (appointmentTime) ไม่มีคอลัมน์ในชีตเลย
+    // จึงถูกฝังไว้ในหมายเหตุเท่านั้น ทำให้ "เวลานัด" หายไปจากหน้ารายละเอียดงาน
+    // ตอนนี้บันทึกแยกเป็นคอลัมน์ "เวลานัด" จริง (เพิ่มคอลัมน์ต่อท้ายอัตโนมัติถ้ายังไม่มี
+    // เพื่อไม่ให้กระทบตำแหน่งคอลัมน์เดิมที่โค้ดส่วนอื่นอ้างอิงแบบ positional array อยู่)
+    if (data.appointmentTime) {
+      var headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+      var timeCol = headers.indexOf("เวลานัด") + 1;
+      if (!timeCol) {
+        timeCol = headers.length + 1;
+        sheet.getRange(1, timeCol).setValue("เวลานัด").setFontWeight("bold").setBackground("#1D9E75").setFontColor("#FFFFFF");
+      }
+      sheet.getRange(lastRow, timeCol).setValue(data.appointmentTime);
+    }
+
     try { updateCustomer(data); } catch(_) {}
     if (LINE_NOTIFY_TOKEN) { try { notifyLine("🔧 งานใหม่: "+jobId+"\nลูกค้า: "+(data.customerName||"-")+"\nรถ: "+(data.carModel||"-")); } catch(_) {} }
     return jobId;
@@ -1927,3 +1989,51 @@ function testDashboard() {
   Logger.log("Dashboard: "+JSON.stringify(summary,null,2));
 }
 
+// ── v3.4: ฟังก์ชันวินิจฉัยปัญหา OCR สลิป — รันจากปุ่ม ▶ Run ในหน้า editor แล้วดู log ด้านล่างได้เลย ──
+function runOcrDiagnostics() {
+  var props = PropertiesService.getScriptProperties();
+
+  Logger.log("── 1) เช็ค Script Properties ──");
+  ["LINE_CHANNEL_TOKEN", "GEMINI_API_KEY", "VISION_API_KEY", "ANTHROPIC_API_KEY"].forEach(function(key) {
+    var val = props.getProperty(key);
+    Logger.log(key + ": " + (val ? ("มีค่า (ยาว " + val.length + " ตัวอักษร)") : "❌ ไม่ได้ตั้งค่า / ว่างเปล่า"));
+  });
+
+  Logger.log("── 2) เช็ค Advanced Drive Service ──");
+  try {
+    var about = Drive.About.get({ fields: "user" }); // v3 ต้องระบุ fields เสมอ
+    Logger.log("✅ Drive API (permission) ใช้งานได้ (user: " + about.user.displayName + ")");
+  } catch (e) {
+    Logger.log("❌ Drive API error: " + e.message + " ← ต้องไปเปิด Services (ไอคอน +) → เพิ่ม Drive API");
+  }
+
+  Logger.log("── 2b) ทดสอบ Drive OCR จริง (สร้าง Google Doc จากรูปทดสอบ 1x1 px) ──");
+  try {
+    var testBlob = Utilities.newBlob(
+      Utilities.base64Decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="),
+      "image/png", "diagnostic_test.png"
+    );
+    var ocrText = extractTextViaDriveOCR(testBlob);
+    Logger.log(ocrText !== null ? "✅ extractTextViaDriveOCR() ทำงานได้ (สร้าง/อ่าน/ลบไฟล์ชั่วคราวสำเร็จ)" : "❌ extractTextViaDriveOCR() คืนค่า null — ดู error ด้านบนจาก Logger.log ใน catch ของฟังก์ชันนั้น");
+  } catch (e) {
+    Logger.log("❌ extractTextViaDriveOCR() throw error: " + e.message);
+  }
+
+  Logger.log("── 3) เช็คว่า Gemini API key เรียกได้จริงไหม (ทดสอบด้วยข้อความล้วน ไม่ใช้รูป) ──");
+  var geminiKey = props.getProperty("GEMINI_API_KEY");
+  if (!geminiKey) {
+    Logger.log("⏭️ ข้าม — ยังไม่ได้ตั้งค่า GEMINI_API_KEY");
+  } else {
+    try {
+      var url = "https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent?key=" + geminiKey;
+      var payload = { contents: [{ role: "user", parts: [{ text: "ตอบคำว่า OK คำเดียว" }] }] };
+      var resp = UrlFetchApp.fetch(url, { method: "post", contentType: "application/json", payload: JSON.stringify(payload), muteHttpExceptions: true });
+      Logger.log("Gemini HTTP status: " + resp.getResponseCode());
+      Logger.log("Gemini raw response: " + resp.getContentText().substring(0, 500));
+    } catch (e) {
+      Logger.log("❌ เรียก Gemini ไม่สำเร็จ: " + e.message);
+    }
+  }
+
+  Logger.log("── เสร็จสิ้น — เลื่อนดูผลด้านบนทีละข้อ ──");
+}
