@@ -711,6 +711,7 @@ body.dark-mode .qc-check.fail{background:#3A1010}
           <div class="form-group"><label class="required">รุ่น</label><select id="f-model"><option value="">— เลือกยี่ห้อก่อน —</option></select></div>
           <div class="form-group"><label>ทะเบียน</label><input type="text" id="f-plate" placeholder="กข 1234"></div>
           <div class="form-group"><label>วันนัด</label><input type="date" id="f-date"></div>
+          <div class="form-group"><label>เวลานัด</label><input type="time" id="f-time"></div>
         </div>
       </div>
       <div class="card" style="grid-column:1/-1"><div class="card-title"><span class="step-num">3</span> อาการ / ปัญหา</div>
@@ -3110,12 +3111,12 @@ async function submitJob(){
   if(!name||!phone){showToast("⚠️ กรุณากรอกชื่อและเบอร์โทร");return;}
   if(!repair||!notes){showToast("⚠️ กรุณาระบุประเภทงานและอาการ");return;}
   const btn=document.getElementById("submit-job-btn");btn.innerHTML='<span class="spinner"></span> กำลังสร้าง...';btn.disabled=true;
-  const r=await gasPost({action:A.CREATE_JOB,customerName:name,customerPhone:phone,carBrand:document.getElementById("f-brand").value,carModel:document.getElementById("f-model").value||document.getElementById("f-brand").value,carPlate:document.getElementById("f-plate").value.trim(),repairType:repair,repairNotes:notes,estimatedPrice:Number(document.getElementById("f-price").value)||0,appointmentDate:document.getElementById("f-date").value,createdBy:currentUser?.username||"system"});
+  const r=await gasPost({action:A.CREATE_JOB,customerName:name,customerPhone:phone,carBrand:document.getElementById("f-brand").value,carModel:document.getElementById("f-model").value||document.getElementById("f-brand").value,carPlate:document.getElementById("f-plate").value.trim(),repairType:repair,repairNotes:notes,estimatedPrice:Number(document.getElementById("f-price").value)||0,appointmentDate:document.getElementById("f-date").value,appointmentTime:document.getElementById("f-time").value,createdBy:currentUser?.username||"system"});
   btn.innerHTML="✅ สร้างใบงาน";btn.disabled=false;
   if(r?.status==="ok"){showToast("✅ สร้างสำเร็จ! "+r.jobId+" — สถานะ: รอตรวจสอบ");clearNewJobForm();await loadJobs();switchTab("jobs",document.querySelectorAll(".tab")[1]);}
   else showToast("❌ "+(r?.message||"เชื่อมต่อไม่ได้"));
 }
-function clearNewJobForm(){["f-name","f-phone","f-plate","f-notes","f-price","f-date"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("f-brand").value="";document.getElementById("f-repair").value="";document.getElementById("f-model").innerHTML=`<option value="">— เลือกยี่ห้อก่อน —</option>`;}
+function clearNewJobForm(){["f-name","f-phone","f-plate","f-notes","f-price","f-date","f-time"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("f-brand").value="";document.getElementById("f-repair").value="";document.getElementById("f-model").innerHTML=`<option value="">— เลือกยี่ห้อก่อน —</option>`;}
 function filterJobs(){const q=document.getElementById("job-search").value.toLowerCase(),st=document.getElementById("job-filter-status").value,tc=document.getElementById("job-filter-tech").value;renderJobs(allJobs.filter(j=>{const mq=!q||Object.values(j).some(v=>String(v).toLowerCase().includes(q));// Bug8 fix: match both displayName and username for tech filter
 return mq&&(!st||j["สถานะ"]===st)&&(!tc||(j["ช่าง"]===tc||String(j["ช่าง"]||"").toLowerCase().includes(tc.toLowerCase())));}));}
 function filterCustomers(){const q=document.getElementById("cust-search").value.toLowerCase();renderCustomers(allCustomers.filter(c=>Object.values(c).some(v=>String(v).toLowerCase().includes(q))));}
@@ -3434,6 +3435,7 @@ function fillJobFromAppt(a){
   document.getElementById("f-phone").value=a.phone||"";
   document.getElementById("f-plate").value=a.plate||"";
   document.getElementById("f-date").value=a.date||"";
+  document.getElementById("f-time").value=a.time||"";
   document.getElementById("f-repair").value=a.type||"";
   // Bug2 fix: parse car field "Brand Model" and set dropdowns
   if(a.car){
