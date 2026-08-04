@@ -1232,7 +1232,8 @@ body.dark-mode .qc-check.fail{background:#3A1010}
         </div>
         <div>
           <div class="info-row"><span class="info-label">ประเภทงาน</span><span id="jd-type">—</span></div>
-          <div class="info-row"><span class="info-label">วันที่รับ</span><span id="jd-date">—</span></div>
+          <div class="info-row"><span class="info-label">วันนัด</span><span id="jd-date">—</span></div>
+          <div class="info-row"><span class="info-label">เวลานัด</span><span id="jd-time">—</span></div>
           <div class="info-row"><span class="info-label">ช่าง</span><span id="jd-tech">—</span></div>
           <div class="info-row"><span class="info-label">ราคาประเมิน</span><span id="jd-price-display">—</span></div>
         </div>
@@ -2337,7 +2338,8 @@ function openJobDetail(j){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||"—";};
   set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
   set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));set("jd-plate",j["ทะเบียน"]);
-  set("jd-type",j["รายการซ่อม / ปัญหา"]);set("jd-date",fd(j["วันที่สร้าง"]));
+  set("jd-type",j["รายการซ่อม / ปัญหา"]);set("jd-date",fd(j["วันนัด"]||j["วันที่สร้าง"]));
+  set("jd-time",j["เวลานัด"]||extractApptTime(j["หมายเหตุ"])||"—");
   set("jd-tech",j["ช่าง"]);set("jd-symptom",j["หมายเหตุ"]);
   // Render saved-data summary banners
   _renderSavedBanner("diag-saved-summary",
@@ -2806,7 +2808,8 @@ function _refreshDisplay(){
   set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
   set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));
   set("jd-plate",j["ทะเบียน"]);set("jd-type",j["รายการซ่อม / ปัญหา"]);
-  set("jd-date",fd(j["วันที่สร้าง"]));set("jd-tech",j["ช่าง"]);
+  set("jd-date",fd(j["วันนัด"]||j["วันที่สร้าง"]));set("jd-time",j["เวลานัด"]||extractApptTime(j["หมายเหตุ"])||"—");
+  set("jd-tech",j["ช่าง"]);
   set("jd-symptom",j["หมายเหตุ"]);
   const sb=document.getElementById("jd-status-badge");if(sb)sb.innerHTML=bh(st);
   renderJobPipeline(st);
@@ -3680,6 +3683,8 @@ async function verifyLineWebhook(){
 
 // UTILS
 function fd(v){if(!v)return"—";try{const d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return d.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});}catch{return String(v).slice(0,10);}}
+// Bug fix: ดึงเวลานัดหมายที่ถูกฝังไว้ในหมายเหตุ (จาก fillJobFromAppt) ออกมาแสดงแยกเป็นช่อง "เวลานัด"
+function extractApptTime(notes){const m=/เวลานัด:\s*(\d{1,2}:\d{2})/.exec(notes||"");return m?m[1]:"";}
 let toastTimer;
 function showToast(msg){const t=document.getElementById("toast");t.textContent=currentLang==="th"?translatePlainText(msg,"th"):msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
 
