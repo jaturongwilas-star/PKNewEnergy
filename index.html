@@ -295,8 +295,7 @@ textarea{min-height:68px}
 /* ── 7. MODAL INNER SPACING ── */
 .modal-title{font-size:14px;margin-bottom:12px;padding-bottom:10px}
 .modal-footer{margin-top:14px;padding-top:12px;gap:6px}
-
-/* v3.6: คืน padding ให้ modal ฟอร์มทั่วไป (jobDetail/qc จัด padding เองอยู่แล้ว จึงไม่แตะ) */
+/* v3.6: คืน padding ให้ modal ฟอร์มทั่วไป (jobDetail/qc จัด padding เองอยู่แล้ว) */
 #editUserModal .modal,#apptModal .modal,#inventoryPriceModal .modal,#setupWizardModal .modal{padding:22px 24px}
 @media(max-width:768px){#editUserModal .modal,#apptModal .modal,#inventoryPriceModal .modal,#setupWizardModal .modal{padding:18px 16px}}
 
@@ -685,8 +684,8 @@ body.dark-mode .qc-check.fail{background:#3A1010}
       </div>
     </div>
     <div class="table-wrap">
-      <table><thead><tr><th>Job ID</th><th>วันที่</th><th>ลูกค้า</th><th>รถ / ทะเบียน</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>ราคา</th><th>จัดการ</th></tr></thead>
-      <tbody id="jobs-body"><tr><td colspan="9" class="empty-state">กำลังโหลด...</td></tr></tbody></table>
+      <table><thead><tr><th>Job ID</th><th>วันที่</th><th>วันนัด</th><th>ลูกค้า</th><th>รถ / ทะเบียน</th><th>อาการ</th><th>สถานะ</th><th>ช่าง</th><th>ราคา</th><th>จัดการ</th></tr></thead>
+      <tbody id="jobs-body"><tr><td colspan="10" class="empty-state">กำลังโหลด...</td></tr></tbody></table>
     </div>
   </section>
 
@@ -715,6 +714,7 @@ body.dark-mode .qc-check.fail{background:#3A1010}
           <div class="form-group"><label class="required">รุ่น</label><select id="f-model"><option value="">— เลือกยี่ห้อก่อน —</option></select></div>
           <div class="form-group"><label>ทะเบียน</label><input type="text" id="f-plate" placeholder="กข 1234"></div>
           <div class="form-group"><label>วันนัด</label><input type="date" id="f-date"></div>
+          <div class="form-group"><label>เวลานัด</label><input type="time" id="f-time"></div>
         </div>
       </div>
       <div class="card" style="grid-column:1/-1"><div class="card-title"><span class="step-num">3</span> อาการ / ปัญหา</div>
@@ -1236,7 +1236,8 @@ body.dark-mode .qc-check.fail{background:#3A1010}
         </div>
         <div>
           <div class="info-row"><span class="info-label">ประเภทงาน</span><span id="jd-type">—</span></div>
-          <div class="info-row"><span class="info-label">วันที่รับ</span><span id="jd-date">—</span></div>
+          <div class="info-row"><span class="info-label">วันนัด</span><span id="jd-date">—</span></div>
+          <div class="info-row"><span class="info-label">เวลานัด</span><span id="jd-time">—</span></div>
           <div class="info-row"><span class="info-label">ช่าง</span><span id="jd-tech">—</span></div>
           <div class="info-row"><span class="info-label">ราคาประเมิน</span><span id="jd-price-display">—</span></div>
         </div>
@@ -1280,7 +1281,18 @@ body.dark-mode .qc-check.fail{background:#3A1010}
         <div class="form-group"><label>ช่างผู้วินิจฉัย</label><select id="jd-diag-tech"><option value="">— เลือกช่าง —</option></select></div>
         <div class="form-group"><label>วันที่วินิจฉัย</label><input type="date" id="jd-diag-date"></div>
         <div class="form-group span2"><label>สาเหตุที่พบ (Root Cause)</label><textarea id="jd-diag-cause" rows="3" placeholder="ระบุสาเหตุที่แท้จริง..."></textarea></div>
-        <div class="form-group span2"><label>อะไหล่ที่ต้องใช้</label><textarea id="jd-diag-parts" rows="2"></textarea></div>
+        <div class="form-group span2">
+          <label>อะไหล่ที่ต้องใช้</label>
+          <textarea id="jd-diag-parts" rows="2"></textarea>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;background:var(--g3, #f4faf7);border:1px dashed var(--g1,#0D7A5F);border-radius:6px;padding:8px">
+            <span style="font-size:12px;color:var(--muted)">ตัดสต็อก:</span>
+            <input type="text" id="jd-diag-part-code" list="parts-datalist" placeholder="รหัสอะไหล่" style="flex:1;min-width:120px;font-size:12px">
+            <datalist id="parts-datalist"></datalist>
+            <input type="number" id="jd-diag-part-qty" placeholder="จำนวน" min="1" value="1" style="width:70px;font-size:12px">
+            <button type="button" class="btn btn-sm" onclick="deductPartStock()">➖ ตัดสต็อก</button>
+            <span id="jd-diag-part-hint" style="font-size:11px;color:var(--muted);width:100%"></span>
+          </div>
+        </div>
         <div class="form-group span2"><label>แผนการซ่อม</label><textarea id="jd-diag-plan" rows="3"></textarea></div>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1721,11 +1733,12 @@ const A = {
   UPDATE_APPT:        "updateAppointment",
   DELETE_APPT:        "deleteAppointment",
   OCR_SLIP:           "ocrSlip",          // server-side Claude OCR proxy (v3.2.2)
-  // ── v3.6: centralized users (login ได้ทุกเครื่อง) ──
+  // ── v3.6: centralized users + ตัดสต็อก ──
   GET_USERS:          "getUsers",
   LOGIN:              "login",
   SAVE_USER:          "saveUser",
   DELETE_USER:        "deleteUser",
+  DEDUCT_JOB_PARTS:   "deductJobParts",
 };
 
 // ── SUBMIT GUARD — prevent duplicate submit ──
@@ -1912,8 +1925,7 @@ function toggleDarkMode(){
   localStorage.setItem("ev_dark_mode",document.body.classList.contains("dark-mode")?"1":"0");
   applyDynamicLanguage();
 }
-// v3.6: user ถูกเก็บแบบ centralized บน backend (Sheet) แล้ว — ที่นี่เก็บแค่ "cache"
-// (ไม่มี password) เพื่อแสดงผล/ตรวจ session ระหว่างรอ sync จาก backend
+// v3.6: user เก็บ centralized บน backend แล้ว — ที่นี่เก็บแค่ cache (ไม่มี password)
 let usersCache=null;
 function loadUsersCache(){
   if(usersCache)return usersCache;
@@ -1921,19 +1933,15 @@ function loadUsersCache(){
   usersCache=DEFAULT_USERS.map(u=>({username:u.username,role:u.role,displayName:u.displayName,active:true}));
   return usersCache;
 }
-// โหลดรายชื่อ user ล่าสุดจาก backend แล้วเก็บลง cache (เรียกตอนเปิดแอป/ก่อนแสดงหน้าจัดการผู้ใช้)
 async function syncUsers(){
   try{
     const d=await gasGet({action:A.GET_USERS});
     if(d?.status==="ok"&&Array.isArray(d.users)&&d.users.length){
-      usersCache=d.users;
-      localStorage.setItem("ev_users_cache",JSON.stringify(usersCache));
-      return usersCache;
+      usersCache=d.users;localStorage.setItem("ev_users_cache",JSON.stringify(usersCache));return usersCache;
     }
   }catch(_){}
   return loadUsersCache();
 }
-// loadUsers() ยังคงเป็น sync (ใช้ในหลายที่) — คืน cache ล่าสุด
 function loadUsers(){return loadUsersCache();}
 function isAdmin(){return currentUser?.role==="admin";}
 function isMgr(){return currentUser?.role==="admin"||currentUser?.role==="manager";}
@@ -1949,14 +1957,9 @@ function applyRoleTabVisibility(role){
   if(role==="tech") document.getElementById("tab-accounting").style.display="none";
 }
 
-// v3.6: ปุ่ม 👁️ แสดง/ซ่อนรหัสผ่าน (ใช้ได้ทุกช่องรหัสผ่าน)
-function togglePw(id,btn){
-  const el=document.getElementById(id);if(!el)return;
-  if(el.type==="password"){el.type="text";if(btn)btn.textContent="🙈";}
-  else{el.type="password";if(btn)btn.textContent="👁️";}
-}
-// v3.6: ตรวจ login ผ่าน backend (centralized) — ทุกเครื่องใช้ user ชุดเดียวกัน
-// ถ้าเชื่อมต่อ backend ไม่ได้ → fallback ตรวจจาก DEFAULT_USERS (โหมดออฟไลน์ฉุกเฉิน)
+// v3.6: ปุ่ม 👁️ แสดง/ซ่อนรหัสผ่าน (ใช้ได้ทุกช่อง)
+function togglePw(id,btn){const el=document.getElementById(id);if(!el)return;if(el.type==="password"){el.type="text";if(btn)btn.textContent="🙈";}else{el.type="password";if(btn)btn.textContent="👁️";}}
+// v3.6: login ผ่าน backend (centralized) — ถ้า backend ไม่รู้จัก action/ต่อไม่ได้ → fallback DEFAULT_USERS
 async function doLogin(){
   const un=document.getElementById("login-user").value.trim().toLowerCase(),pw=document.getElementById("login-pass").value.trim();
   const err=document.getElementById("login-error");
@@ -1965,24 +1968,19 @@ async function doLogin(){
   let u=null;
   try{
     const res=await gasPost({action:A.LOGIN,username:un,password:pw},{retry:1,silent:true});
-    if(res&&res.status==="ok"&&res.user){
-      u=res.user;
-    }else if(res&&res.status==="error"&&!/unknown action/i.test(res.message||"")){
-      // backend ตอบชัดเจนว่าไม่ผ่าน (รหัสผิด/ถูกระงับ) — ไม่ต้อง fallback
-      err.textContent="❌ "+(res.message||"เข้าสู่ระบบไม่สำเร็จ");
-      document.getElementById("login-pass").value="";return;
+    if(res&&res.status==="ok"&&res.user){u=res.user;}
+    else if(res&&res.status==="error"&&!/unknown action/i.test(res.message||"")){
+      err.textContent="❌ "+(res.message||"เข้าสู่ระบบไม่สำเร็จ");document.getElementById("login-pass").value="";return;
     }
-    // ถ้า backend ยังไม่รู้จัก action "login" (ยังไม่ deploy Code ใหม่) → ตกไปใช้ fallback ด้านล่าง
   }catch(_){}
-  // Fallback (offline): backend ไม่ตอบ → ตรวจ DEFAULT_USERS ในเครื่อง
   if(!u){
     const cached=loadUsersCache().find(x=>x.username===un);
-    const du=DEFAULT_USERS.find(x=>x.username===un&&x.password===pw);
+    const du=DEFAULT_USERS.find(x=>x.username.toLowerCase()===un&&x.password===pw);
     if(du&&(!cached||cached.active!==false))u={username:du.username,role:du.role,displayName:du.displayName};
     if(!u){err.textContent="❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง หรือเชื่อมต่อเซิร์ฟเวอร์ไม่ได้";document.getElementById("login-pass").value="";return;}
   }
   currentUser=u;localStorage.setItem("ev_session",JSON.stringify({username:u.username,ts:Date.now()}));
-  syncUsers(); // ดึงรายชื่อ user ล่าสุดมาเก็บ cache ไว้เบื้องหลัง
+  syncUsers();
   document.getElementById("loginScreen").style.display="none";
   document.getElementById("topbar-user").style.display="flex";
   setLanguage(currentLang);
@@ -1999,8 +1997,8 @@ function checkSession(){
   const s=localStorage.getItem("ev_session");if(!s)return false;
   try{const ss=JSON.parse(s);if(Date.now()-ss.ts>24*60*60*1000){localStorage.removeItem("ev_session");return false;}
   // ค้นหาใน localStorage users ก่อน แล้ว fallback ไป DEFAULT_USERS
-  let u=loadUsers().find(x=>x.username===ss.username);
-  if(!u)u=DEFAULT_USERS.find(x=>x.username===ss.username);
+  let u=loadUsers().find(x=>x.username.toLowerCase()===ss.username.toLowerCase());
+  if(!u)u=DEFAULT_USERS.find(x=>x.username.toLowerCase()===ss.username.toLowerCase());
   if(!u)return false;currentUser=u;return true;}catch{return false;}
 }
 
@@ -2040,7 +2038,7 @@ async function gasPost(b,{retry=1,silent=false}={}){
 }
 
 // PRICELIST
-const PRICEBOOK_DATA={"updatedAt":"2026-06-04","categories":[{"id":"pm","label":"Preventive Maintenance","type":"pm","models":[{"id":"neta-v","name":"NETA V-II","subtitle":"การเช็คระยะ / ซ่อมบำรุงของ NETA V-II","intervals":[{"year":1,"km":10000},{"year":2,"km":20000},{"year":3,"km":30000},{"year":4,"km":40000},{"year":5,"km":50000},{"year":6,"km":60000},{"year":7,"km":70000},{"year":8,"km":80000},{"year":9,"km":90000},{"year":10,"km":100000},{"year":11,"km":110000},{"year":12,"km":120000},{"year":13,"km":130000},{"year":14,"km":140000},{"year":15,"km":150000},{"year":16,"km":160000},{"year":17,"km":170000},{"year":18,"km":180000},{"year":19,"km":190000},{"year":20,"km":200000}],"plans":[{"id":"plan-a","name":"Plan A","desc":"น้ำมันเกียร์ / Transmission oil NETA แท้ /ENEOS GEAR OIL GL-4","partsCost":[620,220,620,2420,620,220,620,2420,620,220,620,220,620,2420,620,220,620,2420,620,220],"total":[920,320,920,2720,920,320,920,2720,920,320,920,320,920,2720,920,320,920,2720,920,320]},{"id":"plan-b","name":"Plan B","desc":"น้ำมันเกียร์ / Transmission oil MOTYLGEAR 75W-90","partsCost":[820,null,820,2420,820,null,820,2420,820,null,820,null,820,2420,820,null,820,2420,820,null],"total":[1120,null,1120,2720,1120,null,1120,2720,1120,null,1120,null,1120,2720,1120,null,1120,2720,1120,null]}],"labor":[300,100,300,300,300,100,300,300,300,100,300,100,300,300,300,100,300,300,300,100],"items":[{"name":"น้ำมันเกียร์ / Transmission oil NETA แท้ /ENEOS GEAR OIL GL-4","qty":1,"unit":"ลิตร / Litre","unitPrice":400,"plan":"Plan A","due":[1,3,5,7,9,11,13,15,17,19]},{"name":"น้ำมันเกียร์ / Transmission oil MOTYLGEAR 75W-90","qty":1,"unit":"ลิตร / Litre","unitPrice":600,"plan":"Plan B","due":[1,3,5,7,9,11,13,15,17,19]},{"name":"ไส้กรองอากาศ / Air Filter","qty":1,"unit":"ชิ้น / Pcs","unitPrice":220,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]},{"name":"น้ำมันเบรค / Brake fluid Ate SL DOT","qty":1,"unit":"ลิตร / Litre","unitPrice":450,"plan":"All","due":[4,8,14,18]},{"name":"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง","qty":5,"unit":"ลิตร / Litre","unitPrice":1750,"plan":"All","due":[4,8,14,18]},{"name":"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check","qty":null,"unit":"Service QC checklist","unitPrice":null,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]}]},{"id":"neta-x","name":"NETA X","subtitle":"การเช็คระยะ / ซ่อมบำรุงของ NETA X","intervals":[{"year":1,"km":10000},{"year":2,"km":20000},{"year":3,"km":30000},{"year":4,"km":40000},{"year":5,"km":50000},{"year":6,"km":60000},{"year":7,"km":70000},{"year":8,"km":80000},{"year":9,"km":90000},{"year":10,"km":100000},{"year":11,"km":110000},{"year":12,"km":120000},{"year":13,"km":130000},{"year":14,"km":140000},{"year":15,"km":150000},{"year":16,"km":160000},{"year":17,"km":170000},{"year":18,"km":180000},{"year":19,"km":190000},{"year":20,"km":200000}],"plans":[{"id":"plan-a","name":"Plan A","desc":"น้ำมันเกียร์ / Transmission oil Castrol D1","partsCost":[240,840,240,3040,240,840,240,3040,240,840,240,840,240,3040,240,840,240,3040,240,840],"total":[340,1240,340,3440,340,1240,340,3440,340,1240,340,1240,340,3440,340,1240,340,3440,340,1240]},{"id":"plan-b","name":"Plan B","desc":"น้ำมันเกียร์ / Transmission oil Ravenol EV Synto","partsCost":[240,1690,240,3890,240,1690,240,3890,240,1690,240,1690,240,3890,240,1690,240,3890,240,1690],"total":[340,2090,340,4290,340,2090,340,4290,340,2090,340,2090,340,4290,340,2090,340,4290,340,2090]}],"labor":[100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400],"items":[{"name":"น้ำมันเกียร์ / Transmission oil Castrol D1","qty":1,"unit":"ลิตร / Litre","unitPrice":600,"plan":"Plan A","due":[2,4,6,8,10,12,14,16,18,20]},{"name":"น้ำมันเกียร์ / Transmission oil Ravenol EV Synto","qty":1,"unit":"ลิตร / Litre","unitPrice":1450,"plan":"Plan B","due":[2,4,6,8,10,12,14,16,18,20]},{"name":"ไส้กรองอากาศ Air Filter","qty":1,"unit":"ชิ้น / Pcs","unitPrice":240,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]},{"name":"น้ำมันเบรค / Brake fluid Ate SL DOT","qty":1,"unit":"ลิตร / Litre","unitPrice":450,"plan":"All","due":[4,8,14,18]},{"name":"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง","qty":5,"unit":"ลิตร / Litre","unitPrice":1750,"plan":"All","due":[4,8,14,18]},{"name":"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check","qty":null,"unit":"Service QC checklist","unitPrice":null,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]}]}]},{"id":"hvac","label":"HVAC Maintenance","type":"service","brands":["NETA","MG","BYD","Changan","GAC","Tesla"],"items":[{"name":"ตรวจเช็คระบบ A/C เบื้องต้น","desc":"ค่าแรง ตรวจแรงดันน้ำยา / Temp / Error Code","prices":{"NETA":600,"MG":660,"BYD":720,"Changan":720,"GAC":720,"Tesla":900}},{"name":"ล้างแอร์ EV แผง condensor","desc":"ค่าแรง ล้างแอร์ EV แผง condensor แบบถอดกันชน","prices":{"NETA":800,"MG":800,"BYD":800,"Changan":800,"GAC":800,"Tesla":1000}},{"name":"ล้างแอร์ EV แบบไม่ถอดตู้","desc":"ค่าแรงทำความสะอาด Evaporator + Filter","prices":{"NETA":1500,"MG":1650,"BYD":1800,"Changan":1800,"GAC":1800,"Tesla":2250}},{"name":"ล้างแอร์แบบถอดตู้","desc":"ค่าแรง ถอด Blower / Evaporator Cleaning","prices":{"NETA":3500,"MG":3850,"BYD":4200,"Changan":4200,"GAC":4200,"Tesla":5250}},{"name":"เปลี่ยน Cabin Filter","desc":"รวม Reset Maintenance รวมอะไหล่","prices":{"NETA":340,"MG":374,"BYD":408,"Changan":408,"GAC":408,"Tesla":510}},{"name":"Vacuum + Recharge Refrigerant","desc":"รวมดูด Vacuum + เติมน้ำยา","prices":{"NETA":2500,"MG":2750,"BYD":3000,"Changan":3000,"GAC":3000,"Tesla":3750}},{"name":"เปลี่ยน Electric Compressor","desc":"ค่าแรงถอดประกอบ","prices":{"NETA":3000,"MG":3300,"BYD":3600,"Changan":3600,"GAC":3600,"Tesla":4500}},{"name":"เปลี่ยน Condenser","desc":"ค่าแรงถอดประกอบ","prices":{"NETA":2000,"MG":2200,"BYD":2400,"Changan":2400,"GAC":2400,"Tesla":3000}},{"name":"เปลี่ยน Cooling Fan","desc":"ค่าแรง","prices":{"NETA":800,"MG":880,"BYD":960,"Changan":960,"GAC":960,"Tesla":1200}},{"name":"เปลี่ยน Expansion Valve+Vacuum + Recharge Refrigerant","desc":"ค่าแรง","prices":{"NETA":2500,"MG":2750,"BYD":3000,"Changan":3000,"GAC":3000,"Tesla":3750}},{"name":"Flush ระบบแอร์ EV + เปลี่ยนนำมัน compressor","desc":"รวม ล้างระบบ เปลี่ยนน้ำมัน","prices":{"NETA":3000,"MG":3300,"BYD":3600,"Changan":3600,"GAC":3600,"Tesla":4500}}]}]};
+const PRICEBOOK_DATA={"updatedAt":"2026-06-04","categories":[{"id":"pm","label":"Preventive Maintenance","type":"pm","models":[{"id":"neta-v","name":"NETA V-II","subtitle":"การเช็คระยะ / ซ่อมบำรุงของ NETA V-II","intervals":[{"year":1,"km":10000},{"year":2,"km":20000},{"year":3,"km":30000},{"year":4,"km":40000},{"year":5,"km":50000},{"year":6,"km":60000},{"year":7,"km":70000},{"year":8,"km":80000},{"year":9,"km":90000},{"year":10,"km":100000},{"year":11,"km":110000},{"year":12,"km":120000},{"year":13,"km":130000},{"year":14,"km":140000},{"year":15,"km":150000},{"year":16,"km":160000},{"year":17,"km":170000},{"year":18,"km":180000},{"year":19,"km":190000},{"year":20,"km":200000}],"plans":[{"id":"plan-a","name":"Plan A","desc":"น้ำมันเกียร์ / Transmission oil NETA แท้ /ENEOS GEAR OIL GL-4","partsCost":[620,220,620,2420,620,220,620,2420,620,220,620,220,620,2420,620,220,620,2420,620,220],"total":[920,320,920,2720,920,320,920,2720,920,320,920,320,920,2720,920,320,920,2720,920,320]},{"id":"plan-b","name":"Plan B","desc":"น้ำมันเกียร์ / Transmission oil MOTYLGEAR 75W-90","partsCost":[820,null,820,2420,820,null,820,2420,820,null,820,null,820,2420,820,null,820,2420,820,null],"total":[1120,null,1120,2720,1120,null,1120,2720,1120,null,1120,null,1120,2720,1120,null,1120,2720,1120,null]}],"labor":[300,100,300,300,300,100,300,300,300,100,300,100,300,300,300,100,300,300,300,100],"items":[{"name":"น้ำมันเกียร์ / Transmission oil NETA แท้ /ENEOS GEAR OIL GL-4","qty":1,"unit":"ลิตร / Litre","unitPrice":400,"plan":"Plan A","due":[1,3,5,7,9,11,13,15,17,19]},{"name":"น้ำมันเกียร์ / Transmission oil MOTYLGEAR 75W-90","qty":1,"unit":"ลิตร / Litre","unitPrice":600,"plan":"Plan B","due":[1,3,5,7,9,11,13,15,17,19]},{"name":"ไส้กรองอากาศ / Air Filter","qty":1,"unit":"ชิ้น / Pcs","unitPrice":220,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]},{"name":"น้ำมันเบรค / Brake fluid Ate SL DOT","qty":1,"unit":"ลิตร / Litre","unitPrice":450,"plan":"All","due":[4,8,14,18]},{"name":"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง","qty":5,"unit":"ลิตร / Litre","unitPrice":1750,"plan":"All","due":[4,8,14,18]},{"name":"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check","qty":null,"unit":"Service QC checklist","unitPrice":null,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]}]},{"id":"neta-x","name":"NETA X","subtitle":"การเช็คระยะ / ซ่อมบำรุงของ NETA X","intervals":[{"year":1,"km":10000},{"year":2,"km":20000},{"year":3,"km":30000},{"year":4,"km":40000},{"year":5,"km":50000},{"year":6,"km":60000},{"year":7,"km":70000},{"year":8,"km":80000},{"year":9,"km":90000},{"year":10,"km":100000},{"year":11,"km":110000},{"year":12,"km":120000},{"year":13,"km":130000},{"year":14,"km":140000},{"year":15,"km":150000},{"year":16,"km":160000},{"year":17,"km":170000},{"year":18,"km":180000},{"year":19,"km":190000},{"year":20,"km":200000}],"plans":[{"id":"plan-a","name":"Plan A","desc":"น้ำมันเกียร์ / Transmission oil Castrol D1","partsCost":[240,940,240,3750,240,940,240,3750,240,940,240,940,240,3750,240,940,240,3750,240,940],"total":[340,1340,340,4150,340,1340,340,4150,340,1340,340,1340,340,4150,340,1340,340,4150,340,1340]},{"id":"plan-b","name":"Plan B","desc":"น้ำมันเกียร์ / Transmission oil Ravenol EV Synto","partsCost":[240,1690,240,4500,240,1690,240,4500,240,1690,240,1690,240,4500,240,1690,240,4500,240,1690],"total":[340,2090,340,4900,340,2090,340,4900,340,2090,340,2090,340,4900,340,2090,340,4900,340,2090]}],"labor":[100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400,100,400],"items":[{"name":"น้ำมันเกียร์ / Transmission oil Castrol D1","qty":1,"unit":"ลิตร / Litre","unitPrice":700,"plan":"Plan A","due":[2,4,6,8,10,12,14,16,18,20]},{"name":"น้ำมันเกียร์ / Transmission oil Ravenol EV Synto","qty":1,"unit":"ลิตร / Litre","unitPrice":1450,"plan":"Plan B","due":[2,4,6,8,10,12,14,16,18,20]},{"name":"ไส้กรองอากาศ Air Filter","qty":1,"unit":"ชิ้น / Pcs","unitPrice":240,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]},{"name":"น้ำมันเบรค / Brake fluid Ate SL DOT","qty":1,"unit":"ลิตร / Litre","unitPrice":450,"plan":"All","due":[4,8,14,18]},{"name":"น้ำยาหม้อน้ำสำหรับมอเตอร์ขับเคลื่อน / แบตเตอรี่แรงดันสูง","qty":10,"unit":"ลิตร / Litre","unitPrice":2360,"plan":"All","due":[4,8,14,18]},{"name":"ตรวจสอบความปลอดภัยตาม QC checklist / Safety check","qty":null,"unit":"Service QC checklist","unitPrice":null,"plan":"All","due":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]}]}]},{"id":"hvac","label":"HVAC Maintenance","type":"service","brands":["NETA","MG","BYD","Changan","GAC","Tesla"],"items":[{"name":"ตรวจเช็คระบบ A/C เบื้องต้น","desc":"ค่าแรง ตรวจแรงดันน้ำยา / Temp / Error Code","prices":{"NETA":600,"MG":660,"BYD":720,"Changan":720,"GAC":720,"Tesla":900}},{"name":"ล้างแอร์ EV แผง condensor","desc":"ค่าแรง ล้างแอร์ EV แผง condensor แบบถอดกันชน","prices":{"NETA":800,"MG":800,"BYD":800,"Changan":800,"GAC":800,"Tesla":1000}},{"name":"ล้างแอร์ EV แบบไม่ถอดตู้","desc":"ค่าแรงทำความสะอาด Evaporator + Filter","prices":{"NETA":1500,"MG":1650,"BYD":1800,"Changan":1800,"GAC":1800,"Tesla":2250}},{"name":"ล้างแอร์แบบถอดตู้","desc":"ค่าแรง ถอด Blower / Evaporator Cleaning","prices":{"NETA":3500,"MG":3850,"BYD":4200,"Changan":4200,"GAC":4200,"Tesla":5250}},{"name":"เปลี่ยน Cabin Filter","desc":"รวม Reset Maintenance รวมอะไหล่","prices":{"NETA":340,"MG":374,"BYD":408,"Changan":408,"GAC":408,"Tesla":510}},{"name":"Vacuum + Recharge Refrigerant","desc":"รวมดูด Vacuum + เติมน้ำยา","prices":{"NETA":2500,"MG":2750,"BYD":3000,"Changan":3000,"GAC":3000,"Tesla":3750}},{"name":"เปลี่ยน Electric Compressor","desc":"ค่าแรงถอดประกอบ","prices":{"NETA":3000,"MG":3300,"BYD":3600,"Changan":3600,"GAC":3600,"Tesla":4500}},{"name":"เปลี่ยน Condenser","desc":"ค่าแรงถอดประกอบ","prices":{"NETA":2000,"MG":2200,"BYD":2400,"Changan":2400,"GAC":2400,"Tesla":3000}},{"name":"เปลี่ยน Cooling Fan","desc":"ค่าแรง","prices":{"NETA":800,"MG":880,"BYD":960,"Changan":960,"GAC":960,"Tesla":1200}},{"name":"เปลี่ยน Expansion Valve+Vacuum + Recharge Refrigerant","desc":"ค่าแรง","prices":{"NETA":2500,"MG":2750,"BYD":3000,"Changan":3000,"GAC":3000,"Tesla":3750}},{"name":"Flush ระบบแอร์ EV + เปลี่ยนนำมัน compressor","desc":"รวม ล้างระบบ เปลี่ยนน้ำมัน","prices":{"NETA":3000,"MG":3300,"BYD":3600,"Changan":3600,"GAC":3600,"Tesla":4500}}]}]};
 let priceCurrentCategory="pm";
 function priceMoney(v){return v==null||v===""?"—":"฿"+Number(v||0).toLocaleString("th-TH");}
 function pricePlain(v){return v==null||v===""?"":Number(v||0);}
@@ -2124,7 +2122,6 @@ function switchTab(id,el){
 function _cacheSet(k,d){try{localStorage.setItem("ev_cache_"+k,JSON.stringify(d));}catch(_){}}
 function _cacheGet(k){try{const s=localStorage.getItem("ev_cache_"+k);return s?JSON.parse(s):null;}catch(_){return null;}}
 const DASH_IN_PROGRESS=["กำลังตรวจสอบ","รออนุมัติราคา","รอซ่อม","รออะไหล่","กำลังซ่อม","รอ QC","ผ่าน QC","รอชำระเงิน"];
-// คำนวณตัวเลข dashboard จาก jobs ที่โหลดมาแล้วในเครื่อง (ไม่ต้องรอ getDashboard 3.4 วิ)
 function computeDashboardFromJobs(){
   if(!Array.isArray(allJobs))return;
   const today=new Date().toDateString();let t=0,ip=0,dn=0,rev=0;
@@ -2138,7 +2135,6 @@ function computeDashboardFromJobs(){
   set("m-revenue","฿"+Number(rev).toLocaleString());
   set("m-qc-wait",allJobs.filter(j=>j["สถานะ"]==="รอ QC").length);
 }
-// โชว์ข้อมูลล่าสุดจาก cache ทันที (ก่อน network ตอบกลับ)
 function renderFromCache(){
   const j=_cacheGet("jobs"),c=_cacheGet("customers"),i=_cacheGet("inventory");
   if(j){allJobs=j;try{renderJobs(allJobs);populateTechFilter();renderErpDashboard();computeDashboardFromJobs();}catch(_){}}
@@ -2146,10 +2142,10 @@ function renderFromCache(){
   if(i){allInventory=mergeInventoryOverrides(i);try{renderInventory(allInventory);renderErpDashboard();}catch(_){}}
 }
 async function refreshAllData(){
-  renderFromCache();                                           // ① โชว์ cache ทันที (0 วิ)
-  const jobsP=loadJobs(),custP=loadCustomers(),invP=loadInventory(); // ② ยิงพร้อมกันหมด (รอบเดียว)
-  try{await jobsP;computeDashboardFromJobs();}catch(_){}        // ตัวเลข dashboard ทันทีจาก jobs
-  loadDashboard();                                             // เติมยอดสลิป/นัด เบื้องหลัง (ไม่บล็อก)
+  renderFromCache();
+  const jobsP=loadJobs(),custP=loadCustomers(),invP=loadInventory();
+  try{await jobsP;computeDashboardFromJobs();}catch(_){}
+  loadDashboard();
   try{await Promise.all([custP,invP]);}catch(_){}
   applyDynamicLanguage();
 }
@@ -2272,8 +2268,8 @@ function renderTechPerformanceWidget(){
 // RENDER
 function renderJobs(jobs){
   const tbody=document.getElementById("jobs-body");
-  if(!jobs.length){tbody.innerHTML=`<tr><td colspan="9" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
-  tbody.innerHTML=jobs.map(j=>`<tr><td><code style="font-size:11px">${j["Job ID"]||""}</code></td><td style="font-size:12px">${fd(j["วันที่สร้าง"])}</td><td><strong>${j["ชื่อลูกค้า"]||"—"}</strong><br><span style="font-size:11px;color:var(--muted)">${j["เบอร์โทร"]||""}</span></td><td style="font-size:12px">${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}${j["ทะเบียน"]?`<br><code style="font-size:10px">${j["ทะเบียน"]}</code>`:""}</td><td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j["รายการซ่อม / ปัญหา"]||"—"}</td><td>${bh(j["สถานะ"])}</td><td style="font-size:12px">${j["ช่าง"]||"—"}</td><td style="font-size:12px">${j["ราคาประเมิน (฿)"]?"฿"+Number(j["ราคาประเมิน (฿)"]).toLocaleString():"—"}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick='openJobDetail(${JSON.stringify(j).replace(/'/g,"&#39;")})'>📂 เปิด</button>${j["สถานะ"]==="ปิดงาน"?`<button class="btn btn-sm" style="margin-left:4px;background:var(--g1);color:#fff;border-color:var(--g1)" onclick='printReceiptForJob(${JSON.stringify(j).replace(/'/g,"&#39;")})'>🧾</button>`:""}</td></tr>`).join("");
+  if(!jobs.length){tbody.innerHTML=`<tr><td colspan="10" class="empty-state">ยังไม่มีข้อมูล</td></tr>`;return;}
+  tbody.innerHTML=jobs.map(j=>`<tr><td><code style="font-size:11px">${j["Job ID"]||""}</code></td><td style="font-size:12px">${fd(j["วันที่สร้าง"])}</td><td style="font-size:12px">${fd(j["วันนัด"])}</td><td><strong>${j["ชื่อลูกค้า"]||"—"}</strong><br><span style="font-size:11px;color:var(--muted)">${j["เบอร์โทร"]||""}</span></td><td style="font-size:12px">${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}${j["ทะเบียน"]?`<br><code style="font-size:10px">${j["ทะเบียน"]}</code>`:""}</td><td style="font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j["รายการซ่อม / ปัญหา"]||"—"}</td><td>${bh(j["สถานะ"])}</td><td style="font-size:12px">${j["ช่าง"]||"—"}</td><td style="font-size:12px">${j["ราคาประเมิน (฿)"]?"฿"+Number(j["ราคาประเมิน (฿)"]).toLocaleString():"—"}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick='openJobDetail(${JSON.stringify(j).replace(/'/g,"&#39;")})'>📂 เปิด</button>${j["สถานะ"]==="ปิดงาน"?`<button class="btn btn-sm" style="margin-left:4px;background:var(--g1);color:#fff;border-color:var(--g1)" onclick='printReceiptForJob(${JSON.stringify(j).replace(/'/g,"&#39;")})'>🧾</button>`:""}</td></tr>`).join("");
 }
 function renderCustomers(cs){
   const tbody=document.getElementById("customers-body");
@@ -2282,6 +2278,8 @@ function renderCustomers(cs){
 }
 function renderInventory(inv){
   const tbody=document.getElementById("inventory-body");
+  const dl=document.getElementById("parts-datalist");
+  if(dl)dl.innerHTML=allInventory.map(i=>`<option value="${getPartCode(i)}">${getPartName(i)} (คงเหลือ ${Number(i["จำนวนคงเหลือ"]||0)})</option>`).join("");
   const sku=inv.length,totalStock=inv.reduce((s,i)=>s+(Number(i["จำนวนคงเหลือ"]||0)),0);
   const invValue=inv.reduce((s,i)=>s+getPartUnitCost(i)*(Number(i["จำนวนคงเหลือ"]||0)),0);
   const lowCount=inv.filter(i=>(Number(i["จำนวนคงเหลือ"]||0))<=(Number(i["จำนวนขั้นต่ำ"]||5))).length;
@@ -2399,7 +2397,8 @@ function openJobDetail(j){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v||"—";};
   set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
   set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));set("jd-plate",j["ทะเบียน"]);
-  set("jd-type",j["รายการซ่อม / ปัญหา"]);set("jd-date",fd(j["วันที่สร้าง"]));
+  set("jd-type",j["รายการซ่อม / ปัญหา"]);set("jd-date",fd(j["วันนัด"]||j["วันที่สร้าง"]));
+  set("jd-time",j["เวลานัด"]||extractApptTime(j["หมายเหตุ"])||"—");
   set("jd-tech",j["ช่าง"]);set("jd-symptom",j["หมายเหตุ"]);
   // Render saved-data summary banners
   _renderSavedBanner("diag-saved-summary",
@@ -2591,25 +2590,60 @@ function _renderPayHistory(j){
   if(!wrap||!list)return;
   let hist=[];
   try{hist=JSON.parse(j["payment_history"]||"[]");}catch(_){}
+  const hasStoredHistory=hist.length>0;
   // Also include legacy single payment if no history
   if(!hist.length&&j["ราคาจริง (฿)"]&&j["วิธีชำระเงิน"]){
-    hist=[{ts:j["วันเสร็จ"]||"",amount:j["ราคาจริง (฿)"],method:j["วิธีชำระเงิน"],ref:j["เลขอ้างอิงโอน"]||"",slipUrl:j["URL สลิป"]||"",note:j["หมายเหตุชำระ"]||"",by:""}];
+    hist=[{ts:j["วันเสร็จ"]||"",amount:j["ราคาจริง (฿)"],method:j["วิธีชำระเงิน"],ref:j["เลขอ้างอิงโอน"]||"",slipUrl:j["URL สลิป"]||"",note:j["หมายเหตุชำระ"]||"",by:"",legacy:true}];
   }
   if(!hist.length){wrap.style.display="none";return;}
   wrap.style.display="block";
   const methodLabel={"cash":"💵 เงินสด","transfer":"📱 โอน","deposit":"🔐 มัดจำ","partial":"💳 บางส่วน"};
   list.innerHTML=hist.map((p,i)=>`
     <div style="display:flex;gap:8px;align-items:center;padding:7px 10px;${i<hist.length-1?"border-bottom:1px solid var(--border)":""}">
-      <div style="flex:1">
+      <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:12.5px">฿${Number(p.amount||0).toLocaleString()}</div>
         <div style="font-size:11px;color:var(--muted)">${methodLabel[p.method]||p.method||"—"} ${p.ref?"· "+p.ref:""} ${p.by?"· "+p.by:""}</div>
         ${p.note?`<div style="font-size:11px;color:var(--muted);font-style:italic">${p.note}</div>`:""}
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:10.5px;color:var(--muted)">${p.ts?new Date(p.ts).toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"2-digit"}):"—"}</div>
-        ${p.slipUrl?`<a href="${p.slipUrl}" target="_blank" class="btn btn-xs" style="margin-top:3px">🖼️ สลิป</a>`:""}
+      <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:wrap;flex-shrink:0">
+        <div style="font-size:10.5px;color:var(--muted);width:100%;text-align:right">${p.ts?new Date(p.ts).toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"2-digit"}):"—"}</div>
+        ${p.slipUrl?`<a href="${p.slipUrl}" target="_blank" class="btn btn-xs">🖼️ สลิป</a>`:""}
+        ${hasStoredHistory?`<button class="btn btn-xs btn-red" onclick="deletePaymentHistory(${i})" title="ลบรายการชำระนี้">ลบ</button>`:""}
       </div>
     </div>`).join("");
+}
+
+async function deletePaymentHistory(index){
+  if(!currentJobDetail)return;
+  let hist=[];
+  try{hist=JSON.parse(currentJobDetail["payment_history"]||"[]");}catch(_){}
+  if(index<0||index>=hist.length){showToast("⚠️ ไม่พบรายการชำระ");return;}
+  const item=hist[index];
+  const amount=Number(item.amount||0).toLocaleString();
+  if(!confirm("ยืนยันลบประวัติการชำระ ฿"+amount+"?"))return;
+  hist.splice(index,1);
+  const totalPaid=hist.reduce((s,p)=>s+Number(p.amount||0),0);
+  const last=hist[hist.length-1]||{};
+  const fields={
+    "ราคาจริง (฿)":totalPaid,
+    "วิธีชำระเงิน":last.method||"",
+    "เลขอ้างอิงโอน":last.ref||"",
+    "URL สลิป":last.slipUrl||"",
+    "หมายเหตุชำระ":last.note||"",
+    "payment_history":JSON.stringify(hist),
+    "paid_amount":totalPaid
+  };
+  const r=await gasPost({action:A.UPDATE_JOB,jobId:currentJobDetail["Job ID"],fields});
+  if(r?.status==="ok"||_isUnknownAction(r)){
+    _mergeJob(fields);
+    upsertJobAccounting(currentJobDetail);
+    prefillPay(currentJobDetail,currentJobDetail["สถานะ"]||"รอชำระเงิน");
+    _refreshDisplay();
+    await loadJobs();
+    showToast("✅ ลบประวัติการชำระแล้ว");
+  }else{
+    showToast("❌ "+(r?.message||r?.error||"ลบรายการชำระไม่สำเร็จ"));
+  }
 }
 
 function payCalcBalance(){
@@ -2833,7 +2867,8 @@ function _refreshDisplay(){
   set("jd-name",j["ชื่อลูกค้า"]);set("jd-phone",j["เบอร์โทร"]);
   set("jd-car",(j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""));
   set("jd-plate",j["ทะเบียน"]);set("jd-type",j["รายการซ่อม / ปัญหา"]);
-  set("jd-date",fd(j["วันที่สร้าง"]));set("jd-tech",j["ช่าง"]);
+  set("jd-date",fd(j["วันนัด"]||j["วันที่สร้าง"]));set("jd-time",j["เวลานัด"]||extractApptTime(j["หมายเหตุ"])||"—");
+  set("jd-tech",j["ช่าง"]);
   set("jd-symptom",j["หมายเหตุ"]);
   const sb=document.getElementById("jd-status-badge");if(sb)sb.innerHTML=bh(st);
   renderJobPipeline(st);
@@ -3134,17 +3169,48 @@ async function submitJob(){
   if(!name||!phone){showToast("⚠️ กรุณากรอกชื่อและเบอร์โทร");return;}
   if(!repair||!notes){showToast("⚠️ กรุณาระบุประเภทงานและอาการ");return;}
   const btn=document.getElementById("submit-job-btn");btn.innerHTML='<span class="spinner"></span> กำลังสร้าง...';btn.disabled=true;
-  const r=await gasPost({action:A.CREATE_JOB,customerName:name,customerPhone:phone,carBrand:document.getElementById("f-brand").value,carModel:document.getElementById("f-model").value||document.getElementById("f-brand").value,carPlate:document.getElementById("f-plate").value.trim(),repairType:repair,repairNotes:notes,estimatedPrice:Number(document.getElementById("f-price").value)||0,appointmentDate:document.getElementById("f-date").value,createdBy:currentUser?.username||"system"});
+  const r=await gasPost({action:A.CREATE_JOB,customerName:name,customerPhone:phone,carBrand:document.getElementById("f-brand").value,carModel:document.getElementById("f-model").value||document.getElementById("f-brand").value,carPlate:document.getElementById("f-plate").value.trim(),repairType:repair,repairNotes:notes,estimatedPrice:Number(document.getElementById("f-price").value)||0,appointmentDate:document.getElementById("f-date").value,appointmentTime:document.getElementById("f-time").value,createdBy:currentUser?.username||"system"});
   btn.innerHTML="✅ สร้างใบงาน";btn.disabled=false;
   if(r?.status==="ok"){showToast("✅ สร้างสำเร็จ! "+r.jobId+" — สถานะ: รอตรวจสอบ");clearNewJobForm();await loadJobs();switchTab("jobs",document.querySelectorAll(".tab")[1]);}
   else showToast("❌ "+(r?.message||"เชื่อมต่อไม่ได้"));
 }
-function clearNewJobForm(){["f-name","f-phone","f-plate","f-notes","f-price","f-date"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("f-brand").value="";document.getElementById("f-repair").value="";document.getElementById("f-model").innerHTML=`<option value="">— เลือกยี่ห้อก่อน —</option>`;}
+function clearNewJobForm(){["f-name","f-phone","f-plate","f-notes","f-price","f-date","f-time"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("f-brand").value="";document.getElementById("f-repair").value="";document.getElementById("f-model").innerHTML=`<option value="">— เลือกยี่ห้อก่อน —</option>`;}
 function filterJobs(){const q=document.getElementById("job-search").value.toLowerCase(),st=document.getElementById("job-filter-status").value,tc=document.getElementById("job-filter-tech").value;renderJobs(allJobs.filter(j=>{const mq=!q||Object.values(j).some(v=>String(v).toLowerCase().includes(q));// Bug8 fix: match both displayName and username for tech filter
 return mq&&(!st||j["สถานะ"]===st)&&(!tc||(j["ช่าง"]===tc||String(j["ช่าง"]||"").toLowerCase().includes(tc.toLowerCase())));}));}
 function filterCustomers(){const q=document.getElementById("cust-search").value.toLowerCase();renderCustomers(allCustomers.filter(c=>Object.values(c).some(v=>String(v).toLowerCase().includes(q))));}
 const CM={BYD:["Atto 3","Dolphin","Seal","Han","Tang"],Tesla:["Model 3","Model Y","Model S","Model X"],Neta:["V","V-II","U","X"],MG:["EP","4","ZS EV"],ORA:["Good Cat","Funky Cat"],Volvo:["XC40 Recharge","C40 Recharge","EX30"],BMW:["i3","i4","iX","iX1"],Nissan:["Leaf","Ariya"],Toyota:["bZ4X"]};
 function updateModels(){const b=document.getElementById("f-brand").value,sel=document.getElementById("f-model"),ms=CM[b]||[];sel.innerHTML=ms.length?`<option value="">— เลือกรุ่น —</option>`+ms.map(m=>`<option>${m}</option>`).join(""):`<option value="">— ระบุเองใน Notes —</option>`;}
+async function deductPartStock(){
+  const codeInput=document.getElementById("jd-diag-part-code");
+  const qtyInput=document.getElementById("jd-diag-part-qty");
+  const hint=document.getElementById("jd-diag-part-hint");
+  const code=codeInput.value.trim();
+  const qty=parseInt(qtyInput.value);
+  if(!code){showToast("⚠️ กรุณาใส่รหัสอะไหล่");return;}
+  if(isNaN(qty)||qty<=0){showToast("⚠️ ใส่จำนวนให้ถูกต้อง");return;}
+  const item=allInventory.find(i=>getPartCode(i)===code);
+  if(!item){showToast("❌ ไม่พบรหัสอะไหล่ \""+code+"\" ในคลังอะไหล่");if(hint)hint.textContent="ไม่พบรหัสนี้ในคลัง — ตรวจสอบรหัสอะไหล่อีกครั้ง";return;}
+  const name=getPartName(item);
+  const curStock=Number(item["จำนวนคงเหลือ"]||0);
+  if(curStock<qty&&!confirm(`⚠️ สต็อก "${name}" เหลือเพียง ${curStock} ชิ้น แต่ต้องการตัด ${qty} ชิ้น\nต้องการตัดสต็อกต่อไปหรือไม่? (สต็อกจะติดลบ)`)){
+    return;
+  }
+  showToast("⏳ กำลังตัดสต็อก...");
+  const r=await gasPost({action:A.UPDATE_INVENTORY,partCode:code,qtyChange:-qty});
+  if(r?.status==="ok"){
+    item["จำนวนคงเหลือ"]=curStock-qty;
+    renderInventory(allInventory);renderErpDashboard();
+    const ta=document.getElementById("jd-diag-parts");
+    const line=`${code} (${name}) x${qty}`;
+    ta.value=ta.value?ta.value.replace(/\s*$/,"")+"\n"+line:line;
+    if(hint)hint.textContent=`✅ ตัดสต็อก ${name} แล้ว ${qty} ชิ้น (คงเหลือ ${curStock-qty})`;
+    showToast("✅ ตัดสต็อกสำเร็จ");
+    codeInput.value="";qtyInput.value="1";
+  } else {
+    showToast("❌ ตัดสต็อกล้มเหลว: "+(r?.message||r?.error||"unknown"));
+    if(hint)hint.textContent="❌ ตัดสต็อกไม่สำเร็จ กรุณาลองใหม่";
+  }
+}
 async function adjustStock(code,name,cur){const ch=prompt(`ปรับสต็อก "${name}" (ปัจจุบัน: ${cur})\n+เพิ่ม หรือ -ลด เช่น +5`);if(!ch)return;const v=parseInt(ch);if(isNaN(v)){showToast("⚠️ ใส่ตัวเลข");return;}const r=await gasPost({action:A.UPDATE_INVENTORY,partCode:code,qtyChange:v});if(r?.status==="ok"){showToast("✅ ปรับสต็อกสำเร็จ");await loadInventory();}else showToast("❌ ล้มเหลว");}
 async function deleteSlip(refId){if(!confirm("ยืนยันลบสลิป?"))return;const r=await gasPost({action:A.DELETE_SLIP,refId});if(r?.status==="ok"){showToast("✅ ลบสำเร็จ");await loadSlips();};}
 
@@ -3335,7 +3401,45 @@ async function submitQC(result){
 function gsi(){return{...DEFAULT_SHOP,...SHOP_INFO};}
 function printJobOrder(){if(!currentJobDetail)return;const j=currentJobDetail,s=gsi();openPrint(`<style>body{font-family:sans-serif;padding:24px;font-size:13px;color:#0F172A}h2{font-size:18px;font-weight:700;margin:0}table{width:100%;border-collapse:collapse}th,td{padding:6px 10px;border:1px solid #ddd;font-size:12px}th{background:#f0f0f0;font-weight:600}.hd{display:flex;justify-content:space-between;border-bottom:2px solid #0D7A5F;padding-bottom:12px;margin-bottom:16px}</style><div class="hd"><div><h2>${s.name}</h2><div style="font-size:12px;color:#666">${s.addr||""} ${s.phone||""}</div></div><div style="text-align:right"><h2 style="color:#0D7A5F">ใบงานซ่อม</h2><div style="font-size:16px;font-weight:700">${j["Job ID"]||""}</div><div style="font-size:11px">${fd(j["วันที่สร้าง"])}</div></div></div><table style="margin-bottom:14px"><tr><th>ชื่อลูกค้า</th><td>${j["ชื่อลูกค้า"]||""}</td><th>เบอร์โทร</th><td>${j["เบอร์โทร"]||""}</td></tr><tr><th>ยี่ห้อ/รุ่น</th><td>${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""}</td><th>ทะเบียน</th><td>${j["ทะเบียน"]||""}</td></tr><tr><th>ประเภทงาน</th><td>${j["รายการซ่อม / ปัญหา"]||""}</td><th>สถานะ</th><td>${j["สถานะ"]||""}</td></tr></table><table style="margin-bottom:14px"><thead><tr><th>อาการ</th></tr></thead><tbody><tr><td style="min-height:50px">${j["หมายเหตุ"]||"—"}</td></tr></tbody></table><table style="margin-bottom:14px"><thead><tr><th>สาเหตุ</th><th>แผนการซ่อม</th></tr></thead><tbody><tr><td>${j["สาเหตุ"]||"—"}</td><td>${j["แผนการซ่อม"]||"—"}</td></tr></tbody></table><table style="margin-bottom:14px"><thead><tr><th>ขั้นตอนการซ่อม</th></tr></thead><tbody><tr><td style="white-space:pre-wrap;min-height:60px">${j["ขั้นตอนการซ่อม"]||"—"}</td></tr></tbody></table><table><tr><th>รายการ</th><th>ก่อน</th><th>หลัง</th></tr><tr><td>อุณหภูมิแอร์ (°C)</td><td>${j["อุณหภูมิก่อน"]||"—"}</td><td>${j["อุณหภูมิหลัง"]||"—"}</td></tr><tr><td>ความดัน Hi Side</td><td>${j["ความดัน Hi ก่อน"]||"—"}</td><td>${j["ความดัน Hi หลัง"]||"—"}</td></tr><tr><td>Leak Test</td><td colspan="2">${j["Leak Test"]||"—"}</td></tr><tr><td>Error Code</td><td colspan="2">${j["Error Code"]||"ไม่มี"}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px"><div style="text-align:center;border-top:1px solid #999;padding-top:8px">ช่างผู้ซ่อม: ${j["ช่าง"]||"___________"}</div><div style="text-align:center;border-top:1px solid #999;padding-top:8px">ลูกค้ารับทราบ: _______________</div></div>`);}
 function printReceipt(){if(!currentJobDetail)return;printReceiptForJob(currentJobDetail);}
-function printReceiptForJob(j){if(typeof j==="string")j=JSON.parse(j);const s=gsi();openPrint(`<style>body{font-family:sans-serif;padding:24px;max-width:380px;margin:0 auto;font-size:13px;color:#0F172A}.row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #ddd}.tot{font-size:18px;font-weight:700;padding:10px 0;border-top:2px solid #0D7A5F;border-bottom:2px solid #0D7A5F}</style><div style="text-align:center;border-bottom:2px solid #0D7A5F;padding-bottom:12px;margin-bottom:16px"><strong style="font-size:18px">${s.name}</strong><div style="font-size:12px;color:#666">${s.addr||""}<br>${s.phone||""}</div><div style="font-size:20px;font-weight:700;margin-top:8px;color:#0D7A5F">ใบเสร็จรับเงิน</div></div><div class="row"><span>Job ID</span><strong>${j["Job ID"]||"—"}</strong></div><div class="row"><span>วันที่</span><span>${fd(j["วันเสร็จ"]||j["วันที่สร้าง"])}</span></div><div class="row"><span>ลูกค้า</span><span>${j["ชื่อลูกค้า"]||"—"}</span></div><div class="row"><span>เบอร์โทร</span><span>${j["เบอร์โทร"]||"—"}</span></div><div class="row"><span>รถ</span><span>${j["ยี่ห้อรถ"]||""} ${j["รุ่นรถ"]||""} ${j["ทะเบียน"]||""}</span></div><div class="row"><span>งาน</span><span>${j["รายการซ่อม / ปัญหา"]||"—"}</span></div><div style="margin-top:14px"><div class="row"><span>ค่าแรง</span><span>฿${Number(j["ค่าแรง"]||0).toLocaleString()}</span></div><div class="row"><span>ค่าอะไหล่</span><span>฿${Number(j["ค่าอะไหล่"]||0).toLocaleString()}</span></div><div class="row"><span>ส่วนลด</span><span>-฿${Number(j["ส่วนลด"]||0).toLocaleString()}</span></div><div class="row tot"><span>รวม</span><span>฿${Number(j["ราคาจริง (฿)"]||j["ราคาประเมิน (฿)"]||0).toLocaleString()}</span></div><div class="row"><span>วิธีชำระ</span><span>${j["วิธีชำระเงิน"]||"—"}</span></div>${j["เลขอ้างอิงโอน"]?`<div class="row"><span>เลขอ้างอิง</span><span>${j["เลขอ้างอิงโอน"]}</span></div>`:""}</div><div style="text-align:center;margin-top:24px;font-size:12px;color:#666">ขอบคุณที่ใช้บริการ 🙏<br>${s.name}</div>`);}
+function printReceiptForJob(j){
+  if(typeof j==="string")j=JSON.parse(j);
+  const s=gsi();
+  const baht=n=>"฿"+Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const labor=Number(j["ค่าแรง"]||0);
+  const parts=Number(j["ค่าอะไหล่"]||0);
+  const discount=Number(j["ส่วนลด"]||0);
+  const subtotal=labor+parts;
+  const grandTotal=Math.max(0,subtotal-discount);
+  const paid=Number(j["paid_amount"]||j["ราคาจริง (฿)"]||0);
+  const balance=Math.max(0,grandTotal-paid);
+  const rows=[
+    {type:"ค่าแรง",item:j["รายการซ่อม / ปัญหา"]||"ค่าแรงบริการซ่อม",amount:labor},
+    {type:"อะไหล่",item:j["อะไหล่ที่ต้องใช้"]||"ค่าอะไหล่ / วัสดุสิ้นเปลือง",amount:parts}
+  ].filter(r=>r.amount>0);
+  if(!rows.length)rows.push({type:"บริการ",item:j["รายการซ่อม / ปัญหา"]||"งานบริการ",amount:Number(j["ราคาประเมิน (฿)"]||j["ราคาจริง (฿)"]||0)});
+  const itemRows=rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td><strong>${esc(r.type)}</strong><br><span>${esc(r.item)}</span></td><td class="r">1</td><td class="r">${baht(r.amount)}</td><td class="r">${baht(r.amount)}</td></tr>`).join("");
+  const methodLabel={cash:"เงินสด",transfer:"โอนเงิน",deposit:"มัดจำ",partial:"ชำระบางส่วน"};
+  const method=methodLabel[j["วิธีชำระเงิน"]]||j["วิธีชำระเงิน"]||"—";
+  const repairPlan=String(j["แผนการซ่อม"]||"").trim();
+  openPrint(`<style>
+    @page{size:A4;margin:14mm}
+    *{box-sizing:border-box}
+    body{font-family:sans-serif;padding:0;max-width:720px;margin:0 auto;font-size:13px;color:#0F172A}
+    .hd{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #0D7A5F;padding-bottom:14px;margin-bottom:14px}
+    .shop strong{font-size:20px}.muted{color:#64748B;font-size:12px}.title{text-align:right}.title h1{margin:0;color:#0D7A5F;font-size:24px}.title b{font-size:16px}
+    .info{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:14px}.info div{border-bottom:1px dashed #CBD5E1;padding:5px 0}.info span{color:#64748B;display:inline-block;min-width:76px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0;padding:8px;font-size:12px}td{border:1px solid #E2E8F0;padding:8px;vertical-align:top}td span{color:#64748B;font-size:12px}.c{text-align:center}.r{text-align:right;white-space:nowrap}
+    .totals{width:320px;margin-left:auto;margin-top:12px}.totals .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #CBD5E1}.totals .grand{font-size:18px;font-weight:700;border-top:2px solid #0D7A5F;border-bottom:2px solid #0D7A5F;padding:10px 0;color:#065F46}
+    .note,.pay{margin-top:12px;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#F8FAFC}.note div{white-space:pre-wrap;margin-top:6px}.pay{background:#F8FAFC}.foot{text-align:center;margin-top:28px;font-size:12px;color:#64748B}
+  </style><div class="hd"><div class="shop"><strong>${esc(s.name)}</strong><div class="muted">${esc(s.addr||"")}<br>${esc(s.phone||"")}</div></div><div class="title"><h1>ใบเสร็จรับเงิน</h1><b>${esc(j["Job ID"]||"—")}</b><div class="muted">วันที่ ${esc(fd(j["วันเสร็จ"]||j["วันที่สร้าง"]))}</div></div></div>
+  <div class="info"><div><span>ลูกค้า</span>${esc(j["ชื่อลูกค้า"]||"—")}</div><div><span>เบอร์โทร</span>${esc(j["เบอร์โทร"]||"—")}</div><div><span>รถ</span>${esc((j["ยี่ห้อรถ"]||"")+" "+(j["รุ่นรถ"]||""))}</div><div><span>ทะเบียน</span>${esc(j["ทะเบียน"]||"—")}</div></div>
+  <table><thead><tr><th style="width:44px">#</th><th>รายการ</th><th style="width:70px">จำนวน</th><th style="width:120px">ราคา/หน่วย</th><th style="width:120px">รวม</th></tr></thead><tbody>${itemRows}</tbody></table>
+  <div class="totals"><div class="row"><span>รวมค่าแรง</span><strong>${baht(labor)}</strong></div><div class="row"><span>รวมค่าอะไหล่</span><strong>${baht(parts)}</strong></div><div class="row"><span>รวมก่อนส่วนลด</span><strong>${baht(subtotal)}</strong></div><div class="row"><span>ส่วนลด</span><strong>-${baht(discount)}</strong></div><div class="row grand"><span>ยอดสุทธิ</span><span>${baht(grandTotal)}</span></div><div class="row"><span>รับชำระแล้ว</span><strong>${baht(paid||grandTotal)}</strong></div>${balance>0?`<div class="row"><span>คงเหลือ</span><strong>${baht(balance)}</strong></div>`:""}</div>
+  ${repairPlan?`<div class="note"><strong>แผนการซ่อม</strong><div>${esc(repairPlan)}</div></div>`:""}
+  <div class="pay"><strong>รายละเอียดการชำระเงิน</strong><div style="margin-top:6px">วิธีชำระ: ${esc(method)}${j["เลขอ้างอิงโอน"]?` · เลขอ้างอิง: ${esc(j["เลขอ้างอิงโอน"])}`:""}</div>${j["หมายเหตุชำระ"]?`<div class="muted">หมายเหตุ: ${esc(j["หมายเหตุชำระ"])}</div>`:""}</div>
+  <div class="foot">ขอบคุณที่ใช้บริการ<br>${esc(s.name)}</div>`);
+}
 function openPrint(html){const w=window.open("","_blank","width=800,height=600");w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${html}</body></html>`);w.document.close();w.onload=()=>w.print();}
 
 // APPOINTMENTS
@@ -3389,6 +3493,7 @@ function fillJobFromAppt(a){
   document.getElementById("f-phone").value=a.phone||"";
   document.getElementById("f-plate").value=a.plate||"";
   document.getElementById("f-date").value=a.date||"";
+  document.getElementById("f-time").value=a.time||"";
   document.getElementById("f-repair").value=a.type||"";
   // Bug2 fix: parse car field "Brand Model" and set dropdowns
   if(a.car){
@@ -3470,7 +3575,7 @@ async function rejectLA(id){const a=allAppts.find(x=>x.id===id);if(a){a.status="
 async function refreshLinePending(){showToast("⏳ กำลังโหลด...");await loadAppts();await renderLinePending();showToast("✅ โหลดล่าสุดแล้ว");}
 
 // USERS
-// v3.6: ทุกฟังก์ชันจัดการ user เรียก backend (centralized) แล้ว sync cache ใหม่
+// v3.6: จัดการ user ผ่าน backend (centralized) + ปุ่มระงับ/เปิด
 async function renderUsersTable(){
   await syncUsers();
   const users=loadUsers(),tbody=document.getElementById("users-body");if(!tbody)return;
@@ -3492,7 +3597,7 @@ async function renderUsersTable(){
 }
 function openEditUser(username){if(!isAdmin())return;const u=loadUsers().find(x=>x.username===username);if(!u)return;document.getElementById("edit-user-index").value=username;document.getElementById("edit-user-username").value=u.username;document.getElementById("edit-user-displayname").value=u.displayName;document.getElementById("edit-user-role").value=u.role;document.getElementById("edit-user-password").value="";document.getElementById("editUserModal").classList.add("open");}
 async function saveEditUser(){if(!isAdmin())return;const username=document.getElementById("edit-user-index").value,displayName=document.getElementById("edit-user-displayname").value.trim(),role=document.getElementById("edit-user-role").value,np=document.getElementById("edit-user-password").value;if(np&&np.length<6){showToast("⚠️ รหัสผ่าน ≥6 ตัวอักษร");return;}const payload={action:A.SAVE_USER,username,displayName,role};if(np&&np.length>=6)payload.password=np;const res=await gasPost(payload);if(res?.status==="ok"){document.getElementById("editUserModal").classList.remove("open");await renderUsersTable();showToast("✅ แก้ไขผู้ใช้สำเร็จ");}else{showToast("❌ "+(res?.message||"แก้ไขไม่สำเร็จ"));}}
-async function addUser(){if(!isAdmin()){showToast("⛔ Admin เท่านั้น");return;}const un=document.getElementById("new-username").value.trim().toLowerCase(),pw=document.getElementById("new-password").value,dn=document.getElementById("new-displayname").value.trim(),role=document.getElementById("new-role").value;if(!un||!pw||!dn){showToast("⚠️ กรอกข้อมูลให้ครบ");return;}if(pw.length<6){showToast("⚠️ รหัสผ่าน ≥6 ตัวอักษร");return;}if(!/^[a-z0-9_]+$/.test(un)){showToast("⚠️ Username ใช้ได้เฉพาะ a-z, 0-9, _");return;}if(loadUsers().find(u=>u.username===un)){showToast("⚠️ Username นี้มีอยู่แล้ว");return;}const res=await gasPost({action:A.SAVE_USER,username:un,password:pw,role,displayName:dn});if(res?.status==="ok"){["new-username","new-password","new-displayname"].forEach(id=>{document.getElementById(id).value="";});await renderUsersTable();showToast("✅ เพิ่มผู้ใช้ "+un+" สำเร็จ");}else{showToast("❌ "+(res?.message||"เพิ่มผู้ใช้ไม่สำเร็จ"));}}
+async function addUser(){if(!isAdmin()){showToast("⛔ Admin เท่านั้น");return;}const un=document.getElementById("new-username").value.trim().toLowerCase(),pw=document.getElementById("new-password").value,dn=document.getElementById("new-displayname").value.trim(),role=document.getElementById("new-role").value;if(!un||!pw||!dn){showToast("⚠️ กรอกข้อมูลให้ครบ");return;}if(pw.length<6){showToast("⚠️ รหัสผ่าน ≥6 ตัวอักษร");return;}if(!/^[a-z0-9_]+$/.test(un)){showToast("⚠️ Username ใช้ได้เฉพาะ a-z, 0-9, _");return;}if(loadUsers().find(u=>u.username.toLowerCase()===un)){showToast("⚠️ Username นี้มีอยู่แล้ว");return;}const res=await gasPost({action:A.SAVE_USER,username:un,password:pw,role,displayName:dn});if(res?.status==="ok"){["new-username","new-password","new-displayname"].forEach(id=>{document.getElementById(id).value="";});await renderUsersTable();showToast("✅ เพิ่มผู้ใช้ "+un+" สำเร็จ");}else{showToast("❌ "+(res?.message||"เพิ่มผู้ใช้ไม่สำเร็จ"));}}
 async function toggleUserActive(username,active){if(!isAdmin())return;if(username==="admin"){showToast("⛔ ไม่สามารถระงับ admin ได้");return;}const res=await gasPost({action:A.SAVE_USER,username,active});if(res?.status==="ok"){await renderUsersTable();showToast(active?"✅ เปิดใช้งานผู้ใช้แล้ว":"🚫 ระงับผู้ใช้แล้ว");}else{showToast("❌ "+(res?.message||"อัปเดตไม่สำเร็จ"));}}
 async function deleteUser(username){if(!isAdmin())return;if(username==="admin"||username===currentUser?.username)return;if(!confirm("ยืนยันลบผู้ใช้ "+username+"?"))return;const res=await gasPost({action:A.DELETE_USER,username});if(res?.status==="ok"){await renderUsersTable();showToast("✅ ลบสำเร็จ");}else{showToast("❌ "+(res?.message||"ลบไม่สำเร็จ"));}}
 
@@ -3653,6 +3758,8 @@ async function verifyLineWebhook(){
 
 // UTILS
 function fd(v){if(!v)return"—";try{const d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return d.toLocaleDateString("th-TH",{day:"2-digit",month:"short",year:"numeric"});}catch{return String(v).slice(0,10);}}
+// Bug fix: ดึงเวลานัดหมายที่ถูกฝังไว้ในหมายเหตุ (จาก fillJobFromAppt) ออกมาแสดงแยกเป็นช่อง "เวลานัด"
+function extractApptTime(notes){const m=/เวลานัด:\s*(\d{1,2}:\d{2})/.exec(notes||"");return m?m[1]:"";}
 let toastTimer;
 function showToast(msg){const t=document.getElementById("toast");t.textContent=currentLang==="th"?translatePlainText(msg,"th"):msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),3500);}
 
@@ -4053,7 +4160,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     const rb=document.getElementById("topbar-role-badge");
     rb.textContent=currentUser.role;rb.className="role-badge role-"+currentUser.role;
     applyRoleTabVisibility(currentUser.role);
-    syncUsers(); // v3.6: ดึงรายชื่อ user ล่าสุดจาก backend มาเก็บ cache
+    syncUsers(); // v3.6: ดึงรายชื่อ user ล่าสุดจาก backend
 
     // แสดง Setup Wizard ถ้ายังไม่เคยตั้งค่า GAS URL
     const setupDone = localStorage.getItem("ev_setup_done");
