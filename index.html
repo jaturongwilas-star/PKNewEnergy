@@ -296,6 +296,10 @@ textarea{min-height:68px}
 .modal-title{font-size:14px;margin-bottom:12px;padding-bottom:10px}
 .modal-footer{margin-top:14px;padding-top:12px;gap:6px}
 
+/* v3.6: คืน padding ให้ modal ฟอร์มทั่วไป (jobDetail/qc จัด padding เองอยู่แล้ว จึงไม่แตะ) */
+#editUserModal .modal,#apptModal .modal,#inventoryPriceModal .modal,#setupWizardModal .modal{padding:22px 24px}
+@media(max-width:768px){#editUserModal .modal,#apptModal .modal,#inventoryPriceModal .modal,#setupWizardModal .modal{padding:18px 16px}}
+
 /* info-row compact */
 .info-row{padding:5px 0;font-size:12.5px}
 .info-label{font-size:11.5px}
