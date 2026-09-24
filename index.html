@@ -578,7 +578,7 @@ body.dark-mode .qc-check.fail{background:#3A1010}
     <div style="font-size:20px;font-weight:700;text-align:center;margin-bottom:4px">EV Garage Management</div>
     <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px">P&K New Energy — ระบบจัดการศูนย์บริการ EV</div>
     <div class="form-group"><label>ชื่อผู้ใช้</label><input type="text" id="login-user" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
-    <div class="form-group" style="margin-top:10px"><label>รหัสผ่าน</label><input type="password" id="login-pass" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group" style="margin-top:10px"><label>รหัสผ่าน</label><div style="position:relative"><input type="password" id="login-pass" autocomplete="current-password" style="padding-right:44px" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" onclick="togglePw('login-pass',this)" aria-label="แสดง/ซ่อนรหัสผ่าน" title="แสดง/ซ่อนรหัสผ่าน" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;line-height:1">👁️</button></div></div>
     <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:11px;font-size:15px;font-weight:700" onclick="doLogin()">เข้าสู่ระบบ</button>
     <div class="login-err" id="login-error"></div>
     <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">ติดต่อผู้ดูแลระบบหากลืมรหัสผ่าน</div>
@@ -1949,6 +1949,12 @@ function applyRoleTabVisibility(role){
   if(role==="tech") document.getElementById("tab-accounting").style.display="none";
 }
 
+// v3.6: ปุ่ม 👁️ แสดง/ซ่อนรหัสผ่าน (ใช้ได้ทุกช่องรหัสผ่าน)
+function togglePw(id,btn){
+  const el=document.getElementById(id);if(!el)return;
+  if(el.type==="password"){el.type="text";if(btn)btn.textContent="🙈";}
+  else{el.type="password";if(btn)btn.textContent="👁️";}
+}
 // v3.6: ตรวจ login ผ่าน backend (centralized) — ทุกเครื่องใช้ user ชุดเดียวกัน
 // ถ้าเชื่อมต่อ backend ไม่ได้ → fallback ตรวจจาก DEFAULT_USERS (โหมดออฟไลน์ฉุกเฉิน)
 async function doLogin(){
@@ -2114,10 +2120,37 @@ function switchTab(id,el){
 }
 
 // DATA
+// v3.6: cache + instant render + parallel load (เร่งความเร็วเข้าระบบ)
+function _cacheSet(k,d){try{localStorage.setItem("ev_cache_"+k,JSON.stringify(d));}catch(_){}}
+function _cacheGet(k){try{const s=localStorage.getItem("ev_cache_"+k);return s?JSON.parse(s):null;}catch(_){return null;}}
+const DASH_IN_PROGRESS=["กำลังตรวจสอบ","รออนุมัติราคา","รอซ่อม","รออะไหล่","กำลังซ่อม","รอ QC","ผ่าน QC","รอชำระเงิน"];
+// คำนวณตัวเลข dashboard จาก jobs ที่โหลดมาแล้วในเครื่อง (ไม่ต้องรอ getDashboard 3.4 วิ)
+function computeDashboardFromJobs(){
+  if(!Array.isArray(allJobs))return;
+  const today=new Date().toDateString();let t=0,ip=0,dn=0,rev=0;
+  allJobs.forEach(j=>{
+    if(new Date(j["วันที่สร้าง"]).toDateString()===today)t++;
+    if(DASH_IN_PROGRESS.indexOf(j["สถานะ"])!==-1)ip++;
+    if(j["สถานะ"]==="ปิดงาน"){dn++;rev+=Number(j["ราคาจริง (฿)"]||0);}
+  });
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set("m-today",t);set("m-progress",ip);set("m-done",dn);
+  set("m-revenue","฿"+Number(rev).toLocaleString());
+  set("m-qc-wait",allJobs.filter(j=>j["สถานะ"]==="รอ QC").length);
+}
+// โชว์ข้อมูลล่าสุดจาก cache ทันที (ก่อน network ตอบกลับ)
+function renderFromCache(){
+  const j=_cacheGet("jobs"),c=_cacheGet("customers"),i=_cacheGet("inventory");
+  if(j){allJobs=j;try{renderJobs(allJobs);populateTechFilter();renderErpDashboard();computeDashboardFromJobs();}catch(_){}}
+  if(c){allCustomers=c;try{renderCustomers(allCustomers);}catch(_){}}
+  if(i){allInventory=mergeInventoryOverrides(i);try{renderInventory(allInventory);renderErpDashboard();}catch(_){}}
+}
 async function refreshAllData(){
-  // Bug7 fix: load jobs first, then dashboard, so allJobs is populated for qc-wait count
-  await loadJobs();
-  await Promise.all([loadDashboard(),loadCustomers(),loadInventory()]);
+  renderFromCache();                                           // ① โชว์ cache ทันที (0 วิ)
+  const jobsP=loadJobs(),custP=loadCustomers(),invP=loadInventory(); // ② ยิงพร้อมกันหมด (รอบเดียว)
+  try{await jobsP;computeDashboardFromJobs();}catch(_){}        // ตัวเลข dashboard ทันทีจาก jobs
+  loadDashboard();                                             // เติมยอดสลิป/นัด เบื้องหลัง (ไม่บล็อก)
+  try{await Promise.all([custP,invP]);}catch(_){}
   applyDynamicLanguage();
 }
 async function loadDashboard(){
@@ -2132,11 +2165,11 @@ async function loadDashboard(){
 }
 async function loadJobs(){
   const d=await gasGet({action:A.GET_JOBS});if(!d||d.status!=="ok")return;
-  allJobs=d.jobs||[];renderJobs(allJobs);populateTechFilter();renderErpDashboard();
+  allJobs=d.jobs||[];_cacheSet("jobs",allJobs);renderJobs(allJobs);populateTechFilter();renderErpDashboard();
   document.getElementById("m-qc-wait").textContent=allJobs.filter(j=>j["สถานะ"]==="รอ QC").length;
 }
-async function loadCustomers(){const d=await gasGet({action:A.GET_CUSTOMERS});if(d?.status==="ok"){allCustomers=d.customers||[];renderCustomers(allCustomers);}}
-async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){allInventory=mergeInventoryOverrides(d.inventory||[]);renderInventory(allInventory);renderErpDashboard();}}
+async function loadCustomers(){const d=await gasGet({action:A.GET_CUSTOMERS});if(d?.status==="ok"){allCustomers=d.customers||[];_cacheSet("customers",allCustomers);renderCustomers(allCustomers);}}
+async function loadInventory(){const d=await gasGet({action:A.GET_INVENTORY});if(d?.status==="ok"){_cacheSet("inventory",d.inventory||[]);allInventory=mergeInventoryOverrides(d.inventory||[]);renderInventory(allInventory);renderErpDashboard();}}
 async function loadSlips(){
   const[s1,s2]=await Promise.all([gasGet({action:A.GET_SLIPS}),gasGet({action:A.GET_DASHBOARD})]);
   if(s1?.status==="ok"){const sl=s1.slips||[];renderSlips(sl);document.getElementById("m-slip-total").textContent=sl.length;}
